@@ -89,7 +89,7 @@ local httpGet = buildHttpClient()
 
 function Vanguard:GetModuleUrl(modulePath)
     return string.format(
-        "https://raw.githubusercontent.com/adriano0012/VanguardHub/%s/VanguardHub/%s.lua",
+        "https://raw.githubusercontent.com/adriano0012/Aurora/%s/Products/VanguardHub/%s.lua",
         self.Branch,
         modulePath
     )
