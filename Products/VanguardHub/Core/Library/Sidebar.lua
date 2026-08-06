@@ -2,6 +2,8 @@ local Registry = rawget(_G, "__VanguardModuleRegistry") or {}
 local Utils = Registry["Core/Library/Utils"]
 local Tween = Registry["Core/Library/Tween"]
 
+print("[Vanguard] Sidebar loaded")
+
 local Sidebar = {}
 
 function Sidebar.Build(context)

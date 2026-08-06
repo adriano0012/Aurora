@@ -3,6 +3,8 @@
 -- ============================================================
 
 return function(UI, Config, Utils)
+    print("[Vanguard] Home connect helper")
+
     local Players = game:GetService("Players")
     local Stats = game:GetService("Stats")
     local RunService = game:GetService("RunService")

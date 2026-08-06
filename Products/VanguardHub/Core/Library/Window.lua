@@ -6,6 +6,8 @@ local Tabs = Registry["Core/Library/Tabs"]
 
 local UserInputService = game:GetService("UserInputService")
 
+print("[Vanguard] Window AddConnection v2")
+
 local Library = {
     Flags = {},
     CurrentTab = nil,
@@ -33,7 +35,15 @@ function Library:TrackInstance(instance)
 end
 
 function Library:AddConnection(obj, eventName, callback)
-    local connection = obj[eventName]:Connect(callback)
+    local member = obj[eventName]
+    local connection
+
+    if typeof(member) == "RBXScriptSignal" then
+        connection = member:Connect(callback)
+    else
+        connection = obj:GetPropertyChangedSignal(eventName):Connect(callback)
+    end
+
     table.insert(self.Connections, connection)
     return connection
 end
