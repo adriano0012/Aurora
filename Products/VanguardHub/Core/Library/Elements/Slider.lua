@@ -55,6 +55,9 @@ function Slider.Create(tabContext, section, text, flag, default, min, max, preci
     local dragging = false
 
     local function normalize(newValue)
+        if newValue == nil then
+            newValue = value or min
+        end
         newValue = math.clamp(newValue, min, max)
         if not precise then
             newValue = math.floor(newValue + 0.5)
