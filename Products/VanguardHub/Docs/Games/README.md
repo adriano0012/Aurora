@@ -1,0 +1,1 @@
+# Game Docs`n`nDocumentação dos adaptadores de jogos.

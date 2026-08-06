@@ -1,0 +1,1733 @@
+function SendMessage(Text)
+	game.StarterGui:SetCore("SendNotification", {
+	Title = "Eski Menu"; -- the title (ofc)
+	Text = Text; -- what the text says (ofc)
+	Duration = 1; -- how long the notification should in secounds
+	})
+end
+
+local nigger,data = pcall(function()
+	readfile('EskiKey')
+end)
+local AutoKey
+
+--Login
+local logedin = false
+if not AutoKey then
+	local zg = Instance.new('ScreenGui',game.CoreGui)
+	local drg = Instance.new('TextButton',zg)
+	drg.Size = UDim2.new(0,300,0,20)
+	drg.Draggable = true
+	drg.TextColor3 = Color3.new(1,1,1)
+	drg.Text = 'Login for Eski Hub'
+	drg.BackgroundColor3 = Color3.new(0,0.6,0.6)
+	drg.BackgroundTransparency = .5
+	drg.Position = UDim2.new(.5,-150,0.5,-100)
+	local frm = Instance.new('Frame',drg)
+	frm.Size = UDim2.new(1,0,0,100)
+	frm.BackgroundTransparency = .6
+	frm.BackgroundColor3 = Color3.new(0,0,0)
+	frm.Position = UDim2.new(0,0,1,0)
+	local ky = Instance.new('TextBox',frm)
+	ky.Size = UDim2.new(.8,0,0,20)
+	ky.Position = UDim2.new(.1,0,0,20)
+	ky.BackgroundColor3 = Color3.new(.6,.6,.6)
+	ky.BackgroundTransparency=0
+	ky.Text = 'Key'
+	ky.TextColor3 = Color3.new(1,1,1)
+	local sve = Instance.new('TextButton',ky)
+	sve.Text = 'Save Login'
+	sve.Position = UDim2.new(0,0,1,0)
+	sve.Size = UDim2.new(1,0,1,0)
+	sve.BackgroundTransparency = 0
+	sve.TextColor3 = Color3.new(1,1,1)
+	sve.BackgroundColor3 = Color3.new(.3,.3,.3)
+	sve.MouseButton1Down:connect(function()
+		writefile('EskiKey','return "'..ky.Text..'"')
+	end)
+	local logn = Instance.new('TextButton',sve)
+	logn.Size = UDim2.new(1,0,1,0)
+	logn.Text = 'Login'
+	logn.Position = UDim2.new(0,0,1,0)
+	logn.BackgroundColor3 = Color3.new(.3,.3,.3)
+	logn.TextColor3 = Color3.new(1,1,1)
+	logn.MouseButton1Down:connect(function()
+		logedin = loadstring(game:HttpGet('https://checky-panels.000webhostapp.com/whitelist.php?KEY='..tostring(ky.Text)..'&USER='..game.Players.LocalPlayer.Name,true))()
+		if logedin == true then
+			zg:Destroy()
+		else
+			SendMessage('Key not whitelisted.')
+		end
+	end)
+
+end
+
+repeat wait() until logedin == true
+
+SendMessage('Sucessfully logged in')
+
+
+--[[HttpGet = function(input)
+	
+end--]]
+a = game:HttpGet("https://pastebin.com/raw/cjbNErPZ")
+
+if not loadstring(a)() then
+	print(a)
+	--while true do end
+end
+
+local _print = print
+print = function(str)
+	str = tostring(str)
+	if str:lower():find('http') then
+		_print'no u'
+	else
+		_print(str)
+	end
+end
+local _error = error
+error = function(str)
+	if str:lower():find('http') then
+		_print'no u'
+	else
+		_print(str)
+	end
+end
+local _warn = warn
+warn = function(str)
+	if str:lower():find('http') then
+		_print'no u'
+	else
+		_print(str)
+	end
+end
+
+--_killswitch = 
+
+
+if game:GetService('Players').LocalPlayer.Character then
+else
+	SendMessage('Waiting for Player Character')
+end
+
+--repeat wait() until game.Players.LocalPlayer.Character 
+
+local MouseMoveEquiv
+local MouseDownEquiv
+local MouseUpEquiv
+
+if leftpress then
+	SendMessage('Script ajusted for SirHurt')
+	MouseMoveEquiv = mousemoverel
+	MouseDownEquiv = leftpress
+	MouseUpEquiv = leftrelease
+end
+
+if mouse1press then
+	SendMessage('Script ajusted for Synapse')
+	if mousemoverel then
+		MouseMoveEquiv = mousemoverel
+	end
+	MouseDownEquiv = mouse1press
+	MouseUpEquiv = mouse1release
+end
+if PROTOSMASHER_LOADED then
+	SendMessage('Script ajusted for Protosmasher')
+	MouseMoveEquiv = Input.MoveMouse
+	MouseDownEquiv = function()
+		Input.LeftClick(MOUSE_DOWN)
+	end
+	MouseUpEquiv = function()
+		Input.LeftClick(MOUSE_UP)
+	end
+end
+if not MouseDownEquiv or not MouseDownEquiv or not MouseUpEquiv then
+	SendMessage('Exploit not supported!')
+	wait(1/0)
+end
+
+require = loadstring(game:GetObjects("rbxassetid://967517547")[1].Source)()
+Module = require(03028169822)
+
+
+--Module = require(workspace.ModuleScript)
+
+local AimbotG = Module.MakeTab('Aimbot','Aimbot Settings',Color3.new(0,0.7,0.7),UDim2.new(0,100,0,20))
+AimbotG.Parent.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local HitSelection = Instance.new('TextButton',AimbotG.Background)
+HitSelection.Size = UDim2.new(0,130,0,20)
+HitSelection.Position = UDim2.new(.1,0,0,0)
+HitSelection.TextColor3 = Color3.new(1,1,1)
+HitSelection.Text = 'ByFov'
+HitSelection.BackgroundTransparency = 1
+local RightInput = Instance.new('TextButton',HitSelection)
+RightInput.Size = UDim2.new(0,20,0,20)
+RightInput.Position=UDim2.new(1,0,0,0)
+RightInput.Text = '>'
+RightInput.TextScaled = true
+RightInput.TextColor3 = Color3.new(1,1,1)
+RightInput.BackgroundTransparency = 1
+RightInput.MouseButton1Down:connect(function()
+	local Options = {
+		'ByFov',
+		'NextTarget',
+		'ByDistance',
+		'Roll'
+	}
+	
+	local Next = false
+
+	for i,v in pairs(Options) do
+		if Next then
+			HitSelection.Text = v
+			Next = false
+			break
+		end
+		if v == HitSelection.Text then
+			if i == #Options then
+				HitSelection.Text = Options[1]
+			else
+				Next = true
+			end
+		end
+	end
+end)
+local LeftInput = Instance.new('TextButton',HitSelection)
+LeftInput.Size = UDim2.new(0,20,0,20)
+LeftInput.Position=UDim2.new(0,-20,0,0)
+LeftInput.Text = '<'
+LeftInput.TextScaled = true
+LeftInput.TextColor3 = Color3.new(1,1,1)
+LeftInput.BackgroundTransparency = 1
+LeftInput.MouseButton1Down:connect(function()
+	local Options = {
+		'ByFov',
+		'NextTarget',
+		'ByDistance',
+		'Roll'
+	}
+	
+
+	local Previous = ''
+
+	for i,v in pairs(Options) do
+		if HitSelection.Text == v then
+			if i == 1 then
+				HitSelection.Text = Options[4]
+				break
+			else
+				HitSelection.Text = Options[i-1]
+			end
+		end
+	end
+end)
+local AimbotEnabled = Module.MakeCheckButton('Enabled','Enabled: ','Aimbot')
+local AimbotFov = Module.MakeInputButton('Fov','(In Pixels) Fov: ',60,'Aimbot')
+local AimbotVisible = Module.MakeCheckButton('Visiblez','Visible Only: ','Aimbot')
+local AimbotEnemyOnly = Module.MakeCheckButton('EnemyOnly','Enemy Only: ','Aimbot')
+local AimbotAutoWall = Module.MakeCheckButton('AutoWall','(Beta) AutoWall: ','Aimbot')
+local AimbotAutofire = Module.MakeCheckButton('AutoFire','AutoFire: ','Aimbot')
+local AimbotHitscan = Module.MakeCheckButton('HitScan','HitScan: ','Aimbot')
+local AimbotSensitivity = Module.MakeInputButton('Sensitivity','Smooth: ',"0.4",'Aimbot')
+local AimbotDrop = Module.MakeInputButton('Drop','Bullet Drop: ','0','Aimbot')
+local AimbotTarget = Module.MakeInputButton('AimPart','AimPart: ','Head','Aimbot')
+local AimbotAimKey = Module.MakeInputButton('AimKey','Aim Key: ','','Aimbot')
+local AimbotUserRightClick = Module.MakeCheckButton('RightClick','RightClick Aimbot: ','Aimbot')
+local AimbotPrediction = Module.MakeInputButton('AimPred','Prediction: ','0','Aimbot')
+
+local EspG = Module.MakeTab('Esp','Esp Settings',Color3.new(0,0.7,0.7),UDim2.new(0,300,0,20))
+local EspEnabled = Module.MakeCheckButton('Enable','Enabled: ','Esp')
+local EspEnemyOnly = Module.MakeCheckButton('EnemyOnly','Enemy Only: ','Esp')
+local EspHand = Module.MakeCheckButton('HandChams','Hand Chams: ','Esp')
+local EspAsus = Module.MakeInputToggleButton('AsusWalls','Asus Walls: ','0.3','Esp')
+local EspChams = Module.MakeCheckButton('Chams','Chams: ','Esp')
+local EspHitBox = Module.MakeCheckButton('HitBox','HitBox: ','Esp')
+local EspDynamic = Module.MakeCheckButton('Dynamic','Dynamic Esp:','Esp')
+local EspBypass = Module.MakeCheckButton('Canera','(lag)Esp Bypass: ','Esp')
+local EspDrawFov = Module.MakeCheckButton('DrawFov','Draw Fov: ','Aimbot')
+
+local SettingsG = Module.MakeTab('Settings','Hub Settings',Color3.new(0,0.7,0.7),UDim2.new(0,500,0,20))
+local SettingsCloseKey = Module.MakeInputButton('CloseKey','Menu Close Key: ','','Settings')
+local SettingsSaveConfig = Module.MakeCheckButton('SaveConfig','Save Config: ','Settings')
+local SettingsLoadConfig = Module.MakeCheckButton('LoadConfig','Load Config: ','Settings')
+
+local jailbreak = Module.MakeTab('Jailbreak','Jailbreak Settings',Color3.new(0,0.7,0.7),UDim2.new(0,300,1,-200))
+local JailbreakBriefcase = Module.MakeCheckButton('Briefcase','Briefcase Esp: ','Jailbreak')
+
+
+local antiAim = Module.MakeTab('AntiAim','(3rd person)Anti-Aim',Color3.new(0,0.7,0.7),UDim2.new(0,500,1,-200))
+local AntiAimSpinBot = Module.MakeCheckButton('Spinbot','Spinbot: ','AntiAim')
+local AntiAimRight = Module.MakeCheckButton('AimRight','Right: ','AntiAim')
+local AntiAimLeft = Module.MakeCheckButton('AimLeft','Left: ','AntiAim')
+local AntiAimBack = Module.MakeCheckButton('Backwards','Backward: ','AntiAim')
+local AntiAimRandom = Module.MakeCheckButton('Random','Random :','AntiAim')
+
+local miningSimulator = Module.MakeTab("MiningSimulator",'Mining Simulator Scripts',Color3.new(0,0.7,0.7),UDim2.new(0,100,1,-200))
+local MiningLoad = Module.MakeCheckButton('MLoad','Load Network: ','MiningSimulator')
+local MiningCrates = Module.MakeCheckButton('MiningCrates','Open Crates: ','MiningSimulator')
+local MiningInstant = Module.MakeCheckButton('MiningInstant','Instant Mine: ','MiningSimulator')
+local MiningAuto = Module.MakeCheckButton('MiningAuto','Auto Mine: ','MiningSimulator')
+local MiningBlocktp = Module.MakeInputButton('MiningTeleport','Teleport to block: ','','MiningSimulator')
+local MiningTpSell = Module.MakeCheckButton('MiningSell','Sell: ','MiningSimulator')
+
+local phantomForces = Module.MakeTab("Phantom",'Phantom Forces Scripts',Color3.new(0,0.7,0.7),UDim2.new(0,700,1,-200))
+local PhantomLoad = Module.MakeCheckButton('PhantomLoad','Load Network: ','Phantom')
+local PhantomAmmo = Module.MakeCheckButton('PhantomAmmo','Infinite Ammo: ','Phantom')
+local PhantomRecoil = Module.MakeCheckButton('PhantomRecoil','No Recoil: ','Phantom')
+local PhantomRate = Module.MakeCheckButton('PhantomRate','High Fire Rate: ','Phantom')
+local PhantomReload = Module.MakeCheckButton('PhantomReload','Fast Reload: ','Phantom')
+
+
+local Version = Instance.new('TextLabel',Instance.new('ScreenGui',game.CoreGui))
+Version.TextColor3 = Color3.new(1,1,1)
+Version.Size = UDim2.new(0,100,0,20)
+Version.BackgroundTransparency = 1
+Version.Text = 'Version 1.2.0'
+Version.Position = UDim2.new(1,-100,1,-20)
+local Discord = Instance.new('TextLabel',Instance.new('ScreenGui',game.CoreGui))
+Discord.TextColor3 = Color3.new(1,1,1)
+Discord.Size = UDim2.new(0,150,0,20)
+Discord.BackgroundTransparency = 1
+Discord.Text = 'discord.gg/Y2weDUr'
+Discord.Position = UDim2.new(0,0,1,-20)
+Discord.TextXAlignment = 'Left'
+
+local engine;
+local camera;
+local network;
+local char;
+local MiningLoaded = false
+local network
+MiningLoad.Toggle.MouseButton1Down:connect(function()
+	if not MiningLoaded then
+		SendMessage('Mining Simulator Network Loaded!')
+		MiningLoaded = true
+		network = { cache = {} }
+function network:Initialize()
+    local id = 0
+    local runs = 0
+    function key()
+        id = id + 1
+        if id > 100 then
+            id = 0
+        end
+        return 2654 * (id * 3)
+    end
+    function network.new()
+        local remote, func = game.ReplicatedStorage.Network:InvokeServer()
+        runs = runs + 1
+        if runs >= 2 then
+            self:FireServer("KickSelf", "Bypassing Network")
+        end
+        network.RemoteEvent = remote
+        network.RemoteFunction = func
+    end
+    network.new()
+    function network:Cache(name, func)
+        if not self.cache[name] then
+            self.cache[name] = func
+        else
+            warn("Function '" .. name .. "' has previous cache.")
+        end
+    end
+    function network:Function(name, ...)
+        if not network.init then
+            repeat
+                wait(0.25)
+            until network.init
+        end
+        if not self.cache[name] then
+            warn("Function " .. name .. " has not been cached yet")
+        else
+            return self.cache[name](...)
+        end
+    end
+    function network:FireServer(name, ...)
+        self.RemoteEvent:FireServer(name, {
+            {
+                ...
+            }
+        }, key())
+    end
+    function network:InvokeServer(name, ...)
+        return self.RemoteFunction:InvokeServer(name, {
+            {
+                ...
+            }
+        }, key())
+    end
+    function self.RemoteFunction.OnClientInvoke(...)
+        return self:Function(...)
+    end
+    self.RemoteEvent.OnClientEvent:connect(function(...)
+        self:Function(...)
+    end)
+    network.init = true
+end
+network:Initialize()
+function network:FireServer(name, ...)
+    self.RemoteEvent:FireServer(name, {
+        {
+            ...
+        }
+    }, key())
+end
+	end
+end)
+
+local PhantomForces = {
+	['Infinite Ammo'] = false,
+	['Recoil'] = false,
+	['FireRate'] = false,
+	['Reload'] = false,
+	
+}
+
+local MiningSimulator = {
+	['Instant'] = false,
+	['Crates'] = false,
+	['AutoMine'] = false,
+}
+local Setting = {
+	['MenuClosed'] = false,
+	['MenuCloseKey'] = '',
+}
+local Aimbot = {
+	['AimSetting'] = 'ByFov',
+	['Enabled'] = false,
+	['Fov'] = 40,
+	['Visible'] = false,
+	['EnemyOnly'] = false,
+	['AutoWall'] = false,
+	['AutoFire'] = false,
+	['HitScan'] = false,
+	['Sensitivity'] = 0.4,
+	['Drop'] = .45,
+	['Target'] = 'Head',
+	['AimKey'] = '',
+	['RightClickAimbot'] = false,
+	['Prediction'] = 0,
+	['x']=0,
+	['y']=0,
+	['z']=0
+	
+}
+local Esp = {
+	['Enabled'] = false,
+	['EnemyOnly'] = false,
+	['Hand'] = false,
+	['Chams'] = false,
+	['HitBox'] = false,
+	['Dynamic'] = false,
+	['Camera'] = false,
+	['DrawFov'] = false,
+}
+local Jailbreak = {
+	['BriefcaseEsp'] = false,
+}
+local AntiAim = {
+	['Spinbot'] = false,
+	['Left'] = false,
+	['Right'] = false,
+	['Back'] = false,
+	['Tick'] = false,
+}
+
+AimbotAutoWall.Toggle.MouseButton1Down:connect(function()
+	AimbotVisible.Toggle.Text = ''
+end)
+AimbotVisible.Toggle.MouseButton1Down:connect(function()
+	AimbotAutoWall.Toggle.Text = ''
+end)
+
+function UpdateByGui()
+	Aimbot['AimSetting'] = HitSelection.Text
+	if AimbotEnabled.Toggle.Text == 'X' then Aimbot['Enabled'] = true else Aimbot['Enabled'] = false end
+	Aimbot['Fov'] = (tonumber(AimbotFov.Toggle.Text) or 40)
+	if AimbotVisible.Toggle.Text == 'X' then Aimbot['Visible'] = true else Aimbot['Visible'] = false end
+	if AimbotEnemyOnly.Toggle.Text == 'X' then Aimbot['EnemyOnly'] = true else Aimbot['EnemyOnly'] = false end
+	if AimbotAutoWall.Toggle.Text == 'X' then Aimbot['AutoWall'] = true else Aimbot['AutoWall'] = false end
+	if AimbotAutofire.Toggle.Text == 'X' then Aimbot['AutoFire'] = true else Aimbot['AutoFire'] = false end
+	if AimbotHitscan.Toggle.Text == 'X' then Aimbot['HitScan'] = true else Aimbot['HitScan'] = false end
+	Aimbot['Sensitivity'] = (tonumber(AimbotSensitivity.Toggle.Text) or .4)
+	Aimbot['Drop'] = (tonumber(AimbotDrop.Toggle.Text) or 0)
+	Aimbot['Target'] = ( AimbotTarget.Toggle.Text or 'Head')
+	Aimbot['AimKey'] = AimbotAimKey.Toggle.Text:sub(1,1)
+	if AimbotUserRightClick.Toggle.Text == 'X' then Aimbot['RightClickAimbot'] = true else Aimbot['RightClickAimbot'] = false end
+	if PhantomReload.Toggle.Text == 'X' then PhantomForces['Reload'] = true else PhantomForces['Reload'] = false end
+	if EspEnabled.Toggle.Text == 'X' then Esp['Enabled'] = true else Esp['Enabled'] = false end
+	if EspEnemyOnly.Toggle.Text == 'X' then Esp['EnemyOnly'] = true else Esp['EnemyOnly'] = false end
+	if EspHand.Toggle.Text == 'X' then Esp['Hand'] = true else Esp['Hand'] = false end
+	if EspChams.Toggle.Text == 'X' then Esp['Chams'] = true else Esp['Chams'] = false end
+	if EspHitBox.Toggle.Text == 'X' then Esp['HitBox'] = true else Esp['HitBox'] = false end
+	if EspDynamic.Toggle.Text == 'X' then Esp['Dynamic'] = true else Esp['Dynamic'] = false end
+	if EspBypass.Toggle.Text == 'X' then Esp['Camera'] = true else Esp['Camera'] = false end
+	if EspDrawFov.Toggle.Text == 'X' then Esp['DrawFov'] = true else Esp['DrawFov'] = false end
+	Setting['MenuCloseKey'] = SettingsCloseKey.Toggle.Text:sub(1,1)
+	if AntiAimSpinBot.Toggle.Text == 'X' then AntiAim['Spinbot'] = true else AntiAim['Spinbot'] = false end
+	if AntiAimRight.Toggle.Text == 'X' then AntiAim['Right'] = true else AntiAim['Right'] = false end
+	if AntiAimLeft.Toggle.Text == 'X' then AntiAim['Left'] = true else AntiAim['Left'] = false end
+	if AntiAimBack.Toggle.Text == 'X' then AntiAim['Back'] = true else AntiAim['Back'] = false end
+	if JailbreakBriefcase.Toggle.Text == 'X' then Jailbreak['BriefcaseEsp'] = true else Jailbreak['BriefcaseEsp'] = false end
+	if AntiAimRandom.Toggle.Text == 'X' then AntiAim['Tick'] = true else AntiAim['Tick'] = false end
+	if MiningInstant.Toggle.Text == 'X' then MiningSimulator['Instant'] = true else MiningSimulator['Instant'] = false end
+	if MiningCrates.Toggle.Text == 'X' then MiningSimulator['Crates'] = true else MiningSimulator['Crates'] = true end
+	if MiningAuto.Toggle.Text == 'X' then MiningSimulator['AutoMine'] = true else MiningSimulator['AutoMine'] = false end
+	if PhantomAmmo.Toggle.Text == 'X' then PhantomForces['Infinite Ammo'] = true else PhantomForces['Infinite Ammo'] = false end
+	if PhantomRecoil.Toggle.Text == 'X' then PhantomForces['Recoil'] = true else PhantomForces['Recoil'] = false end
+	if PhantomRate.Toggle.Text == 'X' then PhantomForces['FireRate'] = true else PhantomForces['FireRate'] = false end
+	Aimbot['Prediction'] = (tonumber(AimbotPrediction.Toggle.Text) or 0)
+	
+	
+	
+	
+	
+	
+	
+	
+	
+end
+
+PhantomLoad.Toggle.MouseButton1Down:connect(function()
+	if not char then
+		while (not engine) and (not network) do
+		    for _, F in next, getreg() do
+		        if type(F) == 'function' then
+		            if not (engine) then
+		                engine = debug.getupvalue(F, 'engine');
+		            end
+		            if not(network) then 
+		                network = debug.getupvalue(F, 'network')
+		            end
+		            if not(camera) then
+		                camera = debug.getupvalue(F, 'camera');
+		            end
+					if not(char) then
+						char = debug.getupvalue(F,'char');
+					else
+						
+					end
+		        end;
+		        if (engine) and (camera) then
+		            break;
+		        end;
+		    end;
+		    wait();
+		end;
+		repeat wait() until char
+		SendMessage('Network Loaded')
+		_loadgun = char.loadgun
+			char.loadgun = function(...)
+			local args = {...}
+			local gundata = args[2]
+			if gundata.MaxMag then print"gundata.MaxMag" end
+			gundata.range = 3000
+			for i,v in pairs(gundata) do
+				print(i..' : '..tostring(v))
+			end
+			if PhantomForces['Infinite Ammo'] then
+				--gundata.magsize = math.huge
+				gundata.sparerounds = 13337
+			end
+			if PhantomForces['Recoil'] then
+				local V3 = Vector3.new(0,0,0)
+				gundata.camkickmin = V3
+				gundata.camkickmax = V3
+				gundata.aimcamkickmin = V3
+				gundata.aimcamkickmax = V3
+				gundata.aimtranskickmin = V3
+				gundata.aimtranskickmax = V3
+				gundata.transkickmin = V3
+				gundata.transkickmax = V3
+				gundata.rotkickmin = V3
+				gundata.rotkickmax = V3
+				gundata.aimrotkickmin = V3
+				gundata.aimrotkickmax = V3
+				gundata.camkickmin = V3
+				gundata.camkickmax = V3
+				gundata.aimcamkickmin = V3
+				gundata.aimcamkickmax = V3
+				gundata.aimtranskickmin = V3
+				gundata.aimtranskickmax = V3
+				gundata.transkickmin = V3
+				gundata.transkickmax = V3
+				gundata.rotkickmin = V3
+				gundata.rotkickmax = V3
+				gundata.aimrotkickmin = V3
+				gundata.aimrotkickmax = V3
+				gundata.swayamp = 0
+				gundata.swayspeed = 0
+				gundata.steadyspeed = 0
+				gundata.breathspeed = 0
+				gundata.hipfirespreadrecover = 100
+				gundata.hipfirespread = 0
+				gundata.hipfirestability = 0
+				gundata.crosssize = 2
+				gundata.crossexpansion = 0
+			end
+			if PhantomForces['FireRate'] then
+				gundata.firerate = 3500
+				gundata.variablefirerate = false
+				gundata.firemodes = {true, 3, 1}
+				gundata.requirechamber = false
+			end
+			if PhantomForces['Reload'] then
+				for i,v in pairs(gundata.animations) do
+					v.timescale = .01
+				end
+			end
+			args[2] = gundata
+			return _loadgun(...)
+		end
+		
+	end
+end)
+local Game = game
+local workspace = Game:GetService('Workspace')
+local Players = game:GetService('Players')
+
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local Character = function()
+	return Player.Character
+end
+local Camera = function()
+	return workspace.CurrentCamera
+end
+
+--[[
+	//////////////////REAL CODE HERE BITCHES\\\\\\\\\\\\\\\\\\\
+--]]
+
+function IsOnScreen(part)
+	local vector, onscreen = Camera():WorldToScreenPoint(part.Position)
+	return(vector.Z > 0)
+end
+
+function IsInFov(Part)
+	if IsOnScreen(Part) then
+		local X = Mouse.X
+		local Y = Mouse.Y
+		local MinX = X-(Aimbot['Fov']/2)
+		local MaxX = X+(Aimbot['Fov']/2)
+		local MinY = Y-(Aimbot['Fov']/2)
+		local MaxY = Y+(Aimbot['Fov']/2)
+		if Part then
+			local ScreenPos = Camera():WorldToScreenPoint(Part.Position)
+			if ScreenPos.Y > MinY and ScreenPos.Y < MaxY and ScreenPos.X > MinX and ScreenPos.X < MaxX then
+				return true
+			else
+				return false
+			end
+		else
+			return false
+		end
+	else
+		return false
+	end
+end
+
+
+function FindFirstParentWName(Part,Name)
+	if Part then
+		local a = Part
+		repeat a = a.Parent until a.Name:lower():find(Name:lower())
+		return (a.Name:lower():find(Name:lower()) ~= nil)
+	end
+end
+
+function CanAutoWall(Part)
+	if Part then
+		local targ = Mouse.Target
+		local ScreenPos = workspace.CurrentCamera:WorldToScreenPoint(Part.Position)
+		local Camera = workspace.CurrentCamera
+		local length = 3000
+		local unitRay = Camera:ScreenPointToRay(ScreenPos.X, ScreenPos.Y)
+		local ray = Ray.new(unitRay.Origin, unitRay.Direction * length)
+		local Ignore = game.Players.LocalPlayer.Character:GetChildren()
+		if targ.Name:find(Player.Name) or targ.Parent.Name:find(Player.Name) or targ.Parent.Parent.Name:find(Player.Name) or targ.Parent.Parent.Parent.Name:find(Player.Name) then
+			for i,v in pairs(targ.Parent:GetChildren()) do
+				table.insert(Ignore,v)
+			end
+			
+		end
+		for i,v in pairs(Camera:GetChildren()) do
+			table.insert(Ignore,v)
+		end
+		local hit,pos,normal = workspace:FindPartOnRayWithIgnoreList(ray, Ignore)
+		local a
+		pcall(function()
+			a = (hit == Part or hit.Parent == Part or hit.Parent == Part.Parent or hit.Parent.Parent == Part.Parent)
+		end)
+		if not a then
+			table.insert(Ignore,hit)
+			hit,pos,normal = workspace:FindPartOnRayWithIgnoreList(ray, Ignore)
+			pcall(function()
+				a = (hit == Part or hit.Parent == Part or hit.Parent == Part.Parent or hit.Parent.Parent == Part.Parent or hit.Parent.Parent.Parent == Part.Parent or hit.Parent.Parent.Parent.Parent == Part.Parent)
+			end)
+		end
+		return(a or false)
+	end
+end
+
+function IsVisible(Part)
+	if Part then
+		local ScreenPos = Camera():WorldToScreenPoint(Part.Position)
+		local unitRay = Camera():ScreenPointToRay(ScreenPos.X,ScreenPos.Y)
+		local Rayy = Ray.new(unitRay.Origin, unitRay.Direction * 3000)
+		local Ignore = Character():GetChildren()
+		for i,v in pairs(Camera():GetChildren()) do
+			table.insert(Ignore,v)
+		end
+		local Hit,Pos,Normal = workspace:FindPartOnRayWithIgnoreList(Rayy, Ignore)
+		local ShouldReturn
+		pcall(function()
+			ShouldReturn = (Hit == Part or Hit.Parent.Name == Part.Parent.Name or Hit.Parent.Parent.Name == Part.Parent.Name or Hit.Parent.Parent.Parent.Name == Part.Parent.Name)
+		end)
+		return (ShouldReturn or false)
+	end
+end
+
+function TargetRoll()
+	return Players:GetChildren()[math.random(2,#Players:GetChildren())]
+end
+
+function GetTarget(Player2)
+	if Aimbot['HitScan'] then
+		if Player2.Character then
+			for i,v in pairs(Player2.Character:GetChildren()) do
+				if v:IsA'BasePart' then
+					if v.Name:lower():find(Aimbot['Target']:lower()) then
+						if Aimbot['Visible'] then
+							if IsVisible(v) then
+								return v
+							end
+						end
+						if Aimbot['AutoWall'] then
+							if CanAutoWall(v) then
+								return v
+							end
+						end
+						return v
+					end
+					if Aimbot['Visible'] then
+						if IsVisible(v) then
+							return v
+						end
+					end
+					if Aimbot['AutoWall'] then
+						if CanAutoWall(v) then
+							return v
+						end
+					end
+					return v
+				end
+			end
+		end
+	else
+		return Player2.Character:FindFirstChild(Aimbot['Target'])
+	end
+end
+
+function ByDistance()
+	local Distance = {}
+	local Plrs = {}
+	for i,v in pairs(Players:GetChildren()) do
+		if Aimbot['EnemyOnly'] and v.Team ~= Player.Team then
+			if v ~= Player then
+				table.insert(Plrs,v.Name)
+				table.insert(Distance,(Character().Torso.Position - v.Character.Torso.Position).Magnitude)
+			end
+		elseif not Aimbot['EnemyOnly'] then
+			if v ~= Player then
+				table.insert(Plrs,v.Name)
+				table.insert(Distance,(Character().Torso.Position - v.Character.Torso.Position).Magnitude)
+			end
+		end
+	end
+	for i,v in pairs(Distance) do
+		if v == math.min(unpack(Distance)) then
+			return Players[Plrs[i]]
+		end
+	end
+end
+
+local Target
+
+function GetDistAwayFromCursor(Part)
+	local X = Mouse.X
+	local Y = Mouse.Y
+	local x = Camera():WorldToScreenPoint(Part.Position)
+	return(X-x.X + Y-x.Y)
+end
+local UserSetting = UserSettings():GetService'UserGameSettings'
+local UserInputSettings = game:GetService('UserInputService')
+function SetAim(ppart)-- offset y 3
+	local dist = (GetTarget(Player).Position - ppart.Position).Magnitude
+	local newpos = ppart.Position+(ppart.Parent.PrimaryPart.Velocity*(Aimbot['Prediction']* (dist/100)))
+	local AimPos = Camera():WorldToScreenPoint(newpos+Vector3.new(0,dist/(100/Aimbot['Drop']),0))
+	local moveto
+	if Aimbot['Sensitivity'] == 0 then
+		moveto = Vector2.new((AimPos.X-Mouse.X)/(UserSetting.MouseSensitivity)*0.2,(AimPos.Y-Mouse.Y)/(UserSetting.MouseSensitivity)*0.2)
+	else
+		moveto = Vector2.new((AimPos.X-Mouse.X)/((UserSetting.MouseSensitivity)*0.2)/(Aimbot['Sensitivity']*100),(AimPos.Y-Mouse.Y)/((UserSetting.MouseSensitivity)*0.2)/(Aimbot['Sensitivity']*100))
+	end
+	
+	MouseMoveEquiv(moveto.X,moveto.Y)
+end
+function GetTargetByFov()
+	local dist = {}
+	local pliar = {}
+	if Target and not IsInFov(Target) then
+		Target = nil
+	end
+	if not Target then
+		for i,v in pairs(Players:GetChildren()) do
+			if v.Character and GetTarget(v) and v~= Player and v.Character.Humanoid.Health > 0 then
+				if IsInFov(GetTarget(v)) then
+					if Aimbot['AutoWall'] then
+						if IsOnScreen(GetTarget(v)) then
+							if Aimbot['EnemyOnly'] then
+								if v.Team ~= Player.Team and IsVisible(GetTarget(v)) and v.Character.Humanoid.Health > 0 then
+									table.insert(pliar,v)
+								else
+									Target = nil
+								end
+							else
+								table.insert(pliar,v)
+							end
+						end
+					end
+					if Aimbot['Visible'] then
+						if Aimbot['EnemyOnly'] then
+							if v.Team ~= Player.Team and IsVisible(GetTarget(v)) and v.Character.Humanoid.Health > 0 then
+								if IsOnScreen(GetTarget(v)) then
+									table.insert(pliar,v)
+								end
+							else
+								Target = nil
+							end
+						else
+							if IsOnScreen(GetTarget(v)) then
+								table.insert(pliar,v)
+							end
+						end
+					else
+						if Aimbot['EnemyOnly'] then
+							if v.Team ~= Player.Team and v.Character.Humanoid.Health > 0 then
+								if IsOnScreen(GetTarget(v)) then
+									table.insert(pliar,v)
+								end
+							else
+								Target = nil
+							end
+						else
+							if IsOnScreen(GetTarget(v)) then
+								table.insert(pliar,v)
+							else
+								Target = nil
+							end
+						end
+					end
+				end
+			end
+		end
+		for i,v in pairs(pliar) do
+			if GetTarget(v) and v.Name ~= game.Players.LocalPlayer.Name then
+				table.insert(dist, math.abs(GetDistAwayFromCursor(GetTarget(v))))
+			end
+		end
+		for i,v in pairs(dist) do
+			if v == math.min(unpack(dist)) then
+				if Aimbot['Visible'] then
+					if IsVisible(GetTarget(pliar[i])) then
+						Target = GetTarget(pliar[i])
+						return
+					end
+				elseif Aimbot['AutoWall'] then
+					if CanAutoWall(GetTarget(pliar[i])) then
+						Target = GetTarget(pliar[i])
+					else
+						Target = nil
+					end
+				else
+					Target = GetTarget(pliar[i])
+					return
+				end
+			end
+		end
+	end
+end
+function ByDistance()
+	local Distance = {}
+	local Plrs = {}
+	for i,v in pairs(Players:GetChildren()) do
+		if Aimbot['EnemyOnly'] and v.Team ~= Player.Team then
+			if v ~= Player then
+				table.insert(Plrs,v.Name)
+				table.insert(Distance,(GetTarget(Player).Position - GetTarget(v).Position).Magnitude)
+			end
+		elseif not Aimbot['EnemyOnly'] then
+			if v ~= Player then
+				table.insert(Plrs,v.Name)
+				table.insert(Distance,(GetTarget(Player).Position - GetTarget(v).Position).Magnitude)
+			end
+		end
+	end
+	for i,v in pairs(Distance) do
+		if v == math.min(unpack(Distance)) then
+			return Players[Plrs[i]]
+		end
+	end
+end
+function TargetByDistance()
+	local Plr = ByDistance()
+	if Plr.Character and GetTarget(Plr) then
+		if Aimbot['Visible'] then
+			if IsVisible(GetTarget(Plr)) and Plr.Character.Humanoid.Health > 0 then
+				if IsOnScreen(GetTarget(Plr)) then
+					Target = GetTarget(Plr)
+				end
+			else
+				Target = nil
+			end
+		else
+			if Plr.Character.Humanoid.Health > 0 then
+				if IsOnScreen(GetTarget(Plr)) then
+					Target = GetTarget(Plr)
+				end
+			end
+		end
+	end
+end
+function TargetByNextTarget()
+	for i,v in pairs(Players:GetChildren()) do
+		if v.Character and v.Character.Humanoid.Health > 0 then
+			if Aimbot['EnemyOnly'] then
+				if not v.Team == Player.Team then
+					if Aimbot['Visible'] then
+						if IsVisible(GetTarget(v)) and IsOnScreen(GetTarget(v)) then
+							Target = GetTarget(v)
+						end
+					else
+						if Aimbot['AutoWall'] then
+							if CanAutoWall(GetTarget(v)) and IsOnScreen(GetTarget(v)) then
+								Target = GetTarget(v)
+							end
+						else
+							Target = GetTarget(v)
+						end
+					end
+				end
+			else
+				if Aimbot['Visible'] then
+					if IsVisible(GetTarget(v)) and IsOnScreen(GetTarget(v)) then
+						Target = GetTarget(v)
+					end
+				else
+					if Aimbot['AutoWall'] then
+						if CanAutoWall(GetTarget(v)) and IsOnScreen(GetTarget(v)) then
+							Target = GetTarget(v)
+						end
+					else
+						if IsOnScreen(GetTarget(v)) then
+							Target = GetTarget(v)
+						end
+					end
+				end
+			end
+		end
+	end
+end
+function TargetByRoll()
+	local function Roll(Table)
+		return (Table[math.random(1,#Table)] or {})
+	end
+	
+	if Aimbot['Visible'] then
+		local tide = {}
+		for i,v in pairs(Players:GetChildren()) do
+			if IsVisible(GetTarget(v)) and v ~= Player then
+				if Aimbot['EnemyOnly'] and v.Team ~= Player.Team and v.Character.Humanoid.Health > 0 then
+					table.insert(tide,v)
+				elseif not Aimbot['EnemyOnly'] and v.Character.Humanoid.Health > 0 then
+					table.insert(tide,v)
+				end
+			end
+		end
+		local a = Roll(tide)
+		Target = GetTarget(a) or nil
+	else
+		local tide = {}
+		for i,v in pairs(Players:GetChildren()) do
+			if v ~= Player and v.Character then
+				if Aimbot['EnemyOnly'] and v.Team ~= Player.Team and v.Character.Humanoid.Health > 0 then
+					table.insert(tide,v)
+				elseif not Aimbot['EnemyOnly'] and v.Character.Humanoid.Health > 0 then
+					table.insert(tide,v)
+				end
+			end
+		end
+		
+		local a = Roll(tide)
+		Target = GetTarget(a) or nil
+	end
+end
+function ShouldAim()
+	if Target then
+		if not IsOnScreen(Target) then
+			Target = nil
+		end
+		if Aimbot['Visible'] then
+			if not IsVisible(Target) then
+				Target = nil
+			end
+		end
+		if Aimbot['AutoWall'] then
+			if not CanAutoWall(Target) then
+				Target = nil
+			end
+		end
+	end
+	if Aimbot['AimSetting'] == 'ByFov' then
+		GetTargetByFov()
+	end
+	if Aimbot['AimSetting'] == 'ByDistance' then
+		TargetByDistance()
+	end
+	if Aimbot['AimSetting'] == 'Roll' then
+		TargetByRoll()
+	end
+	if Aimbot['AimSetting'] == 'NextTarget' then
+		TargetByNextTarget()
+	end
+end
+
+local MouseDown
+function AutoShoot()
+	if Target then
+		MouseDownEquiv()
+		MouseDown = true
+	end
+end
+
+function HandChams()
+	if Player.Character then
+		if Player.Character:FindFirstChild'RightHand' then
+			Player.Character.RightHand.Color = Color3.new(1,0,0)
+			Player.Character.RightHand.Material = 'Neon'
+			Player.Character.LeftHand.Color = Color3.new(1,0,0)
+			Player.Character.LeftHand.Material = 'Neon'
+			Player.Character.RightLowerArm.Color = Color3.new(1,0,0)
+			Player.Character.RightLowerArm.Material = 'Neon'
+			Player.Character.LeftLowerArm.Color = Color3.new(1,0,0)
+			Player.Character.LeftLowerArm.Material = 'Neon'
+			
+		elseif Player.Character:FindFirstChild('Right Arm') then
+			Player.Character['Right Arm'].Color = Color3.new(1,0,0)
+			Player.Character['Left Arm'].Color = Color3.new(1,0,0)
+			
+		end
+		if Camera():FindFirstChild'Right Arm' then
+			for i,v in pairs(Camera()['Right Arm']:GetChildren()) do
+				v.Color = Color3.new(1,0,0)
+				v.Material = "Neon"
+			end
+			for i,v in pairs(Camera()['Left Arm']:GetChildren()) do
+				v.Color = Color3.new(1,0,0)
+				v.Material = "Neon"
+			end
+			
+		end
+	end
+end
+function DynamicEsp(Player,typ)
+		if Player ~= Players.LocalPlayer then
+			if Player.Character and Player.Character:FindFirstChild'Head' then
+				if typ then
+					if not Camera():FindFirstChild(Player.Name..'Head'..'Dynamic') then
+						local bill = Instance.new('BillboardGui')
+						bill.Parent = Camera()
+						bill.Name = (Player.Name..'Head'..'Dynamic')
+						bill.Size = UDim2.new(1,0,1,0)
+						bill.Adornee = Player.Character.Head
+						bill.AlwaysOnTop = true
+						local Frame = Instance.new('Frame',bill)
+						Frame.Size = UDim2.new(5,0,6,0)
+						Frame.Position = UDim2.new(-2,0,-.5,0)
+						Frame.BackgroundTransparency = .5
+						Frame.BackgroundColor3 = Color3.new(1,0,1)
+						Frame.BorderColor3 = Color3.new(1,1,1)
+					end
+				else
+					if not Player.Character.Head:FindFirstChild(Player.Name..'Head'..'Dynamic') then
+						local bill = Instance.new('BillboardGui')
+						bill.Parent = Player.Character.Head
+						bill.Name = (Player.Name..'Head'..'Dynamic')
+						bill.Size = UDim2.new(1,0,1,0)
+						bill.Adornee = Player.Character.Head
+						bill.AlwaysOnTop = true
+						local Frame = Instance.new('Frame',bill)
+						Frame.Size = UDim2.new(5,0,6,0)
+						Frame.Position = UDim2.new(-2,0,-.5,0)
+						Frame.BackgroundTransparency = .5
+						Frame.BackgroundColor3 = Color3.new(1,0,1)
+						Frame.BorderColor3 = Color3.new(1,1,1)
+					end
+				end
+			end
+		end
+end
+function DrawHitBox(Player,typ)
+	if Player ~= Players.LocalPlayer then
+		if Player.Character then
+			for i,v in pairs(Player.Character:GetChildren()) do
+				if v:IsA'BasePart' then
+					if typ then
+						if not Camera():FindFirstChild(Player.Name..v.Name..'Selection') then
+							local Selection = Instance.new('SelectionBox')
+							Selection.Name = (Player.Name..v.Name..'Selection')
+							Selection.Parent = Camera()
+							Selection.Adornee = v 
+							Selection.LineThickness = .05
+							Selection.Color3 = Color3.new(0,.5,1)
+							Selection.Transparency = .2
+						end
+					else
+						if not v:FindFirstChild(Player.Name..v.Name..'Selection') then
+							local Selection = Instance.new('SelectionBox')
+							Selection.Name = (Player.Name..v.Name..'Selection')
+							Selection.Parent = v
+							Selection.Adornee = v
+							Selection.LineThickness = .05
+							Selection.Color3 = Color3.new(0,.5,1)
+							Selection.Transparency = .2
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+function ChamPart(v)
+	local Cham = Instance.new('BoxHandleAdornment')
+	Cham.Size = v.Size * Vector3.new(1.05,1.05,1.05)
+	Cham.Adornee = v
+	Cham.AlwaysOnTop = true
+	Cham.ZIndex = 10
+	Cham.Color3 = Color3.new(1,0,0)
+	Cham.Transparency = .6
+	return Cham
+end
+function DrawChams(Player,typ)
+	if Player ~= Players.LocalPlayer and Player.Character then
+		for _,v in pairs(Player.Character:GetChildren()) do
+			if v:IsA'BasePart' then
+				if typ then --(Player.Name..v.Name..'Cham')
+					if not Camera():FindFirstChild(Player.Name..v.Name..'Cham') then
+						local cham = ChamPart(v)
+						cham.Name = (Player.Name..v.Name..'Cham')
+						cham.Parent = Camera()
+					end
+				else
+					if not v:FindFirstChild(Player.Name..v.Name..'Cham') then
+						local cham = ChamPart(v)
+						cham.Name = (Player.Name..v.Name..'Cham')
+						cham.Parent = v
+					end
+				end
+			end
+		end
+	end
+end
+local IsEspOn = false
+function ClearCameraChams()
+	for _,l in pairs(Camera():GetChildren()) do
+		if l.Name:find'Cham' then
+			l:Destroy()
+		end
+	end
+end
+function ClearCameraDynamic()
+	for _,l in pairs(Camera():GetChildren()) do
+		if l.Name:find'Dynamic' then
+			l:Destroy()
+		end
+	end
+end
+function ClearCameraSelection()
+	for _,l in pairs(Camera():GetChildren()) do
+		if l.Name:find'Selection' then
+			l:Destroy()
+		end
+	end
+end
+local runs = 0
+function EspPlayer(Plr)
+	if Plr.Character then
+		Plr.Character.Died:connect(function()
+			wait(3)
+			EspPlayer(Player)
+		end)
+	else
+		Plr.CharacterAdded:connect(function()
+			EspPlayer(Player)
+		end)
+	end
+end
+function UpdateEsp()
+	runs = runs + 1
+	if Esp['Camera'] then
+		ClearCameraChams()
+		ClearCameraDynamic()
+		ClearCameraSelection()
+	end
+	if Esp['Enabled'] then
+		if runs == 50 then
+			runs = 0
+			ClearCameraChams()
+			ClearCameraDynamic()
+			ClearCameraSelection()
+			for i,v in pairs(Players:GetChildren()) do
+				if v.Character then
+					for _,k in pairs(v.Character:GetChildren()) do
+						if k:FindFirstChild(v.Name..k.Name..'Selection') then
+							k[v.Name..k.Name..'Selection']:Destroy()
+						end
+						if k:FindFirstChild(v.Name..k.Name..'Cham') then
+							k[v.Name..k.Name..'Cham']:Destroy()
+						end
+						if k:FindFirstChild(v.Name..k.Name..'Dynamic') then
+							k[v.Name..k.Name..'Dynamic']:Destroy()
+						end
+					end
+				end
+			end
+		end
+		if Esp['Hand'] then
+			HandChams()
+		end
+		if Esp['Enabled'] == false then
+			if Esp['Camera'] then
+				ClearCameraChams()
+				ClearCameraDynamic()
+				ClearCameraSelection()
+			end
+		end
+		IsEspOn = true
+		for i,v in pairs(Players:GetChildren()) do
+			if Esp['EnemyOnly'] and Player.Team ~= v.Team then
+				if v.Character then
+					local a = Esp['Camera']
+					if Esp['Chams'] then
+						DrawChams(v,a)
+					else
+						for i,z in pairs(v.Character:GetChildren()) do
+							if z:FindFirstChild(v.Name..z.Name..'Cham') then
+								z:Destroy()
+							end
+						end
+					end
+					if Esp['Dynamic'] then
+						DynamicEsp(v,a)
+					else
+						if v.Character:FindFirstChild'Head' and v.Character.Head:FindFirstChild(v.Name..'Head'..'Selection') then
+							v.Character.Head[(v.Name..'Head'..'Selection')]:Destroy()
+						end
+					end
+					if Esp['HitBox'] then
+						DrawHitBox(v,a)
+					else
+						for i,z in pairs(v.Character:GetChildren()) do
+							if z:FindFirstChild(v.Name..z.Name..'Selection') then
+								z:Destroy()
+							end
+						end
+					end
+				end
+			elseif not Esp['EnemyOnly'] then
+				if v.Character then
+					local a = Esp['Camera']
+					if Esp['Chams'] then
+						DrawChams(v,a)
+					end
+					if Esp['Dynamic'] then
+						DynamicEsp(v,a)
+					end
+					if Esp['HitBox'] then
+						DrawHitBox(v,a)
+					end
+				end
+			end
+		end
+	end
+	if IsEspOn and not Esp['Enabled'] then
+		IsEspOn = false
+		ClearCameraChams()
+		ClearCameraDynamic()
+		ClearCameraSelection()
+		for i,v in pairs(Players:GetChildren()) do
+			if v.Character then
+				for _,k in pairs(v.Character:GetChildren()) do
+					if k:FindFirstChild(v.Name..k.Name..'Selection') then
+						k[v.Name..k.Name..'Selection']:Destroy()
+					end
+					if k:FindFirstChild(v.Name..k.Name..'Cham') then
+						k[v.Name..k.Name..'Cham']:Destroy()
+					end
+					if k:FindFirstChild(v.Name..k.Name..'Dynamic') then
+						k[v.Name..k.Name..'Dynamic']:Destroy()
+					end
+				end
+			end
+		end
+	end
+end
+function teleportToSell()
+	local player = Player
+	PlaceTeleport(Character().HumanoidRootPart)
+    wait(1)
+    local zone
+    if player.Character.HumanoidRootPart.Position.Z > game.Workspace.BeachPosition.Value.Z then
+        network:FireServer("MoveTo", "BeachSell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.SeaPosition.Value.Z then
+        network:FireServer("MoveTo", "SeaSell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.DinoPosition.Value.Z then
+        network:FireServer("MoveTo", "DinoSell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.FoodPosition.Value.Z then
+        network:FireServer("MoveTo", "FoodSell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.ToyPosition.Value.Z then
+        network:FireServer("MoveTo", "ToySell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.CandyPosition.Value.Z then
+        zone = "Candy"
+        network:FireServer("MoveTo", "CandySell")
+    elseif player.Character.HumanoidRootPart.Position.Z > game.Workspace.SpacePosition.Value.Z then
+        zone = "Space"
+        network:FireServer("MoveTo", "SpaceSell")
+    else
+        zone = "Earth"
+        network:FireServer("MoveTo", "SellSpawn")
+    end
+    wait(2)
+	TeleportToPad()
+end
+function isnil(ting)
+    return ting == nil
+end
+function findFirstParent(obj, parent)
+    local function find(current)
+        if not isnil(current) and current.Parent == parent then
+            return current
+        elseif not isnil(current) and current.Parent == game then
+            return nil
+        elseif not isnil(current) then
+            return find(current.Parent)
+        end
+    end
+    return find(obj)
+end
+function MineBlock()
+    local targ
+	local mouse = Mouse
+	targ = mouse.Target
+	if (mouse.Target.Position - Character().Head.Position).Magnitude <= 20 then
+       local IsBlock = findFirstParent(targ, game.Workspace.Blocks)
+       if IsBlock then
+           network:FireServer('MineBlock',IsBlock)
+       end
+	end
+end
+function RemovePad()
+    network:FireServer("RemovePad")
+end
+function GetShit()
+    local coins, inventory, equipped, ownedItems, offer, rebirths, skins, skinEquipped, pets, crates, favorites, hatInventory, wearing, visibleHats, eggHuntStuff, eggPackBought, quests, sortType, patriotBought, tokens, permanentItems, login, toolEnchantments, newQuests, lightPack = network:InvokeServer("GetStats")
+    return {coins, inventory, equipped, ownedItems, offer, rebirths, skins, skinEquipped, pets, crates, favorites, hatInventory, wearing, visibleHats, eggHuntStuff, eggPackBought, quests, sortType, patriotBought, tokens, permanentItems, login, toolEnchantments, newQuests, lightPack}
+end
+function OpenCrates()
+    if MiningSimulator['Crates'] then
+        local a = {}
+        for i,v in pairs(GetShit()[10]) do
+            local crate,num = v[1],v[2]
+            for i=1,num do
+                if MiningSimulator['Crates'] then
+                    network:FireServer('SpinCrate',crate)
+              		wait(1)
+                end
+            end
+        end
+    else
+        return nil
+    end
+end
+function TeleporterDown()
+    if Character().Parent:FindFirstChild(Player.Name..'Teleporter',true) then
+        return true
+    else
+        return false
+    end
+end
+function PlaceTeleport(item)
+    if TeleporterDown() then
+        RemovePad()
+        wait(0.1)
+        Player.PlayerGui.ScreenGui.ClientScript.Event:Fire("PlaceTeleporter", item.CFrame)
+    else
+        Player.PlayerGui.ScreenGui.ClientScript.Event:Fire("PlaceTeleporter", item.CFrame)
+    end
+   
+    Player.PlayerGui.ScreenGui.ClientScript.Event:Fire("PlaceTeleporter", item.CFrame)
+end
+function TeleportToPad()
+    wait(1)
+    network:FireServer("TeleportToPad")
+end
+function TpToBlock(block)
+    local isBlock = workspace.Blocks:FindFirstChild(block, true)
+	if not isBlock then
+		SendMessage('Ore not found')
+		return
+	end
+    local primary = isBlock.PrimaryPart
+   
+    if primary then
+        PlaceTeleport(primary)
+        wait(0.5)
+        TeleportToPad()
+    end
+	wait(.5)
+	RemovePad()
+end
+MiningBlocktp.Toggle.FocusLost:connect(function(enterPressed)
+	if enterPressed and MiningLoaded then
+		TpToBlock(MiningBlocktp.Toggle.Text)
+	else
+		SendMessage('Please load network')
+	end
+	MiningBlocktp.Toggle.Text = ''
+end)
+MiningTpSell.Toggle.MouseButton1Down:connect(function()
+	if MiningLoaded then
+		teleportToSell()
+	else
+		SendMessage('Please load network')
+	end
+end)
+Mouse.Button1Down:connect(function()
+	if MiningLoaded and MiningSimulator['Instant'] then
+		MineBlock()
+	elseif MiningSimulator['Instant'] and not MiningLoaded then
+		SendMessage('Please load network')
+	end
+end)
+Mouse.Button2Down:connect(function()
+	if Aimbot['RightClickAimbot'] then
+		AimbotEnabled.Toggle.Text = 'X'
+	end
+end)
+Mouse.Button2Up:connect(function()
+	if Aimbot['RightClickAimbot'] then
+		AimbotEnabled.Toggle.Text = ''
+	end
+end)
+MiningCrates.Toggle.MouseButton1Down:connect(function()
+	if MiningLoaded and MiningSimulator['Crates'] then
+		OpenCrates()
+	end
+end)
+
+local UserInputService = game:GetService('UserInputService')
+
+local sg2 = Instance.new('ScreenGui',game.CoreGui)
+local DrwFov = Instance.new('Frame',sg2)
+DrwFov.Size = UDim2.new(0,0,0)
+DrwFov.Position= UDim2.new(0,0,0,0)
+DrwFov.BackgroundTransparency = .7
+DrwFov.BackgroundColor3 = Color3.new(1,0,0)
+
+
+Mouse.KeyDown:connect(function(Key)
+	if Key:lower() == Setting['MenuCloseKey']:lower() then
+		if Setting['MenuClosed'] then
+			Setting['MenuClosed'] = false
+			miningSimulator.Visible = true
+			jailbreak.Visible = true
+			antiAim.Visible = true
+			AimbotG.Visible = true
+			EspG.Visible = true
+			SettingsG.Visible = true
+			phantomForces.Visible = true
+		else
+			
+			Setting['MenuClosed'] = true
+			miningSimulator.Visible = false
+			jailbreak.Visible = false
+			antiAim.Visible = false
+			AimbotG.Visible = false
+			EspG.Visible = false
+			SettingsG.Visible = false
+			phantomForces.Visible = false
+		end
+	end
+end)
+function SaveConfig()
+	--[[for i,v in pairs(AimbotG.Parent:GetDescendants()) do
+		if v:FindFirstChild'Toggle' then
+			print(v.Text)
+		end
+	end--]]
+	local a = 'Config = {'
+		a = a..'"'..HitSelection.Text..'",'
+		a = a..'"'..AimbotEnabled.Toggle.Text..'",'
+		a = a..'"'..AimbotFov.Toggle.Text..'",'
+		a = a..'"'..AimbotVisible.Toggle.Text..'",'
+		a = a..'"'..AimbotEnemyOnly.Toggle.Text..'",'
+		a = a..'"'..AimbotAutoWall.Toggle.Text..'",'
+		a = a..'"'..AimbotAutofire.Toggle.Text..'",'
+		a = a..'"'..AimbotHitscan.Toggle.Text..'",'
+		a = a..'"'..AimbotSensitivity.Toggle.Text..'",'
+		a = a..'"'..AimbotDrop.Toggle.Text..'",'
+		a = a..'"'..AimbotTarget.Toggle.Text..'",'
+		a = a..'"'..AimbotAimKey.Toggle.Text..'",'
+		a = a..'"'..AimbotUserRightClick.Toggle.Text..'",'
+		a = a..'"'..EspEnabled.Toggle.Text..'",'
+		a = a..'"'..EspEnemyOnly.Toggle.Text..'",'
+		a = a..'"'..EspHand.Toggle.Text..'",'
+		a = a..'"'..EspChams.Toggle.Text..'",'
+		a = a..'"'..EspHitBox.Toggle.Text..'",'
+		a = a..'"'..EspDynamic.Toggle.Text..'",'
+		a = a..'"'..EspBypass.Toggle.Text..'",'
+		a = a..'"'..EspDrawFov.Toggle.Text..'",'
+		a = a..'"'..SettingsCloseKey.Toggle.Text..'",'
+		a = a..'} return Config'
+		writefile('EskiSexySlaveTime',a)
+	
+end
+function LoadConfig()
+	local tbl = loadstring(readfile('EskiSexySlaveTime'))()
+	if #tbl > 1 then
+		HitSelection.Text = tbl[1]
+		AimbotEnabled.Toggle.Text = tbl[2]
+		AimbotFov.Toggle.Text = tbl[3]
+		AimbotVisible.Toggle.Text = tbl[4]
+		AimbotEnemyOnly.Toggle.Text = tbl[5]
+		AimbotAutoWall.Toggle.Text = tbl[6]
+		AimbotAutofire.Toggle.Text = tbl[7]
+		AimbotHitscan.Toggle.Text = tbl[8]
+		AimbotSensitivity.Toggle.Text = tbl[9]
+		AimbotDrop.Toggle.Text = tbl[10]
+		AimbotTarget.Toggle.Text = tbl[11]
+		AimbotAimKey.Toggle.Text = tbl[12]
+		AimbotUserRightClick.Toggle.Text = tbl[13]
+		EspEnabled.Toggle.Text = tbl[14]
+		EspEnemyOnly.Toggle.Text = tbl[15]
+		EspHand.Toggle.Text = tbl[16]
+		EspChams.Toggle.Text = tbl[17]
+		EspHitBox.Toggle.Text = tbl[18]
+		EspDynamic.Toggle.Text = tbl[19]
+		EspBypass.Toggle.Text = tbl[20]
+		EspDrawFov.Toggle.Text = tbl[21]
+		SettingsCloseKey.Toggle.Text = tbl[22]
+	end
+end
+
+SettingsSaveConfig.Toggle.MouseButton1Down:connect(function()
+	SendMessage('Config Saved')
+	SaveConfig()
+end)
+SettingsLoadConfig.Toggle.MouseButton1Down:connect(function()
+	SendMessage('Config Loaded')
+	LoadConfig()
+end)
+
+function BriefcaseEsp()
+	for i,v in pairs(workspace:GetChildren()) do
+		if v:FindFirstChild'Briefcase' then
+			if not v.Briefcase:FindFirstChild'esp' then
+				local bill = Instance.new('BillboardGui',v.Briefcase)
+				bill.AlwaysOnTop = true
+				bill.Adornee = v.Briefcase
+				bill.Size = UDim2.new(0,100,0,20)
+				bill.Name = 'esp'
+				local txtlbl = Instance.new('TextLabel',bill)
+				txtlbl.Text = 'Briefcase'
+				txtlbl.Size = UDim2.new(1,0,1,0)
+				txtlbl.BackgroundTransparency = 1
+				txtlbl.TextColor3 = Color3.new(1,0,0)
+			end
+		end
+	end
+end
+function JailbreakOptions()
+	if Jailbreak['BriefcaseEsp'] then
+		BriefcaseEsp()
+	end
+end
+function AntiAimOptions()
+	if AntiAim['Spinbot'] then
+		local Char = Character()
+		Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame*CFrame.Angles(0,.5,0)
+	end
+	if AntiAim['Left'] then
+		local Char = Character()
+		Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame*CFrame.Angles(0,-5,0)
+	
+	end
+	if AntiAim['Right'] then
+		local Char = Character()
+		Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame*CFrame.Angles(0,5,0)
+	
+	end
+	if AntiAim['Back'] then
+		local Char = Character()
+		Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame*CFrame.Angles(0,9.5,0)
+	end
+	if AntiAim['Tick'] then
+		local Char = Character()
+		Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame*CFrame.Angles(0,math.random(-18,18),0)
+	end
+end
+
+game:GetService('RunService').RenderStepped:connect(function()
+	JailbreakOptions()
+	AntiAimOptions()
+	
+	if Esp['DrawFov'] then
+		DrwFov.Size = UDim2.new(0,Aimbot['Fov'],0,Aimbot['Fov'])
+		DrwFov.Position = UDim2.new(0,Mouse.X-Aimbot['Fov']/2,0,Mouse.Y-Aimbot['Fov']/2)
+	else
+		DrwFov.Size = UDim2.new(0,0,0,0)
+	end
+	if Aimbot['AimKey']:len() > 0 then
+		if Enum.KeyCode[Aimbot['AimKey']:upper()] then
+			if UserInputService:IsKeyDown(Enum.KeyCode[Aimbot['AimKey']:upper()]) then
+				AimbotEnabled.Toggle.Text = 'X'
+			else
+				AimbotEnabled.Toggle.Text = ''
+			end
+		end
+	end
+	
+	
+	if MouseDown then
+		MouseUpEquiv()
+		MouseDown = false
+	end
+	UpdateByGui()
+	if Aimbot['AutoFire'] then
+		AutoShoot()
+	end
+	if Aimbot['Enabled'] then
+		ShouldAim()
+	end
+	if not Aimbot['Enabled'] then
+		Target = nil
+	end
+	if Target then
+		SetAim(Target)
+	end
+end)
+local tbl = {
+'Ur kinda cute btw ;)',
+'yo, lowkey dtf?',
+'I wanna frick u so h4rd',
+'Rainbow GUI, u like it?',
+'Special version 1.1.69fuckniggers',
+}
+if Player.Name == 'NeadricTM' then
+	SendMessage(tbl[math.random(1,#tbl)])
+end
+local rotatingdick
+function MakeRotatingDick()
+	local ScreenGui = Instance.new("ScreenGui")
+	local Frame = Instance.new("Frame")
+	local a = Instance.new("Frame")
+	local a_2 = Instance.new("Frame")
+	local a_3 = Instance.new("Frame")
+	local Frame_2 = Instance.new("Frame")
+	local a_4 = Instance.new("Frame")
+	--Properties:
+	ScreenGui.Parent = game.CoreGui
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	
+	Frame.Parent = ScreenGui
+	Frame.BackgroundColor3 = Color3.new(1, 1, 1)
+	Frame.BackgroundTransparency = 1
+	Frame.Position = UDim2.new(.5, -100, 1, -200)
+	Frame.Size = UDim2.new(0, 200, 0, 200)
+	Frame.Name = 'b'
+	
+	a.Name = "a"
+	a.Parent = Frame
+	a.BackgroundColor3 = Color3.new(1, 1, 1)
+	a.BorderSizePixel = 0
+	a.Position = UDim2.new(0.25, 0, 0, 0)
+	a.Size = UDim2.new(0, 50, 0, 50)
+	
+	a_2.Name = "a"
+	a_2.Parent = Frame
+	a_2.BackgroundColor3 = Color3.new(1, 1, 1)
+	a_2.BorderSizePixel = 0
+	a_2.Position = UDim2.new(0, 0, 0.25, 0)
+	a_2.Size = UDim2.new(0, 50, 0, 50)
+	
+	a_3.Name = "a"
+	a_3.Parent = Frame
+	a_3.BackgroundColor3 = Color3.new(1, 1, 1)
+	a_3.BorderSizePixel = 0
+	a_3.Position = UDim2.new(0.155000001, -1, 0.375, -1)
+	a_3.Rotation = 45
+	a_3.Size = UDim2.new(0, 138, 0, 50)
+	
+	Frame_2.Parent = a_3
+	Frame_2.BackgroundColor3 = Color3.new(1, 0.439216, 0.607843)
+	Frame_2.BorderSizePixel = 0
+	Frame_2.Position = UDim2.new(0.775362313, 0, 0, 0)
+	Frame_2.Rotation = 46
+	Frame_2.Size = UDim2.new(0, 50, 0, 50)
+	
+	a_4.Name = "a"
+	a_4.Parent = Frame_2
+	a_4.BackgroundColor3 = Color3.new(1, 1, 1)
+	a_4.BorderSizePixel = 0
+	a_4.Position = UDim2.new(1, -10, 0, 0)
+	a_4.Rotation = 45
+	a_4.Size = UDim2.new(0, 1, 0, 20)
+	rotatingdick = ScreenGui
+
+end
+i = 0
+-- AimbotG EspG SettingsG antiAim jailbreak miningSimulator
+while wait() do
+	if MiningLoaded and MiningSimulator['AutoMine'] then
+		MineBlock()
+	end
+	if i > 1 then
+		i = 0
+	end
+	i = i + .01
+	if Player.Name == 'SoulessKnowledge' or Player.Name == 'NeadricTM' then
+		AimbotG.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		EspG.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		SettingsG.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		antiAim.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		jailbreak.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		miningSimulator.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+		phantomForces.BackgroundColor3 = Color3.fromHSV(i,1,1)
+		if not rotatingdick then
+			MakeRotatingDick()
+		else
+			rotatingdick.b.Rotation = rotatingdick.b.Rotation + 5
+			for _,v in pairs(rotatingdick:GetDescendants()) do
+				if v.Name == 'a' then
+					v.BackgroundColor3 = Color3.fromHSV(i, 1, 1)
+				end
+			end
+		end
+		
+	end
+	
+	UpdateEsp()
+end

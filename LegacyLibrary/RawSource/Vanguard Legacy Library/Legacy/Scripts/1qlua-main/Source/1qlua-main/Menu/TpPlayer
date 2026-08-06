@@ -1,0 +1,765 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+-- Создание GUI в CoreGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PlayerTeleporterGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 9999
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 650)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -325)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Закругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
+
+-- Тень
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(70, 70, 90)
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
+
+-- Заголовок с возможностью перемещения
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 45)
+TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local UICorner2 = Instance.new("UICorner")
+UICorner2.CornerRadius = UDim.new(0, 12, 0, 0)
+UICorner2.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "🎮 ТЕЛЕПОРТЕР ИГРОКОВ"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+-- Кнопка закрытия/отключения скрипта
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 32, 0, 32)
+CloseButton.Position = UDim2.new(1, -42, 0.5, -16)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.Text = "✕"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = TitleBar
+
+local UICorner3 = Instance.new("UICorner")
+UICorner3.CornerRadius = UDim.new(0, 6)
+UICorner3.Parent = CloseButton
+
+-- Вкладки (Все игроки / Избранные)
+local TabsFrame = Instance.new("Frame")
+TabsFrame.Name = "TabsFrame"
+TabsFrame.Size = UDim2.new(1, -30, 0, 40)
+TabsFrame.Position = UDim2.new(0, 15, 0, 55)
+TabsFrame.BackgroundTransparency = 1
+TabsFrame.Parent = MainFrame
+
+local AllPlayersTab = Instance.new("TextButton")
+AllPlayersTab.Name = "AllPlayersTab"
+AllPlayersTab.Size = UDim2.new(0.5, -5, 1, 0)
+AllPlayersTab.Position = UDim2.new(0, 0, 0, 0)
+AllPlayersTab.BackgroundColor3 = Color3.fromRGB(80, 140, 220)
+AllPlayersTab.Text = "👥 ВСЕ ИГРОКИ"
+AllPlayersTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+AllPlayersTab.TextSize = 14
+AllPlayersTab.Font = Enum.Font.GothamBold
+AllPlayersTab.Parent = TabsFrame
+
+local UICornerAll = Instance.new("UICorner")
+UICornerAll.CornerRadius = UDim.new(0, 6, 0, 0)
+UICornerAll.Parent = AllPlayersTab
+
+local FavoritesTab = Instance.new("TextButton")
+FavoritesTab.Name = "FavoritesTab"
+FavoritesTab.Size = UDim2.new(0.5, -5, 1, 0)
+FavoritesTab.Position = UDim2.new(0.5, 5, 0, 0)
+FavoritesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+FavoritesTab.Text = "⭐ ИЗБРАННЫЕ"
+FavoritesTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+FavoritesTab.TextSize = 14
+FavoritesTab.Font = Enum.Font.GothamBold
+FavoritesTab.Parent = TabsFrame
+
+local UICornerFav = Instance.new("UICorner")
+UICornerFav.CornerRadius = UDim.new(0, 6, 0, 0)
+UICornerFav.Parent = FavoritesTab
+
+-- Область поиска
+local SearchFrame = Instance.new("Frame")
+SearchFrame.Name = "SearchFrame"
+SearchFrame.Size = UDim2.new(1, -30, 0, 55)
+SearchFrame.Position = UDim2.new(0, 15, 0, 100)
+SearchFrame.BackgroundTransparency = 1
+SearchFrame.Parent = MainFrame
+
+local SearchBox = Instance.new("TextBox")
+SearchBox.Name = "SearchBox"
+SearchBox.Size = UDim2.new(1, 0, 0, 45)
+SearchBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.PlaceholderText = "🔍 Поиск игроков..."
+SearchBox.PlaceholderColor3 = Color3.fromRGB(160, 160, 180)
+SearchBox.Text = ""
+SearchBox.TextSize = 14
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.ClearTextOnFocus = false
+SearchBox.Parent = SearchFrame
+
+local UICorner4 = Instance.new("UICorner")
+UICorner4.CornerRadius = UDim.new(0, 10)
+UICorner4.Parent = SearchBox
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingLeft = UDim.new(0, 15)
+UIPadding.PaddingRight = UDim.new(0, 15)
+UIPadding.Parent = SearchBox
+
+-- Контейнер для списка игроков
+local PlayersScrollFrame = Instance.new("ScrollingFrame")
+PlayersScrollFrame.Name = "PlayersScrollFrame"
+PlayersScrollFrame.Size = UDim2.new(1, -30, 1, -160)
+PlayersScrollFrame.Position = UDim2.new(0, 15, 0, 165)
+PlayersScrollFrame.BackgroundTransparency = 1
+PlayersScrollFrame.ScrollBarThickness = 8
+PlayersScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(90, 90, 110)
+PlayersScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PlayersScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayersScrollFrame.Parent = MainFrame
+
+local PlayersListLayout = Instance.new("UIListLayout")
+PlayersListLayout.Name = "PlayersListLayout"
+PlayersListLayout.Padding = UDim.new(0, 8)
+PlayersListLayout.Parent = PlayersScrollFrame
+
+-- Кнопки сохранения/загрузки
+local ButtonsFrame = Instance.new("Frame")
+ButtonsFrame.Name = "ButtonsFrame"
+ButtonsFrame.Size = UDim2.new(1, -30, 0, 45)
+ButtonsFrame.Position = UDim2.new(0, 15, 1, -55)
+ButtonsFrame.BackgroundTransparency = 1
+ButtonsFrame.Parent = MainFrame
+
+local SaveButton = Instance.new("TextButton")
+SaveButton.Name = "SaveButton"
+SaveButton.Size = UDim2.new(0.48, 0, 1, 0)
+SaveButton.Position = UDim2.new(0, 0, 0, 0)
+SaveButton.BackgroundColor3 = Color3.fromRGB(80, 140, 220)
+SaveButton.Text = "💾 СОХРАНИТЬ"
+SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveButton.TextSize = 14
+SaveButton.Font = Enum.Font.GothamBold
+SaveButton.Parent = ButtonsFrame
+
+local UICorner5 = Instance.new("UICorner")
+UICorner5.CornerRadius = UDim.new(0, 8)
+UICorner5.Parent = SaveButton
+
+local LoadButton = Instance.new("TextButton")
+LoadButton.Name = "LoadButton"
+LoadButton.Size = UDim2.new(0.48, 0, 1, 0)
+LoadButton.Position = UDim2.new(0.52, 0, 0, 0)
+LoadButton.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+LoadButton.Text = "📂 ЗАГРУЗИТЬ"
+LoadButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadButton.TextSize = 14
+LoadButton.Font = Enum.Font.GothamBold
+LoadButton.Parent = ButtonsFrame
+
+local UICorner6 = Instance.new("UICorner")
+UICorner6.CornerRadius = UDim.new(0, 8)
+UICorner6.Parent = LoadButton
+
+-- Переменные
+local dragging = false
+local dragInput, dragStart, startPos
+local localPlayer = Players.LocalPlayer
+local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Состояния
+local favorites = {}
+local currentTab = "all" -- "all" или "favorites"
+local playerEntries = {}
+
+-- Функция для анимации кнопок при наведении
+local function setupButtonHover(button, hoverColor, normalColor)
+    local hoverColor = hoverColor or button.BackgroundColor3
+    local normalColor = normalColor or button.BackgroundColor3
+    
+    button.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+-- Применяем эффекты к кнопкам
+setupButtonHover(CloseButton, Color3.fromRGB(220, 80, 80), Color3.fromRGB(200, 60, 60))
+setupButtonHover(AllPlayersTab, Color3.fromRGB(90, 160, 240), Color3.fromRGB(80, 140, 220))
+setupButtonHover(FavoritesTab, Color3.fromRGB(80, 80, 100), Color3.fromRGB(60, 60, 80))
+setupButtonHover(SaveButton, Color3.fromRGB(90, 160, 240), Color3.fromRGB(80, 140, 220))
+setupButtonHover(LoadButton, Color3.fromRGB(90, 240, 160), Color3.fromRGB(80, 220, 140))
+
+-- Эффекты для поля поиска
+SearchBox.Focused:Connect(function()
+    game:GetService("TweenService"):Create(SearchBox, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+end)
+
+SearchBox.FocusLost:Connect(function()
+    game:GetService("TweenService"):Create(SearchBox, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}):Play()
+end)
+
+-- Проверка и создание папки 1qluaseting
+local function ensureSettingsFolder()
+    local success, result = pcall(function()
+        if not isfolder then
+            return false
+        end
+        
+        if not isfolder("1qluaseting") then
+            makefolder("1qluaseting")
+        end
+        return true
+    end)
+    
+    return success and result
+end
+
+-- Сохранение настроек
+local function saveSettings()
+    if not ensureSettingsFolder() then
+        warn("Невозможно создать папку для настроек")
+        return false
+    end
+    
+    local settingsData = {
+        favorites = favorites,
+        windowPosition = {
+            X = MainFrame.Position.X.Scale,
+            Y = MainFrame.Position.Y.Scale,
+            OffsetX = MainFrame.Position.X.Offset,
+            OffsetY = MainFrame.Position.Y.Offset
+        },
+        windowSize = {
+            Width = MainFrame.Size.X.Offset,
+            Height = MainFrame.Size.Y.Offset
+        }
+    }
+    
+    local json = HttpService:JSONEncode(settingsData)
+    
+    local success, errorMsg = pcall(function()
+        writefile("1qluaseting/TPFAVORIT.json", json)
+    end)
+    
+    if success then
+        print("Настройки сохранены")
+        return true
+    else
+        warn("Ошибка сохранения: " .. tostring(errorMsg))
+        return false
+    end
+end
+
+-- Загрузка настроек
+local function loadSettings()
+    if not ensureSettingsFolder() then
+        return false
+    end
+    
+    if not isfile then
+        return false
+    end
+    
+    if not isfile("1qluaseting/TPFAVORIT.json") then
+        return false
+    end
+    
+    local success, result = pcall(function()
+        local json = readfile("1qluaseting/TPFAVORIT.json")
+        return HttpService:JSONDecode(json)
+    end)
+    
+    if success and result then
+        favorites = result.favorites or {}
+        
+        if result.windowPosition then
+            MainFrame.Position = UDim2.new(
+                result.windowPosition.X,
+                result.windowPosition.OffsetX,
+                result.windowPosition.Y,
+                result.windowPosition.OffsetY
+            )
+        end
+        
+        if result.windowSize then
+            MainFrame.Size = UDim2.new(
+                0,
+                result.windowSize.Width,
+                0,
+                result.windowSize.Height
+            )
+        end
+        
+        print("Настройки загружены")
+        return true
+    else
+        warn("Ошибка загрузки настроек")
+        return false
+    end
+end
+
+-- Функция телепортации
+local function teleportToPlayer(player)
+    local targetCharacter = player.Character
+    if not targetCharacter then
+        warn("У игрока нет персонажа!")
+        return
+    end
+    
+    local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+    if not targetRoot then
+        warn("У игрока нет HumanoidRootPart!")
+        return
+    end
+    
+    -- Телепортируемся
+    character:SetPrimaryPartCFrame(targetRoot.CFrame + Vector3.new(0, 3, 0))
+    
+    -- Небольшая анимация
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)})
+    tween:Play()
+    
+    print("Телепортировались к игроку: " .. player.Name)
+end
+
+-- Проверка, является ли игрок избранным
+local function isPlayerFavorite(player)
+    for _, userId in ipairs(favorites) do
+        if userId == player.UserId then
+            return true
+        end
+    end
+    return false
+end
+
+-- Создание элемента игрока
+local function createPlayerEntry(player, showFavoriteButton)
+    local isFavorite = isPlayerFavorite(player)
+    
+    local entryFrame = Instance.new("Frame")
+    entryFrame.Name = "PlayerEntry_" .. player.UserId
+    entryFrame.Size = UDim2.new(1, 0, 0, 85)
+    entryFrame.BackgroundColor3 = isFavorite and Color3.fromRGB(55, 65, 85) or Color3.fromRGB(45, 45, 60)
+    entryFrame.Parent = PlayersScrollFrame
+    
+    local UICornerEntry = Instance.new("UICorner")
+    UICornerEntry.CornerRadius = UDim.new(0, 10)
+    UICornerEntry.Parent = entryFrame
+    
+    -- Аватарка
+    local AvatarFrame = Instance.new("Frame")
+    AvatarFrame.Size = UDim2.new(0, 55, 0, 55)
+    AvatarFrame.Position = UDim2.new(0, 10, 0.5, -27.5)
+    AvatarFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    AvatarFrame.Parent = entryFrame
+    
+    local UICornerAvatar = Instance.new("UICorner")
+    UICornerAvatar.CornerRadius = UDim.new(0, 28)
+    UICornerAvatar.Parent = AvatarFrame
+    
+    local AvatarImage = Instance.new("ImageLabel")
+    AvatarImage.Size = UDim2.new(1, -4, 1, -4)
+    AvatarImage.Position = UDim2.new(0, 2, 0, 2)
+    AvatarImage.BackgroundTransparency = 1
+    AvatarImage.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+    AvatarImage.Parent = AvatarFrame
+    
+    -- Информация об игроке
+    local InfoFrame = Instance.new("Frame")
+    InfoFrame.Size = UDim2.new(0, 220, 1, 0)
+    InfoFrame.Position = UDim2.new(0, 75, 0, 0)
+    InfoFrame.BackgroundTransparency = 1
+    InfoFrame.Parent = entryFrame
+    
+    local DisplayNameLabel = Instance.new("TextLabel")
+    DisplayNameLabel.Size = UDim2.new(1, 0, 0, 35)
+    DisplayNameLabel.Position = UDim2.new(0, 0, 0, 10)
+    DisplayNameLabel.BackgroundTransparency = 1
+    DisplayNameLabel.Text = player.DisplayName
+    DisplayNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DisplayNameLabel.TextSize = 16
+    DisplayNameLabel.Font = Enum.Font.GothamBold
+    DisplayNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DisplayNameLabel.Parent = InfoFrame
+    
+    local UserNameLabel = Instance.new("TextLabel")
+    UserNameLabel.Size = UDim2.new(1, 0, 0, 25)
+    UserNameLabel.Position = UDim2.new(0, 0, 0, 45)
+    UserNameLabel.BackgroundTransparency = 1
+    UserNameLabel.Text = "@" .. player.Name
+    UserNameLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+    UserNameLabel.TextSize = 14
+    UserNameLabel.Font = Enum.Font.Gotham
+    UserNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    UserNameLabel.Parent = InfoFrame
+    
+    -- Фрейм для кнопок
+    local ButtonsContainer = Instance.new("Frame")
+    ButtonsContainer.Size = UDim2.new(0, 170, 1, 0)
+    ButtonsContainer.Position = UDim2.new(1, -180, 0, 0)
+    ButtonsContainer.BackgroundTransparency = 1
+    ButtonsContainer.Parent = entryFrame
+    
+    -- Кнопка телепортации
+    local TeleportButton = Instance.new("TextButton")
+    TeleportButton.Name = "TeleportButton"
+    TeleportButton.Size = UDim2.new(0, 110, 0, 35)
+    TeleportButton.Position = showFavoriteButton and UDim2.new(0, 0, 0.5, -17.5) or UDim2.new(0, 30, 0.5, -17.5)
+    TeleportButton.BackgroundColor3 = Color3.fromRGB(80, 160, 220)
+    TeleportButton.Text = "🚀 ТЕЛЕПОРТ"
+    TeleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TeleportButton.TextSize = 14
+    TeleportButton.Font = Enum.Font.GothamBold
+    TeleportButton.Parent = ButtonsContainer
+    
+    local UICornerTeleport = Instance.new("UICorner")
+    UICornerTeleport.CornerRadius = UDim.new(0, 8)
+    UICornerTeleport.Parent = TeleportButton
+    
+    -- Кнопка избранного (только если показываем)
+    local FavoriteButton
+    if showFavoriteButton then
+        FavoriteButton = Instance.new("TextButton")
+        FavoriteButton.Name = "FavoriteButton"
+        FavoriteButton.Size = UDim2.new(0, 45, 0, 35)
+        FavoriteButton.Position = UDim2.new(1, -50, 0.5, -17.5)
+        FavoriteButton.BackgroundColor3 = isFavorite and Color3.fromRGB(255, 200, 50) or Color3.fromRGB(100, 100, 120)
+        FavoriteButton.Text = isFavorite and "⭐" or "☆"
+        FavoriteButton.TextColor3 = isFavorite and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(200, 200, 200)
+        FavoriteButton.TextSize = 20
+        FavoriteButton.Font = Enum.Font.GothamBold
+        FavoriteButton.Parent = ButtonsContainer
+        
+        local UICornerFavorite = Instance.new("UICorner")
+        UICornerFavorite.CornerRadius = UDim.new(0, 8)
+        UICornerFavorite.Parent = FavoriteButton
+        
+        setupButtonHover(FavoriteButton, 
+            isFavorite and Color3.fromRGB(255, 220, 70) or Color3.fromRGB(120, 120, 140),
+            isFavorite and Color3.fromRGB(255, 200, 50) or Color3.fromRGB(100, 100, 120))
+    end
+    
+    setupButtonHover(TeleportButton, Color3.fromRGB(90, 180, 240), Color3.fromRGB(80, 160, 220))
+    
+    -- Обработчики событий
+    TeleportButton.MouseButton1Click:Connect(function()
+        teleportToPlayer(player)
+    end)
+    
+    if FavoriteButton then
+        FavoriteButton.MouseButton1Click:Connect(function()
+            local wasFavorite = isPlayerFavorite(player)
+            
+            if wasFavorite then
+                -- Удаляем из избранного
+                for i, userId in ipairs(favorites) do
+                    if userId == player.UserId then
+                        table.remove(favorites, i)
+                        break
+                    end
+                end
+                print("Удален из избранного: " .. player.Name)
+                
+                -- Обновляем внешний вид кнопки
+                FavoriteButton.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
+                FavoriteButton.Text = "☆"
+                FavoriteButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+                
+                setupButtonHover(FavoriteButton, Color3.fromRGB(120, 120, 140), Color3.fromRGB(100, 100, 120))
+                
+                -- Если мы в режиме избранных, обновляем список
+                if currentTab == "favorites" then
+                    updatePlayersList()
+                end
+            else
+                -- Добавляем в избранное
+                table.insert(favorites, player.UserId)
+                print("Добавлен в избранное: " .. player.Name)
+                
+                -- Обновляем внешний вид кнопки
+                FavoriteButton.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
+                FavoriteButton.Text = "⭐"
+                FavoriteButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+                
+                setupButtonHover(FavoriteButton, Color3.fromRGB(255, 220, 70), Color3.fromRGB(255, 200, 50))
+            end
+            
+            -- Обновляем цвет фона записи
+            entryFrame.BackgroundColor3 = isPlayerFavorite(player) and Color3.fromRGB(55, 65, 85) or Color3.fromRGB(45, 45, 60)
+        end)
+    end
+    
+    playerEntries[player.UserId] = entryFrame
+    return entryFrame
+end
+
+-- Обновление списка игроков
+local function updatePlayersList()
+    local searchText = SearchBox.Text and string.lower(SearchBox.Text) or ""
+    
+    -- Очищаем текущие записи
+    for _, entry in pairs(playerEntries) do
+        if entry and entry.Parent then
+            entry:Destroy()
+        end
+    end
+    playerEntries = {}
+    
+    -- Получаем всех игроков
+    local allPlayers = Players:GetPlayers()
+    local filteredPlayers = {}
+    
+    -- Фильтруем игроков в зависимости от вкладки
+    for _, player in ipairs(allPlayers) do
+        if player ~= localPlayer then
+            local displayName = player.DisplayName or player.Name
+            local userName = player.Name
+            
+            -- Проверяем соответствие поиску
+            local matchesSearch = searchText == "" or 
+               string.find(string.lower(displayName), searchText) or
+               string.find(string.lower(userName), searchText)
+            
+            if matchesSearch then
+                if currentTab == "favorites" then
+                    -- Только избранные игроки
+                    if isPlayerFavorite(player) then
+                        table.insert(filteredPlayers, player)
+                    end
+                else
+                    -- Все игроки
+                    table.insert(filteredPlayers, player)
+                end
+            end
+        end
+    end
+    
+    -- Сортируем: сначала избранные (если вкладка "все игроки")
+    if currentTab == "all" then
+        table.sort(filteredPlayers, function(a, b)
+            local aFavorite = isPlayerFavorite(a)
+            local bFavorite = isPlayerFavorite(b)
+            
+            if aFavorite and not bFavorite then
+                return true
+            elseif not aFavorite and bFavorite then
+                return false
+            else
+                return (a.DisplayName or a.Name) < (b.DisplayName or b.Name)
+            end
+        end)
+    else
+        -- Сортируем избранных по имени
+        table.sort(filteredPlayers, function(a, b)
+            return (a.DisplayName or a.Name) < (b.DisplayName or b.Name)
+        end)
+    end
+    
+    -- Создаем записи для игроков
+    for _, player in ipairs(filteredPlayers) do
+        -- На вкладке "избранные" не показываем кнопку избранного
+        local showFavoriteButton = currentTab == "all"
+        createPlayerEntry(player, showFavoriteButton)
+    end
+    
+    -- Обновляем размер контента
+    local totalPlayers = #filteredPlayers
+    PlayersScrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalPlayers * 93)
+    
+    print("Список игроков обновлен. Игроков: " .. totalPlayers .. " (вкладка: " .. currentTab .. ")")
+end
+
+-- Обработка перемещения GUI
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Обработка поиска
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    updatePlayersList()
+end)
+
+-- Обработка вкладок
+AllPlayersTab.MouseButton1Click:Connect(function()
+    if currentTab ~= "all" then
+        currentTab = "all"
+        AllPlayersTab.BackgroundColor3 = Color3.fromRGB(80, 140, 220)
+        AllPlayersTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        FavoritesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        FavoritesTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+        
+        setupButtonHover(AllPlayersTab, Color3.fromRGB(90, 160, 240), Color3.fromRGB(80, 140, 220))
+        setupButtonHover(FavoritesTab, Color3.fromRGB(80, 80, 100), Color3.fromRGB(60, 60, 80))
+        
+        updatePlayersList()
+    end
+end)
+
+FavoritesTab.MouseButton1Click:Connect(function()
+    if currentTab ~= "favorites" then
+        currentTab = "favorites"
+        FavoritesTab.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
+        FavoritesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        AllPlayersTab.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        AllPlayersTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+        
+        setupButtonHover(FavoritesTab, Color3.fromRGB(255, 220, 70), Color3.fromRGB(255, 200, 50))
+        setupButtonHover(AllPlayersTab, Color3.fromRGB(80, 80, 100), Color3.fromRGB(60, 60, 80))
+        
+        updatePlayersList()
+    end
+end)
+
+-- Кнопка закрытия
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    script:Destroy()
+    print("Скрипт отключен")
+end)
+
+-- Кнопки сохранения/загрузки
+SaveButton.MouseButton1Click:Connect(function()
+    if saveSettings() then
+        -- Анимация подтверждения
+        SaveButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        SaveButton.Text = "✅ СОХРАНЕНО!"
+        
+        task.wait(1)
+        
+        SaveButton.BackgroundColor3 = Color3.fromRGB(80, 140, 220)
+        SaveButton.Text = "💾 СОХРАНИТЬ"
+        
+        setupButtonHover(SaveButton, Color3.fromRGB(90, 160, 240), Color3.fromRGB(80, 140, 220))
+    end
+end)
+
+LoadButton.MouseButton1Click:Connect(function()
+    if loadSettings() then
+        updatePlayersList()
+        
+        -- Анимация подтверждения
+        LoadButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        LoadButton.Text = "✅ ЗАГРУЖЕНО!"
+        
+        task.wait(1)
+        
+        LoadButton.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+        LoadButton.Text = "📂 ЗАГРУЗИТЬ"
+        
+        setupButtonHover(LoadButton, Color3.fromRGB(90, 240, 160), Color3.fromRGB(80, 220, 140))
+    else
+        -- Анимация ошибки
+        LoadButton.BackgroundColor3 = Color3.fromRGB(220, 100, 100)
+        LoadButton.Text = "❌ ОШИБКА!"
+        
+        task.wait(1)
+        
+        LoadButton.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+        LoadButton.Text = "📂 ЗАГРУЗИТЬ"
+        
+        setupButtonHover(LoadButton, Color3.fromRGB(90, 240, 160), Color3.fromRGB(80, 220, 140))
+    end
+end)
+
+-- Инициализация
+print("Запуск GUI телепортера...")
+
+-- Загрузка настроек при старте
+local success = pcall(function()
+    loadSettings()
+end)
+
+if not success then
+    print("Не удалось загрузить настройки, используются настройки по умолчанию")
+end
+
+-- Первоначальное обновление списка
+updatePlayersList()
+
+-- Обработка добавления/удаления игроков
+Players.PlayerAdded:Connect(function(player)
+    task.wait(1) -- Даем время на загрузку данных игрока
+    updatePlayersList()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    task.wait(0.5)
+    updatePlayersList()
+end)
+
+-- Обновление позиции персонажа
+localPlayer.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    print("Персонаж обновлен")
+end)
+
+print("✅ GUI телепортера игроков успешно загружена!")
+print("📊 Избранных игроков: " .. #favorites)

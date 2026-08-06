@@ -1,0 +1,14 @@
+-- Версия с проверкой, стоит ли персонаж на земле
+local Player = game:GetService("Players").LocalPlayer
+
+spawn(function()
+    while true do
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            local Humanoid = Player.Character.Humanoid
+            if Humanoid.Health > 0 and Humanoid.FloorMaterial ~= Enum.Material.Air then
+                Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+        wait(0.5)
+    end
+end)

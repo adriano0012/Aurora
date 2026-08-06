@@ -1,0 +1,1471 @@
+-- ======== НАСТРОЙКИ ======== --
+local SETTINGS = {
+    WALK_SPEED = {
+        DEFAULT = 16,
+        MIN = 0,
+        MAX = 150
+    },
+    JUMP_POWER = {
+        DEFAULT = 50,
+        MIN = 0,
+        MAX = 500
+    },
+    FOV = {
+        DEFAULT = 70,
+        MIN = 0,
+        MAX = 120
+    },
+    TIME = {
+        DEFAULT = 12,
+        MIN = 0,
+        MAX = 24
+    }
+}
+
+-- Функция для создания папки без ключа
+local function createNoKeyFolder()
+    -- Проверяем доступные методы записи файлов
+    local canWrite = false
+    local writeMethods = {
+        writefile,
+        makefolder,
+        saveinstance
+    }
+    
+    for _, method in pairs(writeMethods) do
+        if type(method) == "function" then
+            canWrite = true
+            break
+        end
+    end
+    
+    if not canWrite then
+        Compkiller.newNotify().new({
+            Title = "Ошибка",
+            Content = "Ваш эксплойт не поддерживает запись файлов",
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        })
+        return
+    end
+    
+    -- Пытаемся создать папку
+    local success, err = pcall(function()
+        -- Проверяем разные возможные пути
+        local paths = {
+            "1qluaNoRuKey",
+            "workspace/1qluaNoRuKey",
+            "exploit/1qluaNoRuKey",
+            "bin/1qluaNoRuKey"
+        }
+        
+        local created = false
+        for _, path in ipairs(paths) do
+            if not created then
+                pcall(function()
+                    makefolder(path)
+                    created = true
+                    writefile(path.."/README.txt", "Эта папка создана для входа без ключа")
+                end)
+            end
+        end
+        
+        if not created then
+            error("Не удалось создать папку ни в одной из возможных директорий")
+        end
+    end)
+    
+    if success then
+
+    else
+        Compkiller.newNotify().new({
+            Title = "Ошибка",
+            Content = "Не удалось создать папку: "..tostring(err),
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        })
+    end
+end
+
+-- Variables
+local viewing = nil
+local viewDied = nil
+local viewChanged = nil
+local Players = game:GetService("Players")
+local speaker = Players.LocalPlayer
+
+-- Helper functions
+local function StopFreecam()
+    -- Add your freecam stopping logic here if needed
+end
+
+local function getPlayer(name, speaker)
+    local found = {}
+    local nameLower = name:lower()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= speaker then
+            if player.Name:lower():find(nameLower) or player.DisplayName:lower():find(nameLower) then
+                table.insert(found, player)
+            end
+        end
+    end
+    return found
+end
+
+local function getRoot(character)
+    return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+end
+
+-- Инициализация сервисов
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Глобальные переменные
+local xrayEnabled = false
+local xrayLoop = nil
+local brightLoop = nil
+
+-- Функция XRay
+local function xray()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v.Parent:FindFirstChildOfClass("Humanoid") and not v.Parent.Parent:FindFirstChildOfClass("Humanoid") then
+            v.LocalTransparencyModifier = xrayEnabled and 0.7 or 0
+        end
+    end
+end
+
+-- Variables
+local ESPenabled = false
+local CHMSenabled = false -- Assuming you have chams elsewhere
+local speaker = game.Players.LocalPlayer
+
+-- Глобальные переменные
+_G.Walk = SETTINGS.WALK_SPEED.DEFAULT
+_G.WalkSpeedEnabled = true
+
+local Players = game:GetService("Players")
+local COREGUI = game:GetService("CoreGui")
+
+-- ======== ИНИЦИАЛИЗАЦИЯ БИБЛИОТЕКИ ======== --
+local Compkiller = loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/source"))()
+local Notifier = Compkiller.newNotify()
+local ConfigManager = Compkiller:ConfigManager({
+    Directory = "1Qlua-Config",
+    Config = "Main-Config"
+})
+
+-- Загрузка интерфейса
+Compkiller:Loader("rbxassetid://132794113053866", 2.5).yield()
+
+-- ======== СОЗДАНИЕ ОКНА ======== --
+local Window = Compkiller.new({
+    Name = "1Qlua x \nDERIXXS \nSCRIPTS",
+    Keybind = "LeftAlt",
+    Logo = "rbxassetid://132794113053866",
+    Scale = Compkiller.Scale.Window,
+    TextSize = 15,
+})
+
+-- Уведомление при запуске
+Notifier.new({
+    Title = "1Qlua",
+    Content = "Универсальный хаб скриптов загружен!",
+    Duration = 8,
+    Icon = "rbxassetid://80494437171393"
+})
+
+-- ======== ВОДЯНОЙ ЗНАК ======== --
+local Watermark = Window:Watermark()
+Watermark:AddText({
+    Icon = "user",
+    Text = "1Qlua",
+})
+Watermark:AddText({
+    Icon = "server",
+    Text = "Версия 19",
+})
+Watermark:AddText({
+    Icon = "clock",
+    Text = Compkiller:GetDate(),
+})
+
+-- ======== ОБРАБОТЧИК СКОРОСТИ ======== --
+local Heartbeat = game:GetService("RunService").Heartbeat
+local Player = game:GetService("Players").LocalPlayer
+
+local function UpdateSpeed()
+    if not _G.WalkSpeedEnabled then return end
+    local character = Player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = _G.Walk
+        end
+    end
+end
+
+Heartbeat:Connect(UpdateSpeed)
+Player.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid")
+    UpdateSpeed()
+end)
+
+-- ======== ФУНКЦИИ ======== --
+local Functions = {}
+
+Functions.JumpPower = function(value)
+    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.JumpPower = value
+    end
+    Player.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Humanoid").JumpPower = value
+    end)
+end
+
+Functions.FOV = function(value)
+    workspace.CurrentCamera.FieldOfView = value
+    workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = value
+        end
+    end)
+end
+
+Functions.TimeOfDay = function(hours)
+    local Lighting = game:GetService("Lighting")
+    Lighting.ClockTime = hours % 12 == 0 and 12 or hours % 12
+end
+
+Functions.LoadScript = function(url)
+    local success, err = pcall(loadstring(game:HttpGet(url)))
+    if not success then
+        Notifier.new({
+            Title = "Ошибка",
+            Content = "Ошибка загрузки: "..err,
+            Duration = 5,
+            Icon = "rbxassetid://7734068321"
+        })
+    end
+end
+
+-- ======== ВКЛАДКИ ======== --
+Window:DrawCategory({Name = "Основные"})
+
+-- Вкладка Игрока
+local PlayerTab = Window:DrawTab({
+    Name = "Игрок",
+    Icon = "user",
+    EnableScrolling = true
+})
+
+local PlayerMainSection = PlayerTab:DrawSection({
+    Name = "Основные настройки",
+    Position = "left"
+})
+
+PlayerMainSection:AddSlider({
+    Name = "Скорость передвижения",
+    Description = "Изменяет скорость вашего персонажа",
+    Min = 0,
+    Max = 150,
+    Default = 16,
+    Callback = function(v) _G.Walk = v end
+})
+
+PlayerMainSection:AddSlider({
+    Name = "Поле зрения (FOV)",
+    Description = "Изменяет угол обзора камеры",
+    Min = 0,
+    Max = 120,
+    Default = 70,
+    Callback = Functions.FOV
+})
+
+PlayerMainSection:AddSlider({
+    Name = "Время суток",
+    Description = "Изменяет текущее время в игре",
+    Min = 0,
+    Max = 24,
+    Default = 12,
+    Callback = Functions.TimeOfDay
+})
+
+local HitboxSection = PlayerTab:DrawSection({
+    Name = "Main Settings",
+    Position = 'left'
+});
+
+-- Переменные для хранения настроек
+local hitboxEnabled = false
+local currentPlayers = {}
+local hitboxSize = 2
+local hitboxTransparency = 0.4
+local selectedPlayerOptions = {"All"}
+
+-- Функция для получения списка игроков
+local function getPlayerList()
+    local players = {}
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            table.insert(players, player.Name)
+        end
+    end
+    return players
+end
+
+-- Функция для обновления хитбоксов
+local function updateHitboxes()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character and player.Character:FindFirstChild('HumanoidRootPart') then
+            local root = player.Character.HumanoidRootPart
+            
+            -- Проверяем, должен ли этот игрок иметь хитбокс
+            local shouldHaveHitbox = false
+            if hitboxEnabled then
+                if table.find(selectedPlayerOptions, "All") then
+                    shouldHaveHitbox = (player ~= game.Players.LocalPlayer)
+                else
+                    local isEnemy = not player.Team or player.Team ~= game.Players.LocalPlayer.Team
+                    if table.find(selectedPlayerOptions, "Enemies") and isEnemy then
+                        shouldHaveHitbox = true
+                    elseif table.find(selectedPlayerOptions, "Team") and not isEnemy then
+                        shouldHaveHitbox = true
+                    elseif table.find(selectedPlayerOptions, player.Name) then
+                        shouldHaveHitbox = true
+                    end
+                end
+            end
+            
+            if shouldHaveHitbox then
+                root.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                root.Transparency = hitboxTransparency
+            else
+                root.Size = Vector3.new(2, 1, 1)
+                root.Transparency = 1
+            end
+        end
+    end
+end
+
+-- Тоггл для включения/выключения хитбоксов
+HitboxSection:AddToggle({
+    Name = "Enable Hitboxes",
+    Flag = "Hitbox_Enabled",
+    Default = false,
+    Callback = function(value)
+        hitboxEnabled = value
+        updateHitboxes()
+    end
+})
+
+-- Слайдер для размера хитбокса
+HitboxSection:AddSlider({
+    Name = "Hitbox Size",
+    Min = 1,
+    Max = 10,
+    Default = 2,
+    Round = 1,
+    Flag = "Hitbox_Size",
+    Callback = function(value)
+        hitboxSize = value
+        if hitboxEnabled then
+            updateHitboxes()
+        end
+    end
+})
+
+-- Слайдер для прозрачности
+HitboxSection:AddSlider({
+    Name = "Transparency",
+    Min = 0,
+    Max = 1,
+    Default = 0.4,
+    Round = 0.1,
+    Flag = "Hitbox_Transparency",
+    Callback = function(value)
+        hitboxTransparency = value
+        if hitboxEnabled then
+            updateHitboxes()
+        end
+    end
+})
+
+-- Выбор игроков
+local playerOptions = {"All", "Enemies", "Team"}
+local playerNames = getPlayerList()
+for _, name in pairs(playerNames) do
+    table.insert(playerOptions, name)
+end
+
+HitboxSection:AddDropdown({
+    Name = "Select Players",
+    Default = {"All"},
+    Multi = true,
+    Flag = "Hitbox_Players",
+    Values = playerOptions,
+    Callback = function(selected)
+        selectedPlayerOptions = selected
+        if hitboxEnabled then
+            updateHitboxes()
+        end
+    end
+})
+
+-- Кнопка для обновления списка игроков
+HitboxSection:AddButton({
+    Name = "Refresh Players",
+    Callback = function()
+        playerOptions = {"All", "Enemies", "Team"}
+        playerNames = getPlayerList()
+        for _, name in pairs(playerNames) do
+            table.insert(playerOptions, name)
+        end
+        
+        -- Сохраняем текущий выбор
+        local currentSelection = selectedPlayerOptions
+        updateHitboxes()
+    end
+})
+
+-- Автоматическое обновление при появлении новых игроков
+game.Players.PlayerAdded:Connect(function(player)
+    playerOptions = {"All", "Enemies", "Team"}
+    playerNames = getPlayerList()
+    for _, name in pairs(playerNames) do
+        table.insert(playerOptions, name)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(player)
+    playerOptions = {"All", "Enemies", "Team"}
+    playerNames = getPlayerList()
+    for _, name in pairs(playerNames) do
+        table.insert(playerOptions, name)
+    end
+end)
+
+
+-- Function to get all flag models --
+local function GetFlagModels()
+    local flags = {}
+    local flagFolder = workspace:FindFirstChild("CaptureFlags")
+    
+    if flagFolder then
+        local flagsFolder = flagFolder:FindFirstChild("Flags")
+        if flagsFolder then
+            for _, flag in ipairs(flagsFolder:GetChildren()) do
+                if flag:IsA("Model") then
+                    table.insert(flags, flag.Name)
+                end
+            end
+        end
+    end
+    
+    return flags
+end
+
+-- Function to teleport to flag --
+local function TeleportToFlag(flagName)
+    local flagFolder = workspace:FindFirstChild("CaptureFlags")
+    if not flagFolder then 
+        Notifier.new({
+            Title = "Error",
+            Content = "CaptureFlags folder not found!",
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        });
+        return 
+    end
+    
+    local flagsFolder = flagFolder:FindFirstChild("Flags")
+    if not flagsFolder then 
+        Notifier.new({
+            Title = "Error",
+            Content = "Flags folder not found!",
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        });
+        return 
+    end
+    
+    local flag = flagsFolder:FindFirstChild(flagName)
+    if not flag then 
+        Notifier.new({
+            Title = "Error",
+            Content = "Flag '"..flagName.."' not found!",
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        });
+        return 
+    end
+    
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local rootPart = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            -- Find the main part of the flag (usually the base or a part named "Part")
+            local teleportPart
+            for _, part in ipairs(flag:GetDescendants()) do
+                if part:IsA("BasePart") and (part.Name == "Part" or part.Name == "Base" or part == flag.PrimaryPart) then
+                    teleportPart = part
+                    break
+                end
+            end
+            
+            if teleportPart then
+                rootPart.CFrame = teleportPart.CFrame * CFrame.new(0, 3, 0)
+                Notifier.new({
+                    Title = "Success",
+                    Content = "Teleported to "..flagName,
+                    Duration = 3,
+                    Icon = "rbxassetid://120245531583106"
+                });
+            else
+                Notifier.new({
+                    Title = "Error",
+                    Content = "Couldn't find a valid part to teleport to in "..flagName,
+                    Duration = 5,
+                    Icon = "rbxassetid://120245531583106"
+                });
+            end
+        end
+    end
+end
+
+-- Refresh flags function --
+local function RefreshFlags()
+    local flags = GetFlagModels()
+    FlagDropdown:Refresh(flags, true)
+end
+
+-- Create Teleport Section --
+local TeleportSection = PlayerTab:DrawSection({
+    Name = "телепорт по выбору",
+    Position = 'left'
+});
+
+-- Add Dropdown for flags --
+local FlagDropdown = TeleportSection:AddDropdown({
+    Name = "выбрать флаг",
+    Default = "",
+    Flag = "Selected_Flag",
+    Values = GetFlagModels(),
+    Callback = function(selected)
+        TeleportToFlag(selected)
+    end
+});
+
+-- Utility Section
+local UtilitySection = PlayerTab:DrawSection({
+    Name = "Сервер",
+    Position = "left"
+})
+
+UtilitySection:AddButton({
+    Name = "Copy Server Link",
+    Callback = function()
+        setclipboard("roblox://placeId="..game.PlaceId.."&gameInstanceId="..game.JobId)
+        notify("Server Link", "Copied to clipboard!")
+    end
+})
+
+UtilitySection:AddToggle({
+    Name = "Auto Rejoin",
+    Flag = "AutoRejoin",
+    Default = false,
+    Callback = function(state)
+        if state then
+            if autoRejoinConnection then
+                autoRejoinConnection:Disconnect()
+            end
+            autoRejoinConnection = GuiService.ErrorMessageChanged:Connect(function()
+                TeleportService:Teleport(game.PlaceId)
+            end)
+            notify("Auto Rejoin", "Enabled")
+        else
+            if autoRejoinConnection then
+                autoRejoinConnection:Disconnect()
+                autoRejoinConnection = nil
+            end
+            notify("Auto Rejoin", "Disabled")
+        end
+    end
+})
+
+
+UtilitySection:AddToggle({
+    Name = "Anti-AFK",
+    Flag = "AntiAFK",
+    Default = false,
+    Callback = function(state)
+        antiAfkEnabled = state
+        if state then
+            local GC = getconnections or get_signal_cons
+            if GC then
+                for i,v in pairs(GC(Players.LocalPlayer.Idled)) do
+                    if v["Disable"] then
+                        v["Disable"](v)
+                    elseif v["Disconnect"] then
+                        v["Disconnect"](v)
+                    end
+                end
+            else
+                local VirtualUser = game:GetService("VirtualUser")
+                Players.LocalPlayer.Idled:Connect(function()
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                end)
+            end
+            notify('Anti-AFK', 'Enabled')
+        else
+            notify('Anti-AFK', 'Disabled')
+        end
+    end
+})
+
+local PlayerScriptsSection = PlayerTab:DrawSection({
+    Name = "Основные скрипты",
+    Position = "right"
+})
+
+
+-- Fullbright Toggle
+local FullbrightToggle = PlayerScriptsSection:AddToggle({
+    Name = "Fullbright",
+    Flag = "Fullbright_Enabled",
+    Default = false,
+    Callback = function(state)
+        if state then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 100000
+            Lighting.GlobalShadows = false
+            Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        else
+            Lighting.Brightness = 1
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 1000000
+            Lighting.GlobalShadows = true
+            Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        end
+    end
+})
+
+-- Auto Fullbright Toggle
+PlayerScriptsSection:AddToggle({
+    Name = "Авто Fullbright",
+    Flag = "AutoFullbright_Enabled",
+    Default = false,
+    Callback = function(state)
+        if state then
+            if brightLoop then brightLoop:Disconnect() end
+            
+            brightLoop = RunService.RenderStepped:Connect(function()
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 100000
+                Lighting.GlobalShadows = false
+                Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+                
+                -- Автоматически включаем Fullbright если он выключен
+                if not FullbrightToggle.Value then
+                    FullbrightToggle:Set(true)
+                end
+            end)
+        else
+            if brightLoop then
+                brightLoop:Disconnect()
+                brightLoop = nil
+            end
+        end
+    end
+})
+
+
+PlayerScriptsSection:AddToggle({
+    Name = "Noclip",
+    Flag = "NoclipToggle",
+    Default = false,
+    Callback = function(state)
+        if state then
+            Clip = false
+            local function NoclipLoop()
+                if Clip == false and speaker.Character ~= nil then
+                    for _, child in pairs(speaker.Character:GetDescendants()) do
+                        if child:IsA("BasePart") and child.CanCollide == true then
+                            child.CanCollide = false
+                        end
+                    end
+                end
+            end
+            Noclipping = RunService.Stepped:Connect(NoclipLoop)
+            notify('Noclip', 'Enabled')
+        else
+            if Noclipping then
+                Noclipping:Disconnect()
+                Noclipping = nil
+            end
+            Clip = true
+            notify('Noclip', 'Disabled')
+        end
+    end
+}) 
+
+PlayerScriptsSection:AddButton({
+    Name = "Infinite Yield",
+    Description = "Мощные админ-команды для управления игрой",
+    Callback = function()
+        Functions.LoadScript("https://raw.githubusercontent.com/Infinite-Store/Infinite-Store/main/main.lua")
+    end
+})
+
+PlayerScriptsSection:AddButton({
+    Name = "DEX++",
+    Description = "Инструмент для исследования игровых объектов",
+    Callback = function()
+        Functions.LoadScript("https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/refs/heads/main/DexPlusBackup.luau")
+    end
+})
+
+PlayerScriptsSection:AddButton({
+    Name = "Невидимость (E)",
+    Description = "Делает вашего персонажа невидимым",
+    Callback = function()
+        Functions.LoadScript("https://pastebin.com/raw/VtWhnEnm")
+    end
+})
+
+PlayerScriptsSection:AddButton({
+    Name = "Свободная камера (Shift+P)",
+    Description = "Отключает привязку камеры к персонажу",
+    Callback = function()
+        Functions.LoadScript("https://pastebin.com/raw/ct8Kq5F0")
+    end
+})
+
+PlayerScriptsSection:AddButton({
+    Name = "Полет на танке нажми(V)",
+    Description = "Позволяет транспорту летать",
+    Callback = function()
+        Functions.LoadScript("https://pastebin.com/raw/9bNj1EcR")
+    end
+})
+
+
+-- ESP Functions
+local function CreateESP(player, teamCheck)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    local espGui = Instance.new("BillboardGui")
+    espGui.Name = player.Name .. "_ESP"
+    espGui.AlwaysOnTop = true
+    espGui.Size = UDim2.new(2, 0, 2, 0)
+    espGui.StudsOffset = Vector3.new(0, 2.5, 0)
+    espGui.Adornee = humanoidRootPart
+    espGui.Parent = COREGUI
+    
+    local espFrame = Instance.new("Frame")
+    espFrame.BackgroundTransparency = 1
+    espFrame.Size = UDim2.new(1, 0, 1, 0)
+    espFrame.Parent = espGui
+    
+    local espText = Instance.new("TextLabel")
+    espText.Name = "ESPText"
+    espText.BackgroundTransparency = 1
+    espText.Size = UDim2.new(1, 0, 1, 0)
+    espText.Font = Enum.Font.SourceSansBold
+    espText.TextSize = 18
+    espText.Text = player.Name
+    espText.TextColor3 = teamCheck and player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+    espText.Parent = espFrame
+    
+    -- Health bar
+    local healthBar = Instance.new("Frame")
+    healthBar.Name = "HealthBar"
+    healthBar.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    healthBar.BorderSizePixel = 0
+    healthBar.Size = UDim2.new(1, 0, 0.1, 0)
+    healthBar.Position = UDim2.new(0, 0, 0, -15)
+    healthBar.Parent = espFrame
+    
+    local healthFill = Instance.new("Frame")
+    healthFill.Name = "HealthFill"
+    healthFill.BackgroundColor3 = Color3.new(0, 1, 0)
+    healthFill.BorderSizePixel = 0
+    healthFill.Size = UDim2.new(1, 0, 1, 0)
+    healthFill.Parent = healthBar
+    
+    local function updateHealth()
+        if character and character:FindFirstChild("Humanoid") then
+            local humanoid = character.Humanoid
+            healthFill.Size = UDim2.new(humanoid.Health / humanoid.MaxHealth, 0, 1, 0)
+            
+            -- Change color based on health
+            if humanoid.Health / humanoid.MaxHealth < 0.3 then
+                healthFill.BackgroundColor3 = Color3.new(1, 0, 0)
+            elseif humanoid.Health / humanoid.MaxHealth < 0.6 then
+                healthFill.BackgroundColor3 = Color3.new(1, 1, 0)
+            else
+                healthFill.BackgroundColor3 = Color3.new(0, 1, 0)
+            end
+        end
+    end
+    
+    character:WaitForChild("Humanoid").HealthChanged:Connect(updateHealth)
+    updateHealth()
+    
+    -- Box ESP
+    local box = Instance.new("Frame")
+    box.Name = "Box"
+    box.BackgroundTransparency = 0.8
+    box.BackgroundColor3 = teamCheck and player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+    box.BorderSizePixel = 1
+    box.BorderColor3 = Color3.new(1, 1, 1)
+    box.Size = UDim2.new(1.5, 0, 2.5, 0)
+    box.Position = UDim2.new(-0.25, 0, -0.5, 0)
+    box.Parent = espFrame
+    
+    -- Tracer
+    local tracer = Instance.new("Frame")
+    tracer.Name = "Tracer"
+    tracer.BackgroundColor3 = teamCheck and player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+    tracer.BorderSizePixel = 0
+    tracer.Size = UDim2.new(0, 1, 0, 1000)
+    tracer.AnchorPoint = Vector2.new(0.5, 1)
+    tracer.Position = UDim2.new(0.5, 0, 1, 0)
+    tracer.Parent = espFrame
+    
+    player.CharacterAdded:Connect(function(newChar)
+        espGui.Adornee = newChar:WaitForChild("HumanoidRootPart")
+        newChar:WaitForChild("Humanoid").HealthChanged:Connect(updateHealth)
+        updateHealth()
+    end)
+    
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        if teamCheck then
+            espText.TextColor3 = player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+            box.BackgroundColor3 = player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+            tracer.BackgroundColor3 = player.Team == speaker.Team and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+        end
+    end)
+    
+    return espGui
+end
+
+local function ESP(player, teamCheck)
+    if not player.Character then
+        player.CharacterAdded:Wait()
+    end
+    return CreateESP(player, teamCheck)
+end
+
+local function ToggleESP(teamCheck)
+    if not CHMSenabled then
+        ESPenabled = not ESPenabled
+        
+        if ESPenabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= speaker then
+                    ESP(player, teamCheck)
+                end
+            end
+            
+            Players.PlayerAdded:Connect(function(player)
+                if ESPenabled then
+                    ESP(player, teamCheck)
+                end
+            end)
+            
+            Notifier.new({
+                Title = "ESP",
+                Content = "ESP has been enabled" .. (teamCheck and " (Team Check)" or ""),
+                Duration = 3,
+                Icon = "rbxassetid://120245531583106"
+            })
+        else
+            for _, child in pairs(COREGUI:GetChildren()) do
+                if string.sub(child.Name, -4) == "_ESP" then
+                    child:Destroy()
+                end
+            end
+            
+            Notifier.new({
+                Title = "ESP",
+                Content = "ESP has been disabled",
+                Duration = 3,
+                Icon = "rbxassetid://120245531583106"
+            })
+        end
+    else
+        Notifier.new({
+            Title = "ESP",
+            Content = "Disable chams (nochams) before using esp",
+            Duration = 3,
+            Icon = "rbxassetid://120245531583106"
+        })
+    end
+end
+
+
+
+local ESPTab = Window:DrawTab({
+    Name = "ESP Settings",
+    Icon = "eye",
+    EnableScrolling = true
+})
+
+local ESSettings = ESPTab:DrawSection({
+    Name = "ESP Settings",
+    Position = 'left'
+})
+
+-- ESP Toggles
+ESSettings:AddToggle({
+    Name = "Enable ESP",
+    Flag = "ESP_Enabled",
+    Default = false,
+    Callback = function(state)
+        if state then
+            ToggleESP(false)
+        else
+            ToggleESP(false)
+        end
+    end
+})
+
+ESSettings:AddToggle({
+    Name = "Team Check",
+    Flag = "ESP_TeamCheck",
+    Default = false,
+    Callback = function(state)
+        if ESPenabled then
+            -- Refresh ESP with new team check setting
+            ToggleESP(false) -- Turn off
+            ToggleESP(state) -- Turn on with new setting
+        end
+    end
+})
+
+ESSettings:AddToggle({
+    Name = "Show Names",
+    Flag = "ESP_ShowNames",
+    Default = true,
+    Callback = function(state)
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local espText = child:FindFirstChild("Frame"):FindFirstChild("ESPText")
+                if espText then
+                    espText.Visible = state
+                end
+            end
+        end
+    end
+})
+
+ESSettings:AddToggle({
+    Name = "Show Health Bar",
+    Flag = "ESP_ShowHealth",
+    Default = true,
+    Callback = function(state)
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local healthBar = child:FindFirstChild("Frame"):FindFirstChild("HealthBar")
+                if healthBar then
+                    healthBar.Visible = state
+                end
+            end
+        end
+    end
+})
+
+ESSettings:AddToggle({
+    Name = "Show Box",
+    Flag = "ESP_ShowBox",
+    Default = true,
+    Callback = function(state)
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local box = child:FindFirstChild("Frame"):FindFirstChild("Box")
+                if box then
+                    box.Visible = state
+                end
+            end
+        end
+    end
+})
+
+ESSettings:AddToggle({
+    Name = "Show Tracer",
+    Flag = "ESP_ShowTracer",
+    Default = true,
+    Callback = function(state)
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local tracer = child:FindFirstChild("Frame"):FindFirstChild("Tracer")
+                if tracer then
+                    tracer.Visible = state
+                end
+            end
+        end
+    end
+})
+
+-- ESP Colors
+local ESPColors = ESPTab:DrawSection({
+    Name = "ESP Colors",
+    Position = 'right'
+})
+
+ESPColors:AddColorPicker({
+    Name = "Enemy Color",
+    Flag = "ESP_EnemyColor",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        if not ESPenabled or not ConfigManager:GetValue("ESP_TeamCheck") then return end
+        
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local playerName = string.sub(child.Name, 1, -5)
+                local player = Players:FindFirstChild(playerName)
+                
+                if player and player.Team ~= speaker.Team then
+                    local frame = child:FindFirstChild("Frame")
+                    if frame then
+                        local espText = frame:FindFirstChild("ESPText")
+                        local box = frame:FindFirstChild("Box")
+                        local tracer = frame:FindFirstChild("Tracer")
+                        
+                        if espText then espText.TextColor3 = color end
+                        if box then box.BackgroundColor3 = color end
+                        if tracer then tracer.BackgroundColor3 = color end
+                    end
+                end
+            end
+        end
+    end
+})
+
+ESPColors:AddColorPicker({
+    Name = "Team Color",
+    Flag = "ESP_TeamColor",
+    Default = Color3.fromRGB(0, 255, 0),
+    Callback = function(color)
+        if not ESPenabled or not ConfigManager:GetValue("ESP_TeamCheck") then return end
+        
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local playerName = string.sub(child.Name, 1, -5)
+                local player = Players:FindFirstChild(playerName)
+                
+                if player and player.Team == speaker.Team then
+                    local frame = child:FindFirstChild("Frame")
+                    if frame then
+                        local espText = frame:FindFirstChild("ESPText")
+                        local box = frame:FindFirstChild("Box")
+                        local tracer = frame:FindFirstChild("Tracer")
+                        
+                        if espText then espText.TextColor3 = color end
+                        if box then box.BackgroundColor3 = color end
+                        if tracer then tracer.BackgroundColor3 = color end
+                    end
+                end
+            end
+        end
+    end
+})
+
+ESPColors:AddColorPicker({
+    Name = "Text Color",
+    Flag = "ESP_TextColor",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(color)
+        if not ESPenabled then return end
+        
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local frame = child:FindFirstChild("Frame")
+                if frame then
+                    local espText = frame:FindFirstChild("ESPText")
+                    if espText then
+                        espText.TextColor3 = color
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- Text Settings
+local TextSettings = ESPTab:DrawSection({
+    Name = "Text Settings",
+    Position = 'right'
+})
+
+TextSettings:AddSlider({
+    Name = "Text Size",
+    Min = 10,
+    Max = 30,
+    Default = 18,
+    Round = 0,
+    Flag = "ESP_TextSize",
+    Callback = function(value)
+        if not ESPenabled then return end
+        
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local frame = child:FindFirstChild("Frame")
+                if frame then
+                    local espText = frame:FindFirstChild("ESPText")
+                    if espText then
+                        espText.TextSize = value
+                    end
+                end
+            end
+        end
+    end
+})
+
+TextSettings:AddDropdown({
+    Name = "Text Font",
+    Default = "SourceSansBold",
+    Flag = "ESP_TextFont",
+    Values = {"SourceSans", "SourceSansBold", "SourceSansItalic", "Code", "Highway", "SciFi", "Arcade", "Fantasy"},
+    Callback = function(value)
+        if not ESPenabled then return end
+        
+        local fontMap = {
+            SourceSans = Enum.Font.SourceSans,
+            SourceSansBold = Enum.Font.SourceSansBold,
+            SourceSansItalic = Enum.Font.SourceSansItalic,
+            Code = Enum.Font.Code,
+            Highway = Enum.Font.Highway,
+            SciFi = Enum.Font.SciFi,
+            Arcade = Enum.Font.Arcade,
+            Fantasy = Enum.Font.Fantasy
+        }
+        
+        for _, child in pairs(COREGUI:GetChildren()) do
+            if string.sub(child.Name, -4) == "_ESP" then
+                local frame = child:FindFirstChild("Frame")
+                if frame then
+                    local espText = frame:FindFirstChild("ESPText")
+                    if espText then
+                        espText.Font = fontMap[value]
+                    end
+                end
+            end
+        end
+    end
+})
+
+
+local FlingTab = Window:DrawTab({
+    Name = "Fling",
+    Icon = "target",
+    EnableScrolling = true
+})
+
+-- Секция для обычного fling
+local FlingSection = FlingTab:DrawSection({
+    Name = "Main Fling",
+    Position = 'left'
+})
+
+-- Переменные для управления
+local flinging = false
+local walkflinging = false
+local antifling = nil
+local flingDied = nil
+
+-- Функция включения fling
+local function enableFling()
+    if flinging then return end
+    
+    flinging = true
+    for _, child in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+        if child:IsA("BasePart") then
+            child.CustomPhysicalProperties = PhysicalProperties.new(100, 0.3, 0.5)
+        end
+    end
+    
+    game:GetService("RunService").Stepped:Connect(function()
+        if not flinging then return end
+        game.Players.LocalPlayer.Character.Humanoid:ChangeState(11)
+    end)
+    
+    wait(.1)
+    local bambam = Instance.new("BodyAngularVelocity")
+    bambam.Name = "FlingVelocity"
+    bambam.Parent = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    bambam.AngularVelocity = Vector3.new(0,99999,0)
+    bambam.MaxTorque = Vector3.new(0,math.huge,0)
+    bambam.P = math.huge
+    
+    for i, v in next, game.Players.LocalPlayer.Character:GetChildren() do
+        if v:IsA("BasePart") then
+            v.CanCollide = false
+            v.Massless = true
+            v.Velocity = Vector3.new(0, 0, 0)
+        end
+    end
+    
+    local function flingDiedF()
+        disableFling()
+    end
+    
+    flingDied = game.Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid').Died:Connect(flingDiedF)
+    
+    while flinging do
+        bambam.AngularVelocity = Vector3.new(0,99999,0)
+        wait(.2)
+        bambam.AngularVelocity = Vector3.new(0,0,0)
+        wait(.1)
+    end
+end
+
+-- Функция выключения fling
+local function disableFling()
+    if not flinging then return end
+    
+    if flingDied then
+        flingDied:Disconnect()
+    end
+    
+    flinging = false
+    wait(.1)
+    
+    local speakerChar = game.Players.LocalPlayer.Character
+    if not speakerChar or not speakerChar:FindFirstChild("HumanoidRootPart") then return end
+    
+    for i,v in pairs(speakerChar.HumanoidRootPart:GetChildren()) do
+        if v.ClassName == 'BodyAngularVelocity' then
+            v:Destroy()
+        end
+    end
+    
+    for _, child in pairs(speakerChar:GetDescendants()) do
+        if child:IsA("BasePart") then
+            child.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
+        end
+    end
+end
+
+-- Функция включения walkfling
+local function enableWalkFling()
+    if walkflinging then return end
+    
+    walkflinging = true
+    local RunService = game:GetService("RunService")
+    
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        humanoid.Died:Connect(function()
+            disableWalkFling()
+        end)
+    end
+    
+    while walkflinging do
+        RunService.Heartbeat:Wait()
+        local character = game.Players.LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local vel, movel = nil, 0.1
+
+        while not (character and character.Parent and root and root.Parent) do
+            RunService.Heartbeat:Wait()
+            character = game.Players.LocalPlayer.Character
+            root = character and character:FindFirstChild("HumanoidRootPart")
+        end
+
+        vel = root.Velocity
+        root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+
+        RunService.RenderStepped:Wait()
+        if character and character.Parent and root and root.Parent then
+            root.Velocity = vel
+        end
+
+        RunService.Stepped:Wait()
+        if character and character.Parent and root and root.Parent then
+            root.Velocity = vel + Vector3.new(0, movel, 0)
+            movel = movel * -1
+        end
+    end
+end
+
+-- Функция выключения walkfling
+local function disableWalkFling()
+    walkflinging = false
+end
+
+-- Функция включения antifling
+local function enableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+        antifling = nil
+    end
+    
+    antifling = game:GetService("RunService").Stepped:Connect(function()
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                for _, v in pairs(player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- Функция выключения antifling
+local function disableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+        antifling = nil
+    end
+end
+
+FlingSection:AddToggle({
+    Name = "WalkFling",
+    Flag = "WalkFling_Toggle",
+    Default = false,
+    Callback = function(state)
+        if state then
+            enableWalkFling()
+        else
+            disableWalkFling()
+        end
+    end
+})
+
+FlingSection:AddToggle({
+    Name = "AntiFling",
+    Flag = "AntiFling_Toggle",
+    Default = false,
+    Callback = function(state)
+        if state then
+            enableAntiFling()
+        else
+            disableAntiFling()
+        end
+    end
+})
+
+-- Секция для настроек флинга
+local FlingSettings = FlingTab:DrawSection({
+    Name = "Fling Settings",
+    Position = 'right'
+})
+
+FlingSettings:AddSlider({
+    Name = "Fling Power",
+    Min = 1000,
+    Max = 99999,
+    Default = 99999,
+    Round = 0,
+    Flag = "Fling_Power",
+    Callback = function(value)
+        -- Можно добавить логику изменения силы флинга
+    end
+})
+
+FlingSettings:AddDropdown({
+    Name = "Fling Type",
+    Default = "Normal",
+    Values = {"Normal", "Reverse", "Chaos"},
+    Callback = function(value)
+        -- Можно добавить разные типы флинга
+    end
+})
+
+FlingSettings:AddButton({
+    Name = "Reset Character",
+    Callback = function()
+        game.Players.LocalPlayer.Character:BreakJoints()
+    end
+})
+
+-- Автоматическое отключение при смерти
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid").Died:Connect(function()
+        disableFling()
+        disableWalkFling()
+    end)
+end)
+
+
+-- Вкладка Настройки
+local SettingsTab = Window:DrawTab({
+    Name = "Настройки",
+    Icon = "settings",
+    Type = "Single"
+})
+
+local UISettings = SettingsTab:DrawSection({
+    Name = "Настройки интерфейса",
+    Position = "left"
+})
+
+UISettings:AddToggle({
+    Name = "Всегда показывать UI",
+    Description = "Отключает автоматическое скрытие интерфейса",
+    Default = false,
+    Callback = function(v)
+        Window.AlwayShowTab = v
+    end
+})
+
+UISettings:AddColorPicker({
+    Name = "Цвет интерфейса",
+    Description = "Изменяет основной цвет элементов",
+    Default = Compkiller.Colors.Highlight,
+    Callback = function(v)
+        Compkiller.Colors.Highlight = v
+        Compkiller:RefreshCurrentColor()
+    end
+})
+
+UISettings:AddButton({
+    Name = "Сохранить настройки",
+    Callback = function()
+        ConfigManager:Save()
+        Notifier.new({
+            Title = "Успех",
+            Content = "Настройки сохранены!",
+            Duration = 3
+        })
+    end
+})
+
+UISettings:AddButton({
+    Name = "Загрузить настройки",
+    Callback = function()
+        ConfigManager:Load()
+        Notifier.new({
+            Title = "Успех",
+            Content = "Настройки загружены!",
+            Duration = 3
+        })
+    end
+})
+
+-- Конфигурация
+local ConfigUI = Window:DrawConfig({
+    Name = "Конфигурация",
+    Icon = "folder",
+    Config = ConfigManager
+})
+
+ConfigUI:Init()
+
+-- Автозагрузка
+task.spawn(function()
+    task.wait(1)
+    ConfigManager:Load()
+end)
+
+ConfigUI:Init();

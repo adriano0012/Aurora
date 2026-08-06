@@ -1,0 +1,159 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки по умолчанию
+local TPPART_SETTINGS = {
+    Position = Vector3.new(0, 0, 0),  -- Координаты назначения
+    Rotation = Vector3.new(0, 0, 0),   -- Поворот (X,Y,Z в градусах)
+    Offset = Vector3.new(0, 0, 0)      -- Дополнительное смещение
+}
+
+-- Функция для безопасного получения объекта
+local function findObject(objectPath)
+    local success, target = pcall(function()
+        local fixedPath = objectPath:gsub('game:GetService%("', 'game:GetService(\'')
+                          :gsub('")', '\')')
+        return loadstring("return " .. fixedPath)()
+    end)
+    return if success then target else nil
+end
+
+-- Настройка параметров телепортации
+getgenv().TPPART_SETTINGS = function(settings)
+    if settings.Position then 
+        if type(settings.Position) == "string" then
+            local coords = {}
+            for num in settings.Position:gmatch("-?%d+%.?%d*") do
+                table.insert(coords, tonumber(num))
+            end
+            if #coords == 3 then
+                TPPART_SETTINGS.Position = Vector3.new(coords[1], coords[2], coords[3])
+            end
+        elseif typeof(settings.Position) == "Vector3" then
+            TPPART_SETTINGS.Position = settings.Position
+        end
+    end
+    
+    if settings.Rotation then
+        if type(settings.Rotation) == "string" then
+            local angles = {}
+            for num in settings.Rotation:gmatch("-?%d+%.?%d*") do
+                table.insert(angles, tonumber(num))
+            end
+            if #angles == 3 then
+                TPPART_SETTINGS.Rotation = Vector3.new(angles[1], angles[2], angles[3])
+            end
+        elseif typeof(settings.Rotation) == "Vector3" then
+            TPPART_SETTINGS.Rotation = settings.Rotation
+        end
+    end
+    
+    if settings.Offset then
+        if type(settings.Offset) == "string" then
+            local offsets = {}
+            for num in settings.Offset:gmatch("-?%d+%.?%d*") do
+                table.insert(offsets, tonumber(num))
+            end
+            if #offsets == 3 then
+                TPPART_SETTINGS.Offset = Vector3.new(offsets[1], offsets[2], offsets[3])
+            end
+        elseif typeof(settings.Offset) == "Vector3" then
+            TPPART_SETTINGS.Offset = settings.Offset
+        end
+    end
+    
+    print("✅ Настройки TPPART обновлены:")
+    print("Позиция:", TPPART_SETTINGS.Position)
+    print("Поворот:", TPPART_SETTINGS.Rotation, "(в градусах)")
+    print("Смещение:", TPPART_SETTINGS.Offset)
+end
+
+-- Основная функция телепортации
+getgenv().TPPART = function(objectPath, customPos, customRot, customOffset)
+    -- Получаем объект
+    local target = findObject(objectPath)
+    if not target then
+        warn("❌ Объект не найден: " .. objectPath)
+        return false
+    end
+
+    -- Обрабатываем пользовательские параметры
+    local position = TPPART_SETTINGS.Position
+    local rotation = TPPART_SETTINGS.Rotation
+    local offset = TPPART_SETTINGS.Offset
+    
+    -- Парсим кастомную позицию если передана
+    if customPos then
+        if type(customPos) == "string" then
+            local coords = {}
+            for num in customPos:gmatch("-?%d+%.?%d*") do
+                table.insert(coords, tonumber(num))
+            end
+            if #coords == 3 then
+                position = Vector3.new(coords[1], coords[2], coords[3])
+            end
+        elseif typeof(customPos) == "Vector3" then
+            position = customPos
+        end
+    end
+    
+    -- Парсим кастомный поворот если передан
+    if customRot then
+        if type(customRot) == "string" then
+            local angles = {}
+            for num in customRot:gmatch("-?%d+%.?%d*") do
+                table.insert(angles, tonumber(num))
+            end
+            if #angles == 3 then
+                rotation = Vector3.new(angles[1], angles[2], angles[3])
+            end
+        elseif typeof(customRot) == "Vector3" then
+            rotation = customRot
+        end
+    end
+    
+    -- Парсим кастомное смещение если передано
+    if customOffset then
+        if type(customOffset) == "string" then
+            local offsets = {}
+            for num in customOffset:gmatch("-?%d+%.?%d*") do
+                table.insert(offsets, tonumber(num))
+            end
+            if #offsets == 3 then
+                offset = Vector3.new(offsets[1], offsets[2], offsets[3])
+            end
+        elseif typeof(customOffset) == "Vector3" then
+            offset = customOffset
+        end
+    end
+    
+    -- Создаем CFrame с учетом позиции, поворота и смещения
+    local finalPosition = position + offset
+    local finalCFrame = CFrame.new(finalPosition) * 
+                        CFrame.Angles(
+                            math.rad(rotation.X), 
+                            math.rad(rotation.Y), 
+                            math.rad(rotation.Z)
+                        )
+    
+    -- Применяем к объекту
+    if target:IsA("BasePart") then
+        target.CFrame = finalCFrame
+    elseif target:IsA("Model") then
+        local primary = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
+        if primary then
+            target:SetPrimaryPartCFrame(finalCFrame)
+        else
+            warn("❌ У модели нет частей для телепортации")
+            return false
+        end
+    else
+        warn("❌ Можно телепортировать только BasePart или Model")
+        return false
+    end
+
+    print(string.format("✅ Объект %s телепортирован:", target.Name))
+    print("Позиция:", finalPosition)
+    print("Поворот:", rotation, "(в градусах)")
+    return true
+end

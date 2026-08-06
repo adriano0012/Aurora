@@ -1,0 +1,39 @@
+-- УЛЬТРА-ПРОСТОЙ СКРИПТ (должен работать в 100% случаев)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local me = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+print("🎯 УЛЬТРА-СКРИПТ ЗАПУЩЕН!")
+
+RunService.Heartbeat:Connect(function()
+    if not me.Character then return end
+    if not me.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local myPos = me.Character.HumanoidRootPart.Position
+    local closest = nil
+    local dist = 9999
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= me and player.Character then
+            local char = player.Character
+            if char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+                if char.Humanoid.Health > 0 then
+                    local targetPos = char.HumanoidRootPart.Position
+                    local newDist = (targetPos - myPos).Magnitude
+                    if newDist < dist then
+                        dist = newDist
+                        closest = char.HumanoidRootPart
+                    end
+                end
+            end
+        end
+    end
+    
+    if closest then
+        camera.CFrame = CFrame.lookAt(camera.CFrame.Position, closest.Position)
+    end
+end)
+
+print("✅ СКРИПТ РАБОТАЕТ! Камера должна двигаться!")

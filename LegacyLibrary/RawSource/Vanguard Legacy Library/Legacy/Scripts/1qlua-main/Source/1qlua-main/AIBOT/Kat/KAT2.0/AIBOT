@@ -1,0 +1,19 @@
+local scripts = {
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/Kat/KAT2.0/AIM",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/Kat/KAT2.0/AUTOWALK",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/Kat/KAT2.0/KAMERA",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/Kat/KAT2.0/REVOLVER"
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+
+        if not success then
+        else
+        end
+    end)()
+end

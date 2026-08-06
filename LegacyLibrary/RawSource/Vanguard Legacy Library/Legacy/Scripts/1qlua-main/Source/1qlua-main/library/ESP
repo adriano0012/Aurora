@@ -1,0 +1,182 @@
+local ESP = {
+    Active = {},
+    Connections = {},
+    Settings = {
+        Color = Color3.fromRGB(0, 255, 0),
+        Transparency = 0.5,
+        SizeOffset = Vector3.new(0.1, 0.1, 0.1)
+    }
+}
+
+-- Функция для безопасного получения объекта
+local function GetTarget(targetPath)
+    local success, target = pcall(function()
+        -- Обработка специальных символов в названиях
+        local fixedPath = targetPath:gsub('(%b[])', function(match)
+            return '[' .. match:sub(2, -2):gsub('["%[]', '\\%0') .. ']'
+        end)
+        return loadstring("return " .. fixedPath)()
+    end)
+    return success and target or nil
+end
+
+-- Создание ESP для объекта
+local function CreateESP(target)
+    if not target then return end
+    
+    if target:IsA("BasePart") then
+        -- Удаляем старую подсветку если есть
+        if ESP.Active[target] then
+            ESP.Active[target]:Destroy()
+        end
+        
+        -- Создаем новую подсветку
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "ESP_" .. target:GetFullName()
+        box.Adornee = target
+        box.AlwaysOnTop = true
+        box.ZIndex = 10
+        box.Size = target.Size + ESP.Settings.SizeOffset
+        box.Transparency = ESP.Settings.Transparency
+        box.Color3 = ESP.Settings.Color
+        box.Parent = target
+        
+        ESP.Active[target] = box
+        return true
+    elseif target:IsA("Model") then
+        -- Для моделей подсвечиваем все части
+        local success = false
+        for _, part in ipairs(target:GetDescendants()) do
+            if part:IsA("BasePart") then
+                CreateESP(part)
+                success = true
+            end
+        end
+        return success
+    end
+    return false
+end
+
+-- Удаление ESP
+local function RemoveESP(target)
+    if not target then return false end
+    
+    if target:IsA("BasePart") then
+        if ESP.Active[target] then
+            ESP.Active[target]:Destroy()
+            ESP.Active[target] = nil
+            return true
+        end
+    elseif target:IsA("Model") then
+        -- Для моделей удаляем все ESP
+        local success = false
+        for _, part in ipairs(target:GetDescendants()) do
+            if part:IsA("BasePart") and ESP.Active[part] then
+                ESP.Active[part]:Destroy()
+                ESP.Active[part] = nil
+                success = true
+            end
+        end
+        return success
+    end
+    return false
+end
+
+-- Основная функция ESP
+getgenv().ESP = function(targetPath)
+    -- Обработка разных форматов ввода
+    local target = GetTarget(targetPath)
+    
+    if not target then
+        -- Попробуем найти по имени (старая версия)
+        local found = false
+        for _, part in ipairs(workspace:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name:lower() == targetPath:lower() then
+                CreateESP(part)
+                found = true
+            end
+        end
+        
+        if not found then
+            warn("❌ Объект не найден: " .. targetPath)
+            return false
+        end
+    else
+        if not CreateESP(target) then
+            warn("❌ Не удалось создать ESP для: " .. targetPath)
+            return false
+        end
+    end
+    
+    -- Подписка на новые объекты
+    if not ESP.Connections[targetPath] then
+        ESP.Connections[targetPath] = workspace.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("BasePart") and descendant.Name:lower() == targetPath:lower() then
+                CreateESP(descendant)
+            end
+        end)
+    end
+    
+    print("✅ ESP создан для: " .. targetPath)
+    return true
+end
+
+-- Функция отключения ESP
+getgenv().UNESP = function(targetPath)
+    -- Попробуем найти конкретный объект
+    local target = GetTarget(targetPath)
+    
+    if target then
+        if RemoveESP(target) then
+            print("✅ ESP удален для: " .. targetPath)
+            return true
+        end
+    else
+        -- Удаляем все ESP с таким именем
+        local found = false
+        for part, _ in pairs(ESP.Active) do
+            if part.Name:lower() == targetPath:lower() then
+                RemoveESP(part)
+                found = true
+            end
+        end
+        
+        if not found then
+            warn("❌ ESP не найден для: " .. targetPath)
+            return false
+        end
+    end
+    
+    -- Отключаем подписку
+    if ESP.Connections[targetPath] then
+        ESP.Connections[targetPath]:Disconnect()
+        ESP.Connections[targetPath] = nil
+    end
+    
+    print("✅ ESP отключен для: " .. targetPath)
+    return true
+end
+
+-- Настройки ESP
+getgenv().ESP_SETTINGS = function(settings)
+    if settings.Color then
+        ESP.Settings.Color = settings.Color
+    end
+    if settings.Transparency then
+        ESP.Settings.Transparency = settings.Transparency
+    end
+    if settings.SizeOffset then
+        ESP.Settings.SizeOffset = settings.SizeOffset
+    end
+    
+    -- Обновляем существующие ESP
+    for _, box in pairs(ESP.Active) do
+        box.Color3 = ESP.Settings.Color
+        box.Transparency = ESP.Settings.Transparency
+        if box.Adornee then
+            box.Size = box.Adornee.Size + ESP.Settings.SizeOffset
+        end
+    end
+    
+    print("✅ Настройки ESP обновлены")
+end

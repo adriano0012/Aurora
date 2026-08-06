@@ -1,0 +1,116 @@
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+Lighting.GlobalShadows = true
+pcall(function() Lighting.Technology = Enum.Technology.ShadowMap end)
+
+for _, obj in pairs(Lighting:GetChildren()) do
+    if obj:IsA("ColorCorrectionEffect") and obj.Name == "PinkFilter" then obj:Destroy() end
+end
+
+local ColorCorrection = Instance.new("ColorCorrectionEffect")
+ColorCorrection.Name = "PinkFilter"
+ColorCorrection.Saturation = 0.6
+ColorCorrection.TintColor = Color3.fromRGB(255, 180, 220)
+ColorCorrection.Parent = Lighting
+
+local RADIUS = 100 
+local GHOST_COLOR = Color3.fromRGB(255, 100, 180)
+local activeGhosts = {}
+local keepAlive = {}
+
+local function removeEffect(part)
+    if activeGhosts[part] then
+        if activeGhosts[part].GlassTop then activeGhosts[part].GlassTop:Destroy() end
+        if activeGhosts[part].MirrorBottom then activeGhosts[part].MirrorBottom:Destroy() end
+        part.Transparency = activeGhosts[part].OriginalTransparency
+        activeGhosts[part] = nil
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    local char = Player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local params = OverlapParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {char}
+    
+    local nearbyParts = workspace:GetPartBoundsInRadius(root.Position, RADIUS, params)
+    local currentFrameParts = {}
+
+    for _, part in pairs(nearbyParts) do
+        if part:IsA("BasePart") and not part.Name:find("GhostEffect") then
+
+            local partTopY = part.Position.Y + (part.Size.Y / 2)
+            local isBelow = partTopY <= (root.Position.Y - 2.5)
+            local isFlat = part.Size.Y < part.Size.X or part.Size.Y < part.Size.Z
+            
+            if part.Transparency < 1 and part.Material ~= Enum.Material.Neon and isBelow and isFlat then
+                currentFrameParts[part] = true
+                keepAlive[part] = 60 
+
+                if not activeGhosts[part] then
+                    activeGhosts[part] = {
+                        OriginalTransparency = part.Transparency,
+                        GlassTop = part:Clone(),
+                        MirrorBottom = part:Clone()
+                    }
+
+                    local offsetDepth = part.Size.Y + 0.02
+
+                    local bottom = activeGhosts[part].MirrorBottom
+                    bottom.Name = "GhostEffect_MirrorBottom"
+                    bottom.Parent = part.Parent
+                    bottom.CFrame = part.CFrame * CFrame.new(0, -offsetDepth, 0)
+                    bottom.Transparency = activeGhosts[part].OriginalTransparency
+                    bottom.CanCollide = false
+                    bottom.Anchored = true
+                    bottom.Reflectance = 0.3
+
+                    local top = activeGhosts[part].GlassTop
+                    top.Name = "GhostEffect_GlassTop"
+                    top.Parent = part.Parent
+                    top.CFrame = part.CFrame * CFrame.new(0, 0.01, 0)
+                    top.Material = Enum.Material.Glass
+                    top.Transparency = 5
+                    top.Color = GHOST_COLOR
+                    top.CanCollide = false
+                    top.Anchored = true
+
+                    local highlight = Instance.new("Highlight")
+                    highlight.FillTransparency = 1
+                    highlight.OutlineTransparency = 1
+                    highlight.Enabled = false
+                    highlight.Parent = top
+
+                    for _, child in pairs(top:GetChildren()) do 
+                        if not (child:IsA("Highlight") or child:IsA("SpecialMesh")) then child:Destroy() end 
+                    end
+                    for _, child in pairs(bottom:GetChildren()) do 
+                        if not (child:IsA("Texture") or child:IsA("SpecialMesh") or child:IsA("Decal")) then child:Destroy() end 
+                    end
+
+                    part.Transparency = 0.5
+                else
+                    local offsetDepth = part.Size.Y + 0.02
+                    activeGhosts[part].GlassTop.CFrame = part.CFrame * CFrame.new(0, 0.01, 0)
+                    activeGhosts[part].MirrorBottom.CFrame = part.CFrame * CFrame.new(0, -offsetDepth, 0)
+                end
+            end
+        end
+    end
+
+    for part, _ in pairs(activeGhosts) do
+        if not currentFrameParts[part] then
+            keepAlive[part] = (keepAlive[part] or 0) - 1
+            if keepAlive[part] <= 0 or not part.Parent then
+                removeEffect(part)
+                keepAlive[part] = nil
+            end
+        end
+    end
+end)

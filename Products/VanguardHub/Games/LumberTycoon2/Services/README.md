@@ -1,0 +1,1 @@
+# LT2 Services`n`nReservado para serviços específicos do adaptador de LT2.

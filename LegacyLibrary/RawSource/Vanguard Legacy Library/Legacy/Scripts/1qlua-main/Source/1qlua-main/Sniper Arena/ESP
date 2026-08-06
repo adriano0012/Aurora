@@ -1,0 +1,961 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = gethui and gethui() or game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+
+local SETTINGS_FILE = "esp_settings.json"
+local BLACKLIST_FILE = "esp_blacklist.json"
+local Config = {
+    Enabled = false,
+    HeadImage = "rbxassetid://138895356591238",
+    HeadScale = 1,
+    Thickness = 1,
+    MaxDist = 1500,
+    Colors = {
+        Head = Color3.fromRGB(255, 255, 255),
+        Torso = Color3.fromRGB(255, 179, 226),
+        Arms = Color3.fromRGB(255, 179, 226),
+        Legs = Color3.fromRGB(255, 179, 226)
+    }
+}
+
+local Blacklist = {}
+local Storage = {}
+local NPCStorage = {}  -- хранилище NPC
+
+local COLOR_ON = Color3.fromRGB(0, 134, 9)
+local COLOR_OFF = Color3.fromRGB(206, 131, 188)
+
+local function saveSettings()
+    if not writefile or not Config then return end
+    local c = Config.Colors
+    local settings = {
+        Enabled = Config.Enabled,
+        HeadImage = Config.HeadImage,
+        HeadScale = Config.HeadScale,
+        Thickness = Config.Thickness,
+        MaxDist = Config.MaxDist,
+        Colors = {
+            Head  = { c.Head.R*255,  c.Head.G*255,  c.Head.B*255  },
+            Torso = { c.Torso.R*255, c.Torso.G*255, c.Torso.B*255 },
+            Arms  = { c.Arms.R*255,  c.Arms.G*255,  c.Arms.B*255  },
+            Legs  = { c.Legs.R*255,  c.Legs.G*255,  c.Legs.B*255  }
+        }
+    }
+    pcall(writefile, SETTINGS_FILE, HttpService:JSONEncode(settings))
+end
+
+local function loadSettings()
+    if not readfile then return end
+    local ok, data = pcall(readfile, SETTINGS_FILE)
+    if ok and data and data ~= "" then
+        local loaded = HttpService:JSONDecode(data)
+        if type(loaded) == "table" then
+            Config.Enabled    = loaded.Enabled
+            Config.HeadImage  = loaded.HeadImage  or Config.HeadImage
+            Config.HeadScale  = loaded.HeadScale  or 1
+            Config.Thickness  = loaded.Thickness  or 1
+            Config.MaxDist    = loaded.MaxDist     or 1500
+            if loaded.Colors then
+                if loaded.Colors.Head  then Config.Colors.Head  = Color3.fromRGB(unpack(loaded.Colors.Head))  end
+                if loaded.Colors.Torso then Config.Colors.Torso = Color3.fromRGB(unpack(loaded.Colors.Torso)) end
+                if loaded.Colors.Arms  then Config.Colors.Arms  = Color3.fromRGB(unpack(loaded.Colors.Arms))  end
+                if loaded.Colors.Legs  then Config.Colors.Legs  = Color3.fromRGB(unpack(loaded.Colors.Legs))  end
+            end
+        end
+    end
+end
+
+local function saveBlacklist()
+    if not writefile then return end
+    pcall(writefile, BLACKLIST_FILE, HttpService:JSONEncode(Blacklist))
+end
+
+local function loadBlacklist()
+    if not readfile then return end
+    local ok, data = pcall(readfile, BLACKLIST_FILE)
+    if ok and data and data ~= "" then
+        local decoded = HttpService:JSONDecode(data)
+        if type(decoded) == "table" then
+            for k, v in pairs(decoded) do
+                Blacklist[tonumber(k) or k] = v
+            end
+        end
+    end
+end
+
+loadSettings()
+loadBlacklist()
+
+local SkeletonStudioConfig = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local Title = Instance.new("TextLabel")
+local MenuBind = Instance.new("TextButton")
+local UICorner_2 = Instance.new("UICorner")
+local indicator = Instance.new("Frame")
+local UICorner_3 = Instance.new("UICorner")
+local PlayerList = Instance.new("ScrollingFrame")
+local UIListLayout = Instance.new("UIListLayout")
+local SamplePlayer = Instance.new("TextButton")
+local UICorner_4 = Instance.new("UICorner")
+local icon = Instance.new("ImageLabel")
+local UICorner_5 = Instance.new("UICorner")
+local indicator_2 = Instance.new("Frame")
+local UICorner_6 = Instance.new("UICorner")
+local Username = Instance.new("TextLabel")
+local DisplayName = Instance.new("TextLabel")
+local decorations = Instance.new("Frame")
+local UICorner_7 = Instance.new("UICorner")
+local decorations_2 = Instance.new("ImageLabel")
+local decorations_3 = Instance.new("Frame")
+local UICorner_8 = Instance.new("UICorner")
+local Torso = Instance.new("Frame")
+local UICorner_9 = Instance.new("UICorner")
+local arm = Instance.new("Frame")
+local UICorner_10 = Instance.new("UICorner")
+local decorations_4 = Instance.new("ImageLabel")
+local Head = Instance.new("ImageLabel")
+local arm_2 = Instance.new("Frame")
+local UICorner_11 = Instance.new("UICorner")
+local Legs = Instance.new("TextBox")
+local UICorner_12 = Instance.new("UICorner")
+local Arm = Instance.new("TextBox")
+local UICorner_13 = Instance.new("UICorner")
+local Torso_2 = Instance.new("TextBox")
+local UICorner_14 = Instance.new("UICorner")
+local Head_2 = Instance.new("TextBox")
+local UICorner_15 = Instance.new("UICorner")
+local legs = Instance.new("Frame")
+local UICorner_16 = Instance.new("UICorner")
+local legs_2 = Instance.new("Frame")
+local UICorner_17 = Instance.new("UICorner")
+local HeadScale = Instance.new("Frame")
+local UICorner_18 = Instance.new("UICorner")
+local TextLabel = Instance.new("TextLabel")
+local TextBox = Instance.new("TextBox")
+local UICorner_19 = Instance.new("UICorner")
+local LineScale = Instance.new("Frame")
+local UICorner_20 = Instance.new("UICorner")
+local TextLabel_2 = Instance.new("TextLabel")
+local TextBox_2 = Instance.new("TextBox")
+local UICorner_21 = Instance.new("UICorner")
+local decorations_5 = Instance.new("Frame")
+local UICorner_22 = Instance.new("UICorner")
+
+SkeletonStudioConfig.Name = "1Qlua_Ultimate_ESP"
+SkeletonStudioConfig.ResetOnSpawn = false
+SkeletonStudioConfig.IgnoreGuiInset = true
+SkeletonStudioConfig.Parent = CoreGui
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = SkeletonStudioConfig
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -254, 0.5, -163)
+MainFrame.Size = UDim2.new(0, 508, 0, 327)
+MainFrame.Active = true
+MainFrame.Visible = false
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.new(1, 1, 1)
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+local UIGradient = Instance.new("UIGradient", UIStroke)
+UIGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromHex("#191919")),
+    ColorSequenceKeypoint.new(1, Color3.fromHex("#ffa2e9"))
+}
+
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1.000
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Font = Enum.Font.Code
+Title.Text = "1Qlua_ESP"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextSize = 16.000
+
+MenuBind.Name = "MenuBind"
+MenuBind.Parent = MainFrame
+MenuBind.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MenuBind.Position = UDim2.new(0, 244, 0, 281)
+MenuBind.Size = UDim2.new(0.467, -20, 0, 30)
+MenuBind.Font = Enum.Font.SourceSans
+MenuBind.Text = "Enabled: " .. tostring(Config.Enabled)
+MenuBind.TextColor3 = Color3.fromRGB(180, 180, 180)
+MenuBind.TextSize = 14.000
+UICorner_2.CornerRadius = UDim.new(0, 4)
+UICorner_2.Parent = MenuBind
+
+indicator.Name = "indicator"
+indicator.Parent = MenuBind
+indicator.BackgroundColor3 = Config.Enabled and COLOR_ON or COLOR_OFF
+indicator.BorderSizePixel = 0
+indicator.Position = UDim2.new(0.92, -1, 0.129, 1)
+indicator.Size = UDim2.new(0, 7, 0, 20)
+UICorner_3.CornerRadius = UDim.new(0, 5)
+UICorner_3.Parent = indicator
+
+PlayerList.Name = "PlayerList"
+PlayerList.Parent = MainFrame
+PlayerList.BackgroundTransparency = 1.000
+PlayerList.Position = UDim2.new(0, 216, 0, 51)
+PlayerList.Size = UDim2.new(0.58, -20, 0.69, -130)
+PlayerList.ScrollBarThickness = 0
+UIListLayout.Parent = PlayerList
+UIListLayout.Padding = UDim.new(0, 5)
+
+SamplePlayer.Name = "SamplePlayer"
+SamplePlayer.Parent = PlayerList
+SamplePlayer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SamplePlayer.Size = UDim2.new(1, 0, 0, 35)
+SamplePlayer.Text = ""
+SamplePlayer.Visible = false
+UICorner_4.CornerRadius = UDim.new(0, 4)
+UICorner_4.Parent = SamplePlayer
+
+icon.Name = "icon"
+icon.Parent = SamplePlayer
+icon.BackgroundTransparency = 1.000
+icon.Position = UDim2.new(0, 5, 0, 5)
+icon.Size = UDim2.new(0, 25, 0, 25)
+UICorner_5.CornerRadius = UDim.new(0, 5)
+UICorner_5.Parent = icon
+
+indicator_2.Name = "indicator"
+indicator_2.Parent = SamplePlayer
+indicator_2.BackgroundColor3 = COLOR_ON
+indicator_2.BorderSizePixel = 0
+indicator_2.Position = UDim2.new(0.92, 1, 0.129, 2)
+indicator_2.Size = UDim2.new(0, 7, 0, 20)
+UICorner_6.CornerRadius = UDim.new(0, 5)
+UICorner_6.Parent = indicator_2
+
+Username.Name = "Username"
+Username.Parent = SamplePlayer
+Username.BackgroundTransparency = 1.000
+Username.Position = UDim2.new(0.16, 0, 0.65, 0)
+Username.Size = UDim2.new(0.41, 0, 0, 10)
+Username.Font = Enum.Font.Code
+Username.TextColor3 = Color3.fromRGB(127, 127, 127)
+Username.TextSize = 10.000
+Username.TextXAlignment = Enum.TextXAlignment.Left
+
+DisplayName.Name = "DisplayName"
+DisplayName.Parent = SamplePlayer
+DisplayName.BackgroundTransparency = 1.000
+DisplayName.Position = UDim2.new(0.16, 0, 0.13, 0)
+DisplayName.Size = UDim2.new(0.44, 0, 0, 20)
+DisplayName.Font = Enum.Font.Code
+DisplayName.TextColor3 = Color3.fromRGB(200, 200, 200)
+DisplayName.TextSize = 14.000
+DisplayName.TextXAlignment = Enum.TextXAlignment.Left
+
+decorations.Parent = MainFrame
+decorations.AnchorPoint = Vector2.new(0.5, 0.5)
+decorations.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+decorations.BackgroundTransparency = 0.5
+decorations.Position = UDim2.new(0.477, 6, 0, 36)
+decorations.Size = UDim2.new(0.954, 0, 0, 2)
+decorations.BorderSizePixel = 0
+UICorner_7.Parent = decorations
+
+decorations_2.Parent = MainFrame
+decorations_2.BackgroundTransparency = 1
+decorations_2.Position = UDim2.new(0.92, 3, 0.017, -2)
+decorations_2.Size = UDim2.new(0, 30, 0, 30)
+decorations_2.Image = Config.HeadImage
+decorations_2.BorderSizePixel = 0
+
+decorations_3.Parent = MainFrame
+decorations_3.AnchorPoint = Vector2.new(0.5, 0.5)
+decorations_3.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+decorations_3.BackgroundTransparency = 0.5
+decorations_3.Position = UDim2.new(0.389, 6, 0.452, 36)
+decorations_3.Size = UDim2.new(0.005, 0, 0.895, 2)
+decorations_3.BorderSizePixel = 0
+UICorner_8.Parent = decorations_3
+
+decorations_4.Parent = MainFrame
+decorations_4.BackgroundTransparency = 1
+decorations_4.Position = UDim2.new(0.031, -2, 0.009, -2)
+decorations_4.Size = UDim2.new(0, 30, 0, 30)
+decorations_4.Image = Config.HeadImage
+decorations_4.BorderSizePixel = 0
+
+decorations_5.Parent = MainFrame
+decorations_5.AnchorPoint = Vector2.new(0.5, 0.5)
+decorations_5.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+decorations_5.BackgroundTransparency = 0.5
+decorations_5.Position = UDim2.new(0.673, 6, 0.385, 36)
+decorations_5.Size = UDim2.new(0.562, 0, 0, 2)
+decorations_5.BorderSizePixel = 0
+UICorner_22.Parent = decorations_5
+
+Torso.Parent = MainFrame
+Torso.AnchorPoint = Vector2.new(0.5, 0.5)
+Torso.BackgroundColor3 = Config.Colors.Torso
+Torso.Position = UDim2.new(0.169, -7, 0.484, 19)
+Torso.Size = UDim2.new(0.026, 0, 0.282, 2)
+Torso.BorderSizePixel = 0
+UICorner_9.Parent = Torso
+
+arm.Parent = MainFrame
+arm.AnchorPoint = Vector2.new(0.5, 0.5)
+arm.BackgroundColor3 = Config.Colors.Arms
+arm.Position = UDim2.new(0.117, -5, 0.631, -61)
+arm.Rotation = 45
+arm.Size = UDim2.new(0.024, 0, 0.198, 2)
+arm.BorderSizePixel = 0
+UICorner_10.Parent = arm
+
+arm_2.Parent = MainFrame
+arm_2.AnchorPoint = Vector2.new(0.5, 0.5)
+arm_2.BackgroundColor3 = Config.Colors.Arms
+arm_2.Position = UDim2.new(0.117, 43, 0.631, -61)
+arm_2.Rotation = -45
+arm_2.Size = UDim2.new(0.024, 0, 0.198, 2)
+arm_2.BorderSizePixel = 0
+UICorner_11.Parent = arm_2
+
+legs.Parent = MainFrame
+legs.AnchorPoint = Vector2.new(0.5, 0.5)
+legs.BackgroundColor3 = Config.Colors.Legs
+legs.Position = UDim2.new(0.117, -5, 0.673, 19)
+legs.Rotation = 45
+legs.Size = UDim2.new(0.024, 0, 0.198, 2)
+legs.BorderSizePixel = 0
+UICorner_16.Parent = legs
+
+legs_2.Parent = MainFrame
+legs_2.AnchorPoint = Vector2.new(0.5, 0.5)
+legs_2.BackgroundColor3 = Config.Colors.Legs
+legs_2.Position = UDim2.new(0.117, 43, 0.673, 19)
+legs_2.Rotation = -45
+legs_2.Size = UDim2.new(0.024, 0, 0.198, 2)
+legs_2.BorderSizePixel = 0
+UICorner_17.Parent = legs_2
+
+Head.Parent = MainFrame
+Head.BackgroundTransparency = 1
+Head.Position = UDim2.new(0.123, -13, 0.357, -51)
+Head.Size = UDim2.new(0, 63, 0, 57)
+Head.Image = Config.HeadImage
+Head.BorderSizePixel = 0
+
+Legs.Parent = MainFrame
+Legs.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Legs.Position = UDim2.new(0.081, 10, 0.833, 0)
+Legs.Size = UDim2.new(0.113, 0, 0.075, 0)
+Legs.Font = Enum.Font.GothamBold
+Legs.Text = string.format("%d,%d,%d",
+    Config.Colors.Legs.R*255, Config.Colors.Legs.G*255, Config.Colors.Legs.B*255)
+Legs.TextColor3 = Color3.fromRGB(255, 255, 255)
+Legs.TextSize = 11
+UICorner_12.Parent = Legs
+
+Arm.Parent = MainFrame
+Arm.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Arm.Position = UDim2.new(0.252, 10, 0.417, -7)
+Arm.Size = UDim2.new(0.113, 0, 0.075, 0)
+Arm.Font = Enum.Font.GothamBold
+Arm.Text = string.format("%d,%d,%d",
+    Config.Colors.Arms.R*255, Config.Colors.Arms.G*255, Config.Colors.Arms.B*255)
+Arm.TextColor3 = Color3.fromRGB(255, 255, 255)
+Arm.TextSize = 11
+UICorner_13.Parent = Arm
+
+Torso_2.Parent = MainFrame
+Torso_2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Torso_2.Position = UDim2.new(0.252, 10, 0.594, -7)
+Torso_2.Size = UDim2.new(0.113, 0, 0.075, 0)
+Torso_2.Font = Enum.Font.GothamBold
+Torso_2.Text = string.format("%d,%d,%d",
+    Config.Colors.Torso.R*255, Config.Colors.Torso.G*255, Config.Colors.Torso.B*255)
+Torso_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+Torso_2.TextSize = 11
+UICorner_14.Parent = Torso_2
+
+Head_2.Parent = MainFrame
+Head_2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Head_2.Position = UDim2.new(0.081, 10, 0.227, -35)
+Head_2.Size = UDim2.new(0.113, 0, 0.075, 0)
+Head_2.Font = Enum.Font.GothamBold
+Head_2.Text = Config.HeadImage:match("(%d+)") or "138895356591238"
+Head_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+Head_2.TextSize = 11
+UICorner_15.Parent = Head_2
+
+HeadScale.Parent = MainFrame
+HeadScale.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+HeadScale.Position = UDim2.new(0.509, 0, 0.547, 0)
+HeadScale.Size = UDim2.new(0.362, 0, 0, 45)
+HeadScale.BorderSizePixel = 0
+UICorner_18.Parent = HeadScale
+TextLabel.Parent = HeadScale
+TextLabel.BackgroundTransparency = 1
+TextLabel.Position = UDim2.new(0.05, 0, 0, 0)
+TextLabel.Size = UDim2.new(0.6, 0, 1, 0)
+TextLabel.Font = Enum.Font.Gotham
+TextLabel.Text = "Head Scale"
+TextLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TextLabel.TextSize = 12
+TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+TextBox.Parent = HeadScale
+TextBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TextBox.Position = UDim2.new(0.65, 0, 0.2, 0)
+TextBox.Size = UDim2.new(0.3, 0, 0.6, 0)
+TextBox.Font = Enum.Font.GothamBold
+TextBox.Text = tostring(Config.HeadScale)
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.TextSize = 11
+UICorner_19.Parent = TextBox
+
+LineScale.Parent = MainFrame
+LineScale.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+LineScale.Position = UDim2.new(0.509, 0, 0.700, 0)
+LineScale.Size = UDim2.new(0.36, 0, 0, 45)
+LineScale.BorderSizePixel = 0
+UICorner_20.Parent = LineScale
+TextLabel_2.Parent = LineScale
+TextLabel_2.BackgroundTransparency = 1
+TextLabel_2.Position = UDim2.new(0.05, 0, 0, 0)
+TextLabel_2.Size = UDim2.new(0.6, 0, 1, 0)
+TextLabel_2.Font = Enum.Font.Gotham
+TextLabel_2.Text = "Line Thickness"
+TextLabel_2.TextColor3 = Color3.fromRGB(200, 200, 200)
+TextLabel_2.TextSize = 12
+TextLabel_2.TextXAlignment = Enum.TextXAlignment.Left
+TextBox_2.Parent = LineScale
+TextBox_2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TextBox_2.Position = UDim2.new(0.65, 0, 0.2, 0)
+TextBox_2.Size = UDim2.new(0.3, 0, 0.6, 0)
+TextBox_2.Font = Enum.Font.GothamBold
+TextBox_2.Text = tostring(Config.Thickness)
+TextBox_2.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox_2.TextSize = 11
+UICorner_21.Parent = TextBox_2
+
+-- [[ ГРАДИЕНТ (отдельно от ESP, пониженная нагрузка) ]]
+local ROTATION_SPEED = 300
+local currentRotation = 0
+RunService.Heartbeat:Connect(function(dt)
+    currentRotation = currentRotation + ROTATION_SPEED * dt
+    if currentRotation > 180 then currentRotation = -180
+    elseif currentRotation < -180 then currentRotation = 180 end
+    UIGradient.Rotation = currentRotation
+end)
+
+-- [[ ДРАГГИНГ ОКНА ]]
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = dragInput.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+MenuBind.MouseButton1Click:Connect(function()
+    Config.Enabled = not Config.Enabled
+    MenuBind.Text = "Enabled: " .. tostring(Config.Enabled)
+    indicator.BackgroundColor3 = Config.Enabled and COLOR_ON or COLOR_OFF
+    saveSettings()
+end)
+
+local function setupColorInput(inputBox, key, visualFrames)
+    inputBox.FocusLost:Connect(function()
+        local r, g, b = inputBox.Text:match("(%d+)[%s,]+(%d+)[%s,]+(%d+)")
+        if r and g and b then
+            local color = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+            Config.Colors[key] = color
+            for _, f in pairs(visualFrames) do f.BackgroundColor3 = color end
+            saveSettings()
+        end
+    end)
+end
+
+setupColorInput(Legs, "Legs", {legs, legs_2})
+setupColorInput(Arm, "Arms", {arm, arm_2})
+setupColorInput(Torso_2, "Torso", {Torso})
+
+Head_2.FocusLost:Connect(function()
+    local txt = Head_2.Text:match("%d+")
+    if txt then
+        Config.HeadImage = "rbxassetid://" .. txt
+        Head.Image = Config.HeadImage
+        decorations_2.Image = Config.HeadImage
+        decorations_4.Image = Config.HeadImage
+        for _, assets in pairs(Storage) do
+            if assets.HeadImg then assets.HeadImg.Image = Config.HeadImage end
+        end
+        saveSettings()
+    end
+end)
+
+TextBox.FocusLost:Connect(function()
+    Config.HeadScale = tonumber(TextBox.Text) or 1
+    saveSettings()
+end)
+TextBox_2.FocusLost:Connect(function()
+    Config.Thickness = tonumber(TextBox_2.Text) or 1
+    saveSettings()
+end)
+
+local function UpdatePlayerList()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == Players.LocalPlayer then continue end
+        local uid = p.UserId
+        if not PlayerList:FindFirstChild(tostring(uid)) then
+            local card = SamplePlayer:Clone()
+            card.Visible = true
+            card.Name = tostring(uid)
+            card:FindFirstChild("Username").Text = "@" .. p.Name
+            card:FindFirstChild("DisplayName").Text = p.DisplayName
+
+            task.spawn(function()
+                local s, img = pcall(function()
+                    return Players:GetUserThumbnailAsync(uid, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+                end)
+                if s and img then
+                    local ic = card:FindFirstChild("icon")
+                    if ic then ic.Image = img end
+                end
+            end)
+
+            local pInd = card:FindFirstChild("indicator")
+            pInd.BackgroundColor3 = Blacklist[uid] and COLOR_OFF or COLOR_ON
+            card.MouseButton1Click:Connect(function()
+                Blacklist[uid] = not Blacklist[uid]
+                pInd.BackgroundColor3 = Blacklist[uid] and COLOR_OFF or COLOR_ON
+                saveBlacklist()
+            end)
+            card.Parent = PlayerList
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoving:Connect(function(p)
+    local card = PlayerList:FindFirstChild(tostring(p.UserId))
+    if card then card:Destroy() end
+    local assets = Storage[p]
+    if assets then
+        if assets.HeadImg   then assets.HeadImg:Destroy()   end
+        if assets.AvatarImg then assets.AvatarImg:Destroy() end
+        if assets.HpText    then assets.HpText:Remove()     end
+        if assets.HpBarBg   then assets.HpBarBg:Remove()    end
+        if assets.HpBarFill then assets.HpBarFill:Remove()  end
+        for _, l in pairs(assets.Lines or {}) do l:Remove() end
+        Storage[p] = nil
+    end
+end)
+UpdatePlayerList()
+
+local Bones = {
+    R15 = {
+        {"UpperTorso","Head","Head"},
+        {"UpperTorso","LeftUpperArm","Arms"}, {"LeftUpperArm","LeftLowerArm","Arms"},
+        {"UpperTorso","RightUpperArm","Arms"}, {"RightUpperArm","RightLowerArm","Arms"},
+        {"UpperTorso","LowerTorso","Torso"},
+        {"LowerTorso","LeftUpperLeg","Legs"}, {"LeftUpperLeg","LeftLowerLeg","Legs"},
+        {"LowerTorso","RightUpperLeg","Legs"}, {"RightUpperLeg","RightLowerLeg","Legs"}
+    },
+    R6 = {
+        {"Torso","Head","Head"},
+        {"Torso","Left Arm","Arms"}, {"Torso","Right Arm","Arms"},
+        {"Torso","Left Leg","Legs"}, {"Torso","Right Leg","Legs"}
+    }
+}
+
+local function addESP(p)
+    if p == Players.LocalPlayer then return end
+    local assets = {
+        Lines = {},
+        HeadImg  = Instance.new("ImageLabel", SkeletonStudioConfig),
+        AvatarImg = Instance.new("ImageLabel", SkeletonStudioConfig),
+        HpText    = Drawing.new("Text"),
+        HpBarBg   = Drawing.new("Square"),
+        HpBarFill = Drawing.new("Square")
+    }
+    assets.HeadImg.BackgroundTransparency = 1
+    assets.HeadImg.AnchorPoint = Vector2.new(0.5, 0.5)
+    assets.HeadImg.Image = Config.HeadImage
+    assets.HeadImg.Visible = false
+    assets.HeadImg.ZIndex = 100
+
+    assets.AvatarImg.BackgroundTransparency = 1
+    assets.AvatarImg.AnchorPoint = Vector2.new(0.5, 0.5)
+    assets.AvatarImg.Size = UDim2.new(0, 50, 0, 50)
+    assets.AvatarImg.Visible = false
+    assets.AvatarImg.ZIndex = 90
+    task.spawn(function()
+        local s, img = pcall(function()
+            return Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        end)
+        if s and img and assets.AvatarImg then
+            assets.AvatarImg.Image = img
+        end
+    end)
+
+    assets.HpText.Visible = false
+    assets.HpText.Color = Color3.fromRGB(255, 255, 255)
+    assets.HpText.Outline = true
+    assets.HpText.OutlineColor = Color3.new(0,0,0)
+    assets.HpText.Size = 14
+    assets.HpText.Center = true
+
+    assets.HpBarBg.Visible = false
+    assets.HpBarBg.Color = Color3.fromRGB(40, 40, 40)
+    assets.HpBarBg.Filled = true
+    assets.HpBarBg.Thickness = 1
+    assets.HpBarBg.Transparency = 0.1
+
+    assets.HpBarFill.Visible = false
+    assets.HpBarFill.Filled = true
+    assets.HpBarFill.Thickness = 0
+
+    for i = 1, 12 do
+        local l = Drawing.new("Line")
+        l.Visible = false
+        l.Transparency = 1
+        l.ZIndex = 1
+        table.insert(assets.Lines, l)
+    end
+    Storage[p] = assets
+end
+
+for _, p in pairs(Players:GetPlayers()) do addESP(p) end
+Players.PlayerAdded:Connect(addESP)
+
+-- ===== NPC ESP =====
+local function addNPC(model)
+    if NPCStorage[model] then return end
+    local assets = {
+        Lines = {},
+        HeadDot = Drawing.new("Circle"),   -- белая точка на голове
+        HpText  = Drawing.new("Text"),
+        HpBarBg = Drawing.new("Square"),
+        HpBarFill = Drawing.new("Square"),
+    }
+    assets.HeadDot.Visible = false
+    assets.HeadDot.Filled = true
+    assets.HeadDot.Color = Color3.fromRGB(255, 255, 255)
+    assets.HeadDot.Thickness = 0
+    assets.HeadDot.Transparency = 1
+
+    assets.HpText.Visible = false
+    assets.HpText.Color = Color3.fromRGB(255, 255, 255)
+    assets.HpText.Outline = true
+    assets.HpText.OutlineColor = Color3.new(0,0,0)
+    assets.HpText.Size = 14
+    assets.HpText.Center = true
+
+    assets.HpBarBg.Visible = false
+    assets.HpBarBg.Color = Color3.fromRGB(40, 40, 40)
+    assets.HpBarBg.Filled = true
+    assets.HpBarBg.Thickness = 1
+    assets.HpBarBg.Transparency = 0.1
+
+    assets.HpBarFill.Visible = false
+    assets.HpBarFill.Filled = true
+    assets.HpBarFill.Thickness = 0
+
+    for i = 1, 12 do
+        local l = Drawing.new("Line")
+        l.Visible = false
+        l.Transparency = 1
+        l.ZIndex = 1
+        table.insert(assets.Lines, l)
+    end
+    NPCStorage[model] = assets
+end
+
+local function removeNPC(model)
+    local assets = NPCStorage[model]
+    if not assets then return end
+    if assets.HeadDot then assets.HeadDot:Remove() end
+    if assets.HpText then assets.HpText:Remove() end
+    if assets.HpBarBg then assets.HpBarBg:Remove() end
+    if assets.HpBarFill then assets.HpBarFill:Remove() end
+    for _, l in pairs(assets.Lines or {}) do l:Remove() end
+    NPCStorage[model] = nil
+end
+
+local function isPlayerCharacter(model)
+    return Players:GetPlayerFromCharacter(model) ~= nil
+end
+
+local function scanNPCs()
+    for _, descendant in ipairs(workspace:GetDescendants()) do
+        if descendant:IsA("Humanoid") then
+            local model = descendant.Parent
+            if model and not NPCStorage[model] and not isPlayerCharacter(model) then
+                addNPC(model)
+            end
+        end
+    end
+    -- очистка мёртвых/удалённых NPC
+    for model, _ in pairs(NPCStorage) do
+        if not model:IsDescendantOf(workspace) then
+            removeNPC(model)
+        else
+            local hum = model:FindFirstChildOfClass("Humanoid")
+            if not hum or hum.Health <= 0 then
+                removeNPC(model)
+            end
+        end
+    end
+end
+
+scanNPCs()
+spawn(function()
+    while true do
+        wait(5)
+        scanNPCs()
+    end
+end)
+
+-- [[ Константы для ESP ]]
+local AVATAR_OFFSET = Vector3.new(0, -2.5, 0)
+local HP_OFFSET     = Vector3.new(0,  9,   0)
+local BAR_WIDTH     = 60
+local BAR_HEIGHT    = 1
+local HALF_BAR      = BAR_WIDTH / 2
+
+local function hideAssets(assets)
+    assets.HeadImg.Visible   = false
+    assets.AvatarImg.Visible = false
+    assets.HpText.Visible    = false
+    assets.HpBarBg.Visible   = false
+    assets.HpBarFill.Visible = false
+    for _, l in pairs(assets.Lines) do l.Visible = false end
+end
+
+local function hideNPCAssets(assets)
+    assets.HeadDot.Visible   = false
+    assets.HpText.Visible    = false
+    assets.HpBarBg.Visible   = false
+    assets.HpBarFill.Visible = false
+    for _, l in pairs(assets.Lines) do l.Visible = false end
+end
+
+RunService.RenderStepped:Connect(function()
+    local cam     = workspace.CurrentCamera
+    local camPos  = cam.CFrame.Position
+    local maxDist = Config.MaxDist
+    local enabled = Config.Enabled
+    local colors  = Config.Colors
+    local thick   = Config.Thickness
+    local hScale  = Config.HeadScale
+
+    -- игроки
+    for player, assets in next, Storage do
+        if not enabled or Blacklist[player.UserId] then
+            hideAssets(assets)
+            continue
+        end
+
+        local char = player.Character
+        local hum  = char and char:FindFirstChildOfClass("Humanoid")
+        local head = char and char:FindFirstChild("Head")
+
+        if not (head and hum and hum.Health > 0) then
+            hideAssets(assets)
+            continue
+        end
+
+        local headPos, onScreen = cam:WorldToViewportPoint(head.Position)
+        local dist = (head.Position - camPos).Magnitude
+
+        if not onScreen or dist >= maxDist then
+            hideAssets(assets)
+            continue
+        end
+
+        local hSize = (2500 / dist) * hScale
+        assets.HeadImg.Size     = UDim2.new(0, hSize, 0, hSize)
+        assets.HeadImg.Position = UDim2.new(0, headPos.X, 0, headPos.Y)
+        assets.HeadImg.Visible  = true
+
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+            or char:FindFirstChild("UpperTorso")
+            or char:FindFirstChild("Torso")
+
+        if rootPart then
+            local footVec, footOn = cam:WorldToViewportPoint(rootPart.Position + AVATAR_OFFSET)
+            if footOn then
+                local avatarSize = (1500 / dist) * hScale
+                assets.AvatarImg.Size     = UDim2.new(0, avatarSize, 0, avatarSize)
+                assets.AvatarImg.Position = UDim2.new(0, footVec.X, 0, footVec.Y)
+                assets.AvatarImg.Visible  = true
+
+                local hpVec, hpOn = cam:WorldToViewportPoint(rootPart.Position + AVATAR_OFFSET + HP_OFFSET)
+                if hpOn then
+                    local hp      = hum.Health / hum.MaxHealth
+                    local barX    = hpVec.X - HALF_BAR
+                    local barY    = hpVec.Y + 16
+
+                    assets.HpText.Text     = string.format("%.0f%%", hp * 100)
+                    assets.HpText.Position = Vector2.new(hpVec.X, hpVec.Y)
+                    assets.HpText.Visible  = true
+
+                    assets.HpBarBg.Position = Vector2.new(barX, barY)
+                    assets.HpBarBg.Size     = Vector2.new(BAR_WIDTH, BAR_HEIGHT)
+                    assets.HpBarBg.Visible  = true
+
+                    assets.HpBarFill.Position = Vector2.new(barX, barY)
+                    assets.HpBarFill.Size     = Vector2.new(BAR_WIDTH * hp, BAR_HEIGHT)
+                    assets.HpBarFill.Color    = Color3.fromRGB(255 - 255*hp, 255*hp, 0)
+                    assets.HpBarFill.Visible  = true
+                else
+                    assets.HpText.Visible    = false
+                    assets.HpBarBg.Visible   = false
+                    assets.HpBarFill.Visible = false
+                end
+            else
+                assets.AvatarImg.Visible = false
+                assets.HpText.Visible    = false
+                assets.HpBarBg.Visible   = false
+                assets.HpBarFill.Visible = false
+            end
+        else
+            assets.AvatarImg.Visible = false
+            assets.HpText.Visible    = false
+            assets.HpBarBg.Visible   = false
+            assets.HpBarFill.Visible = false
+        end
+
+        local rig = hum.RigType == Enum.HumanoidRigType.R15 and Bones.R15 or Bones.R6
+        for i, bone in ipairs(rig) do
+            local p1   = char:FindFirstChild(bone[1])
+            local p2   = char:FindFirstChild(bone[2])
+            local line = assets.Lines[i]
+            if p1 and p2 and line then
+                local pos1, vis1 = cam:WorldToViewportPoint(p1.Position)
+                local pos2, vis2 = cam:WorldToViewportPoint(p2.Position)
+                if vis1 and vis2 then
+                    line.Visible    = true
+                    line.From       = Vector2.new(pos1.X, pos1.Y)
+                    line.To         = Vector2.new(pos2.X, pos2.Y)
+                    line.Color      = colors[bone[3]]
+                    line.Thickness  = thick
+                else
+                    line.Visible = false
+                end
+            elseif line then
+                line.Visible = false
+            end
+        end
+    end
+
+    -- NPC
+    for model, assets in next, NPCStorage do
+        if not enabled then
+            hideNPCAssets(assets)
+            continue
+        end
+
+        local humanoid = model:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+            hideNPCAssets(assets)
+            continue
+        end
+
+        local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+        if not head then
+            hideNPCAssets(assets)
+            continue
+        end
+
+        local headPos, onScreen = cam:WorldToViewportPoint(head.Position)
+        local dist = (head.Position - camPos).Magnitude
+        if not onScreen or dist >= maxDist then
+            hideNPCAssets(assets)
+            continue
+        end
+
+        -- точка на голове
+        local headSize = (2500 / dist) * hScale * 0.5
+        assets.HeadDot.Radius = headSize
+        assets.HeadDot.Position = Vector2.new(headPos.X, headPos.Y)
+        assets.HeadDot.Visible = true
+
+        -- полоса здоровья
+        local hpVec, hpOn = cam:WorldToViewportPoint(head.Position + Vector3.new(0, 3, 0))
+        if hpOn then
+            local hp = humanoid.Health / humanoid.MaxHealth
+            local barX = hpVec.X - HALF_BAR
+            local barY = hpVec.Y
+
+            assets.HpText.Text = string.format("%.0f%%", hp * 100)
+            assets.HpText.Position = Vector2.new(hpVec.X, hpVec.Y)
+            assets.HpText.Visible = true
+
+            assets.HpBarBg.Position = Vector2.new(barX, barY)
+            assets.HpBarBg.Size = Vector2.new(BAR_WIDTH, BAR_HEIGHT)
+            assets.HpBarBg.Visible = true
+
+            assets.HpBarFill.Position = Vector2.new(barX, barY)
+            assets.HpBarFill.Size = Vector2.new(BAR_WIDTH * hp, BAR_HEIGHT)
+            assets.HpBarFill.Color = Color3.fromRGB(255 - 255*hp, 255*hp, 0)
+            assets.HpBarFill.Visible = true
+        else
+            assets.HpText.Visible = false
+            assets.HpBarBg.Visible = false
+            assets.HpBarFill.Visible = false
+        end
+
+        -- скелет
+        local rigType = humanoid.RigType
+        local rig = (rigType == Enum.HumanoidRigType.R6) and Bones.R6 or Bones.R15
+        for i, bone in ipairs(rig) do
+            local p1 = model:FindFirstChild(bone[1])
+            local p2 = model:FindFirstChild(bone[2])
+            local line = assets.Lines[i]
+            if p1 and p2 and line then
+                local pos1, vis1 = cam:WorldToViewportPoint(p1.Position)
+                local pos2, vis2 = cam:WorldToViewportPoint(p2.Position)
+                if vis1 and vis2 then
+                    line.Visible = true
+                    line.From = Vector2.new(pos1.X, pos1.Y)
+                    line.To = Vector2.new(pos2.X, pos2.Y)
+                    line.Color = colors[bone[3]]
+                    line.Thickness = thick
+                else
+                    line.Visible = false
+                end
+            elseif line then
+                line.Visible = false
+            end
+        end
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(i, proc)
+    if not proc and i.KeyCode == Enum.KeyCode.P then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)

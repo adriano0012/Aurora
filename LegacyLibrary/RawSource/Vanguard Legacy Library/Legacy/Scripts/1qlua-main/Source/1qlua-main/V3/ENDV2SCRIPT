@@ -1,0 +1,77 @@
+
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local keywords = {"redonyx", "watermark"}
+local targetPosition = UDim2.new(0.5, 0, 1, -30) 
+
+local function collectGuiObjects(instance, result)
+    result = result or {}
+    for _, obj in ipairs(instance:GetChildren()) do
+        local nameLower = obj.Name:lower()
+        local matched = false
+        for _, kw in ipairs(keywords) do
+            if nameLower:find(kw) then
+                matched = true
+                break
+            end
+        end
+
+        if matched then
+            if obj:IsA("GuiObject") then
+                table.insert(result, obj)
+            else
+                local function addDescendants(parent)
+                    for _, child in ipairs(parent:GetChildren()) do
+                        if child:IsA("GuiObject") then
+                            table.insert(result, child)
+                        end
+                        addDescendants(child)
+                    end
+                end
+                addDescendants(obj)
+            end
+        else
+            collectGuiObjects(obj, result)
+        end
+    end
+    return result
+end
+
+local function animateObjects()
+    local objects = collectGuiObjects(CoreGui)
+    if #objects == 0 then
+        return
+    end
+    for _, obj in ipairs(objects) do
+        if not obj or not obj.Parent then continue end
+
+        local tweenInfo = TweenInfo.new(
+            0.5,                    
+            Enum.EasingStyle.Quad,
+            Enum.EasingDirection.Out
+        )
+
+        local targetProps = {
+            Size = UDim2.fromOffset(30, 30),
+            Position = targetPosition,
+            Rotation = rotationTarget,
+            BackgroundTransparency = 0.8 
+        }
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            targetProps.TextTransparency = 0.8
+        elseif obj:IsA("ImageLabel") then
+            targetProps.ImageTransparency = 0.8
+        end
+
+        local tween = TweenService:Create(obj, tweenInfo, targetProps)
+        tween:Play()
+        tween.Completed:Connect(function()
+            if obj and obj.Parent then
+                obj:Destroy()
+            end
+        end)
+    end
+end
+
+animateObjects()

@@ -1,0 +1,1829 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Проверяем, что LocalPlayer существует
+if not LocalPlayer then
+    repeat task.wait() until Players.LocalPlayer
+    LocalPlayer = Players.LocalPlayer
+end
+
+-- Переменные для телепортации
+local teleportEnabled = false
+local teleportLoop = nil
+local currentTarget = nil
+local isTeleporting = false
+local teleportMode = "Teleport"
+local teleportDelay = 1
+local flySpeed = 50
+local offset = Vector3.new(0, 0, 0)
+local playerList = {}
+local teleportKeybind = Enum.KeyCode.KeypadZero
+local faceTarget = false
+
+-- НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЗАПРЕТНЫХ ЗОН
+local restrictedAreas = {} -- {position = Vector3, radius = number}
+local minYLevel = -500 -- Минимальный уровень Y по умолчанию
+local configs = {} -- Таблица для хранения конфигураций
+
+-- Проверяем доступность функций для работы с файлами
+local canUseFiles = false
+if pcall(function() 
+    return writefile and readfile and listfiles and isfile and makefolder 
+end) then
+    canUseFiles = true
+    print("Функции файлов доступны")
+else
+    print("Функции файлов недоступны")
+end
+
+-- Создаем папку для конфигов если доступны файлы
+if canUseFiles then
+    pcall(function()
+        makefolder("LoopTP_Configs")
+    end)
+end
+
+-- Функция для сохранения конфига в файл
+local function saveConfigToFile(configName, configData)
+    if not canUseFiles then return false end
+    
+    local success, result = pcall(function()
+        local jsonData = HttpService:JSONEncode(configData)
+        writefile("LoopTP_Configs/" .. configName .. ".json", jsonData)
+        return true
+    end)
+    
+    return success
+end
+
+-- Функция для загрузки конфига из файла
+local function loadConfigFromFile(configName)
+    if not canUseFiles then return nil end
+    
+    local success, result = pcall(function()
+        local filePath = "LoopTP_Configs/" .. configName .. ".json"
+        if isfile(filePath) then
+            local jsonData = readfile(filePath)
+            return HttpService:JSONDecode(jsonData)
+        end
+        return nil
+    end)
+    
+    if success then
+        return result
+    end
+    return nil
+end
+
+-- Функция для получения списка конфигов из файлов
+local function getConfigsFromFiles()
+    if not canUseFiles then return {} end
+    
+    local configList = {}
+    local success, files = pcall(function()
+        return listfiles("LoopTP_Configs")
+    end)
+    
+    if success and files then
+        for _, filePath in ipairs(files) do
+            local fileName = string.match(filePath, "LoopTP_Configs/(.+)%.json$")
+            if fileName then
+                table.insert(configList, fileName)
+            end
+        end
+    end
+    
+    return configList
+end
+
+-- Функция для загрузки всех конфигов при старте
+local function loadAllConfigs()
+    if canUseFiles then
+        local fileConfigs = getConfigsFromFiles()
+        for _, configName in ipairs(fileConfigs) do
+            local config = loadConfigFromFile(configName)
+            if config then
+                configs[configName] = config
+            end
+        end
+    end
+end
+
+-- Загружаем все конфиги при старте
+loadAllConfigs()
+
+-- Оптимизация: кеш для проверки позиций
+local positionCheckCache = {}
+local lastPositionCheck = 0
+local POSITION_CHECK_INTERVAL = 0.5 -- Проверяем позицию каждые 0.5 секунды
+
+-- Создаем основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 999999
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Основной фрейм
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 550)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Скругление углов основного окна
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopBar
+
+-- Заголовок
+local TitleText = Instance.new("TextLabel")
+TitleText.Name = "TitleText"
+TitleText.Size = UDim2.new(0, 200, 1, 0)
+TitleText.Position = UDim2.new(0, 55, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "LoopTP Menu"
+TitleText.TextColor3 = Color3.fromRGB(253, 104, 159)
+TitleText.Font = Enum.Font.SourceSansBold
+TitleText.TextSize = 31
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TopBar
+
+-- Кнопки управления
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Parent = TopBar
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.Font = Enum.Font.SourceSansBold
+MinimizeText.TextSize = 20
+MinimizeText.Parent = MinimizeButton
+
+local MinimizeButtonClick = Instance.new("ImageButton")
+MinimizeButtonClick.Name = "MinimizeButtonClick"
+MinimizeButtonClick.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButtonClick.BackgroundTransparency = 1
+MinimizeButtonClick.Parent = MinimizeButton
+
+-- Кнопка "Закрыть"
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.Parent = TopBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.Font = Enum.Font.SourceSansBold
+CloseText.TextSize = 18
+CloseText.Parent = CloseButton
+
+local CloseButtonClick = Instance.new("ImageButton")
+CloseButtonClick.Name = "CloseButtonClick"
+CloseButtonClick.Size = UDim2.new(1, 0, 1, 0)
+CloseButtonClick.BackgroundTransparency = 1
+CloseButtonClick.Parent = CloseButton
+
+-- Область контента
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, -20, 1, -70)
+ContentFrame.Position = UDim2.new(0, 10, 0, 60)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+-- ScrollingFrame для контента
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Name = "ScrollingFrame"
+ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.ScrollBarThickness = 4
+ScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 1500)
+ScrollingFrame.Parent = ContentFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = ScrollingFrame
+
+-- Функция для создания Groupbox
+local function createGroupbox(title, position, size)
+    local Groupbox = Instance.new("Frame")
+    Groupbox.Name = "Groupbox_" .. title
+    Groupbox.Size = size or UDim2.new(1, 0, 0, 0)
+    Groupbox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Groupbox.BorderSizePixel = 0
+    Groupbox.LayoutOrder = position == "Left" and 1 or 2
+    
+    local GroupboxCorner = Instance.new("UICorner")
+    GroupboxCorner.CornerRadius = UDim.new(0, 6)
+    GroupboxCorner.Parent = Groupbox
+    
+    local GroupboxStroke = Instance.new("UIStroke")
+    GroupboxStroke.Color = Color3.fromRGB(253, 104, 159)
+    GroupboxStroke.Thickness = 1
+    GroupboxStroke.Parent = Groupbox
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.TextSize = 18
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Groupbox
+    
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -20, 1, -40)
+    ContentContainer.Position = UDim2.new(0, 10, 0, 35)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = Groupbox
+    
+    local ContainerListLayout = Instance.new("UIListLayout")
+    ContainerListLayout.Padding = UDim.new(0, 8)
+    ContainerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ContainerListLayout.Parent = ContentContainer
+    
+    Groupbox:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        Groupbox.Size = UDim2.new(Groupbox.Size.X.Scale, Groupbox.Size.X.Offset, 0, ContentContainer.AbsoluteSize.Y + 50)
+    end)
+    
+    ContainerListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ContentContainer.Size = UDim2.new(1, -20, 0, ContainerListLayout.AbsoluteContentSize.Y)
+    end)
+    
+    return Groupbox, ContentContainer
+end
+
+-- Функция для создания Toggle
+local function createToggle(parent, title, defaultValue, callback)
+    local ToggleContainer = Instance.new("Frame")
+    ToggleContainer.Name = "ToggleContainer_" .. title
+    ToggleContainer.Size = UDim2.new(1, 0, 0, 28)
+    ToggleContainer.BackgroundTransparency = 1
+    ToggleContainer.LayoutOrder = #parent:GetChildren()
+    
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Name = "ToggleLabel"
+    ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Text = title
+    ToggleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    ToggleLabel.Font = Enum.Font.SourceSans
+    ToggleLabel.TextSize = 14
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleLabel.Parent = ToggleContainer
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Size = UDim2.new(0, 50, 0, 24)
+    ToggleButton.Position = UDim2.new(1, -50, 0.5, -12)
+    ToggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(253, 104, 159) or Color3.fromRGB(60, 60, 60)
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Text = ""
+    ToggleButton.Parent = ToggleContainer
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 12)
+    ToggleCorner.Parent = ToggleButton
+    
+    local ToggleIndicator = Instance.new("Frame")
+    ToggleIndicator.Name = "ToggleIndicator"
+    ToggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+    ToggleIndicator.Position = defaultValue and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10)
+    ToggleIndicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleIndicator.BorderSizePixel = 0
+    ToggleIndicator.Parent = ToggleButton
+    
+    local IndicatorCorner = Instance.new("UICorner")
+    IndicatorCorner.CornerRadius = UDim.new(1, 0)
+    IndicatorCorner.Parent = ToggleIndicator
+    
+    local toggleState = defaultValue
+    
+    ToggleButton.MouseButton1Click:Connect(function()
+        toggleState = not toggleState
+        
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        if toggleState then
+            local tween1 = TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(253, 104, 159)})
+            local tween2 = TweenService:Create(ToggleIndicator, tweenInfo, {Position = UDim2.new(1, -22, 0.5, -10)})
+            tween1:Play()
+            tween2:Play()
+        else
+            local tween1 = TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(60, 60, 60)})
+            local tween2 = TweenService:Create(ToggleIndicator, tweenInfo, {Position = UDim2.new(0, 2, 0.5, -10)})
+            tween1:Play()
+            tween2:Play()
+        end
+        
+        if callback then
+            callback(toggleState)
+        end
+    end)
+    
+    ToggleContainer.Parent = parent
+    
+    return {
+        Set = function(value)
+            toggleState = value
+            if value then
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+                ToggleIndicator.Position = UDim2.new(1, -22, 0.5, -10)
+            else
+                ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                ToggleIndicator.Position = UDim2.new(0, 2, 0.5, -10)
+            end
+        end,
+        Get = function()
+            return toggleState
+        end
+    }
+end
+
+-- Функция для создания Slider
+local function createSlider(parent, title, min, max, defaultValue, suffix, callback)
+    local SliderContainer = Instance.new("Frame")
+    SliderContainer.Name = "SliderContainer_" .. title
+    SliderContainer.Size = UDim2.new(1, 0, 0, 55)
+    SliderContainer.BackgroundTransparency = 1
+    SliderContainer.LayoutOrder = #parent:GetChildren()
+    
+    local SliderLabel = Instance.new("TextLabel")
+    SliderLabel.Name = "SliderLabel"
+    SliderLabel.Size = UDim2.new(1, 0, 0, 18)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Text = title
+    SliderLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    SliderLabel.Font = Enum.Font.SourceSans
+    SliderLabel.TextSize = 14
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SliderLabel.Parent = SliderContainer
+    
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Name = "ValueLabel"
+    ValueLabel.Size = UDim2.new(0, 60, 0, 18)
+    ValueLabel.Position = UDim2.new(1, -60, 0, 0)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(defaultValue) .. (suffix or "")
+    ValueLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+    ValueLabel.Font = Enum.Font.SourceSansBold
+    ValueLabel.TextSize = 14
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = SliderContainer
+    
+    local SliderTrack = Instance.new("Frame")
+    SliderTrack.Name = "SliderTrack"
+    SliderTrack.Size = UDim2.new(1, 0, 0, 6)
+    SliderTrack.Position = UDim2.new(0, 0, 0, 32)
+    SliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    SliderTrack.BorderSizePixel = 0
+    SliderTrack.Parent = SliderContainer
+    
+    local TrackCorner = Instance.new("UICorner")
+    TrackCorner.CornerRadius = UDim.new(1, 0)
+    TrackCorner.Parent = SliderTrack
+    
+    local SliderFill = Instance.new("Frame")
+    SliderFill.Name = "SliderFill"
+    SliderFill.Size = UDim2.new((defaultValue - min) / (max - min), 0, 1, 0)
+    SliderFill.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    SliderFill.BorderSizePixel = 0
+    SliderFill.Parent = SliderTrack
+    
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(1, 0)
+    FillCorner.Parent = SliderFill
+    
+    local SliderButton = Instance.new("TextButton")
+    SliderButton.Name = "SliderButton"
+    SliderButton.Size = UDim2.new(0, 18, 0, 18)
+    SliderButton.Position = UDim2.new((defaultValue - min) / (max - min), -9, 0.5, -9)
+    SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderButton.BorderSizePixel = 0
+    SliderButton.Text = ""
+    SliderButton.ZIndex = 2
+    SliderButton.Parent = SliderTrack
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(1, 0)
+    ButtonCorner.Parent = SliderButton
+    
+    local dragging = false
+    local currentValue = defaultValue
+    
+    local function updateValue(value)
+        local clampedValue = math.clamp(value, min, max)
+        currentValue = clampedValue
+        
+        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween1 = TweenService:Create(SliderFill, tweenInfo, {Size = UDim2.new((clampedValue - min) / (max - min), 0, 1, 0)})
+        local tween2 = TweenService:Create(SliderButton, tweenInfo, {Position = UDim2.new((clampedValue - min) / (max - min), -9, 0.5, -9)})
+        tween1:Play()
+        tween2:Play()
+        
+        ValueLabel.Text = tostring(math.floor(clampedValue * 10) / 10) .. (suffix or "")
+        
+        if callback then
+            callback(clampedValue)
+        end
+    end
+    
+    SliderButton.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    SliderTrack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+            local value = min + (max - min) * relativeX
+            updateValue(value)
+        end
+    end)
+    
+    local connection
+    connection = game:GetService("RunService").RenderStepped:Connect(function()
+        if dragging then
+            local mouse = UserInputService:GetMouseLocation()
+            local relativeX = (mouse.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+            local value = min + (max - min) * math.clamp(relativeX, 0, 1)
+            updateValue(value)
+        end
+    end)
+    
+    -- Очистка соединения при уничтожении
+    SliderContainer.Destroying:Connect(function()
+        if connection then
+            connection:Disconnect()
+        end
+    end)
+    
+    SliderContainer.Parent = parent
+    
+    return {
+        Set = function(value)
+            updateValue(value)
+        end,
+        Get = function()
+            return currentValue
+        end
+    }
+end
+
+-- Функция для создания Dropdown
+local function createDropdown(parent, title, values, defaultValue, callback)
+    local DropdownContainer = Instance.new("Frame")
+    DropdownContainer.Name = "DropdownContainer_" .. title
+    DropdownContainer.Size = UDim2.new(1, 0, 0, 30)
+    DropdownContainer.BackgroundTransparency = 1
+    DropdownContainer.LayoutOrder = #parent:GetChildren()
+    DropdownContainer.ClipsDescendants = true
+    
+    local DropdownLabel = Instance.new("TextLabel")
+    DropdownLabel.Name = "DropdownLabel"
+    DropdownLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    DropdownLabel.BackgroundTransparency = 1
+    DropdownLabel.Text = title
+    DropdownLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    DropdownLabel.Font = Enum.Font.SourceSans
+    DropdownLabel.TextSize = 14
+    DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DropdownLabel.Parent = DropdownContainer
+    
+    local DropdownButton = Instance.new("TextButton")
+    DropdownButton.Name = "DropdownButton"
+    DropdownButton.Size = UDim2.new(0, 100, 0, 28)
+    DropdownButton.Position = UDim2.new(1, -100, 0, 1)
+    DropdownButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    DropdownButton.BorderSizePixel = 0
+    DropdownButton.Text = defaultValue
+    DropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DropdownButton.Font = Enum.Font.SourceSans
+    DropdownButton.TextSize = 14
+    DropdownButton.Parent = DropdownContainer
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = DropdownButton
+    
+    local DropdownList = Instance.new("Frame")
+    DropdownList.Name = "DropdownList"
+    DropdownList.Size = UDim2.new(0, 100, 0, 0)
+    DropdownList.Position = UDim2.new(1, -100, 1, 2)
+    DropdownList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    DropdownList.BorderSizePixel = 0
+    DropdownList.Visible = false
+    DropdownList.ZIndex = 5
+    DropdownList.Parent = DropdownContainer
+    
+    local ListCorner = Instance.new("UICorner")
+    ListCorner.CornerRadius = UDim.new(0, 6)
+    ListCorner.Parent = DropdownList
+    
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Padding = UDim.new(0, 2)
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Parent = DropdownList
+    
+    local currentValue = defaultValue
+    local isOpen = false
+    
+    local function updateDropdownSize()
+        DropdownList.Size = UDim2.new(0, 100, 0, #values * 28)
+    end
+    
+    local function closeDropdown()
+        isOpen = false
+        DropdownList.Visible = false
+        DropdownContainer.Size = UDim2.new(1, 0, 0, 30)
+    end
+    
+    local function selectValue(value)
+        currentValue = value
+        DropdownButton.Text = value
+        closeDropdown()
+        
+        if callback then
+            callback(value)
+        end
+    end
+    
+    for _, value in ipairs(values) do
+        local OptionButton = Instance.new("TextButton")
+        OptionButton.Name = "Option_" .. value
+        OptionButton.Size = UDim2.new(1, -4, 0, 26)
+        OptionButton.Position = UDim2.new(0, 2, 0, 0)
+        OptionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        OptionButton.BorderSizePixel = 0
+        OptionButton.Text = value
+        OptionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        OptionButton.Font = Enum.Font.SourceSans
+        OptionButton.TextSize = 14
+        OptionButton.ZIndex = 6
+        OptionButton.Parent = DropdownList
+        
+        local OptionCorner = Instance.new("UICorner")
+        OptionCorner.CornerRadius = UDim.new(0, 4)
+        OptionCorner.Parent = OptionButton
+        
+        OptionButton.MouseButton1Click:Connect(function()
+            selectValue(value)
+        end)
+        
+        OptionButton.MouseEnter:Connect(function()
+            OptionButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+        end)
+        
+        OptionButton.MouseLeave:Connect(function()
+            OptionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        end)
+    end
+    
+    updateDropdownSize()
+    
+    DropdownButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        DropdownList.Visible = isOpen
+        DropdownContainer.Size = isOpen and UDim2.new(1, 0, 0, 30 + DropdownList.AbsoluteSize.Y + 2) or UDim2.new(1, 0, 0, 30)
+    end)
+    
+    DropdownContainer.Parent = parent
+    
+    return {
+        Set = function(value)
+            if table.find(values, value) then
+                selectValue(value)
+            end
+        end,
+        Get = function()
+            return currentValue
+        end
+    }
+end
+
+-- Функция для создания Keybind
+local function createKeybind(parent, title, defaultKey, callback)
+    local KeybindContainer = Instance.new("Frame")
+    KeybindContainer.Name = "KeybindContainer_" .. title
+    KeybindContainer.Size = UDim2.new(1, 0, 0, 28)
+    KeybindContainer.BackgroundTransparency = 1
+    KeybindContainer.LayoutOrder = #parent:GetChildren()
+    
+    local KeybindLabel = Instance.new("TextLabel")
+    KeybindLabel.Name = "KeybindLabel"
+    KeybindLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    KeybindLabel.BackgroundTransparency = 1
+    KeybindLabel.Text = title
+    KeybindLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    KeybindLabel.Font = Enum.Font.SourceSans
+    KeybindLabel.TextSize = 14
+    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    KeybindLabel.Parent = KeybindContainer
+    
+    local KeybindButton = Instance.new("TextButton")
+    KeybindButton.Name = "KeybindButton"
+    KeybindButton.Size = UDim2.new(0, 80, 0, 26)
+    KeybindButton.Position = UDim2.new(1, -80, 0, 1)
+    KeybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    KeybindButton.BorderSizePixel = 0
+    KeybindButton.Text = tostring(defaultKey):gsub("Enum.KeyCode.", "")
+    KeybindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    KeybindButton.Font = Enum.Font.SourceSans
+    KeybindButton.TextSize = 14
+    KeybindButton.Parent = KeybindContainer
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = KeybindButton
+    
+    local listening = false
+    local currentKey = defaultKey
+    
+    KeybindButton.MouseButton1Click:Connect(function()
+        listening = true
+        KeybindButton.Text = "..."
+        KeybindButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end)
+    
+    local inputConnection
+    inputConnection = UserInputService.InputBegan:Connect(function(input)
+        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+            listening = false
+            currentKey = input.KeyCode
+            KeybindButton.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
+            KeybindButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            
+            if callback then
+                callback(input.KeyCode)
+            end
+        end
+    end)
+    
+    KeybindContainer.Destroying:Connect(function()
+        if inputConnection then
+            inputConnection:Disconnect()
+        end
+    end)
+    
+    KeybindContainer.Parent = parent
+    
+    return {
+        Set = function(key)
+            currentKey = key
+            KeybindButton.Text = tostring(key):gsub("Enum.KeyCode.", "")
+        end,
+        Get = function()
+            return currentKey
+        end
+    }
+end
+
+-- Функция для создания TextBox
+local function createTextBox(parent, title, defaultValue, placeholder, callback)
+    local TextBoxContainer = Instance.new("Frame")
+    TextBoxContainer.Name = "TextBoxContainer_" .. title
+    TextBoxContainer.Size = UDim2.new(1, 0, 0, 45)
+    TextBoxContainer.BackgroundTransparency = 1
+    TextBoxContainer.LayoutOrder = #parent:GetChildren()
+    
+    local TextBoxLabel = Instance.new("TextLabel")
+    TextBoxLabel.Name = "TextBoxLabel"
+    TextBoxLabel.Size = UDim2.new(1, 0, 0, 18)
+    TextBoxLabel.BackgroundTransparency = 1
+    TextBoxLabel.Text = title
+    TextBoxLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    TextBoxLabel.Font = Enum.Font.SourceSans
+    TextBoxLabel.TextSize = 14
+    TextBoxLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TextBoxLabel.Parent = TextBoxContainer
+    
+    local TextBox = Instance.new("TextBox")
+    TextBox.Name = "TextBox"
+    TextBox.Size = UDim2.new(1, 0, 0, 28)
+    TextBox.Position = UDim2.new(0, 0, 0, 20)
+    TextBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    TextBox.BorderSizePixel = 0
+    TextBox.Text = defaultValue or ""
+    TextBox.PlaceholderText = placeholder or ""
+    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextBox.Font = Enum.Font.SourceSans
+    TextBox.TextSize = 14
+    TextBox.Parent = TextBoxContainer
+    
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.Parent = TextBox
+    
+    TextBox.FocusLost:Connect(function()
+        if callback then
+            callback(TextBox.Text)
+        end
+    end)
+    
+    TextBoxContainer.Parent = parent
+    
+    return {
+        Set = function(value)
+            TextBox.Text = value
+            if callback then
+                callback(value)
+            end
+        end,
+        Get = function()
+            return TextBox.Text
+        end,
+        Destroy = function()
+            TextBoxContainer:Destroy()
+        end
+    }
+end
+
+-- Функция для создания кнопки
+local function createButton(parent, title, callback)
+    local ButtonContainer = Instance.new("Frame")
+    ButtonContainer.Name = "ButtonContainer_" .. title
+    ButtonContainer.Size = UDim2.new(1, 0, 0, 35)
+    ButtonContainer.BackgroundTransparency = 1
+    ButtonContainer.LayoutOrder = #parent:GetChildren()
+    
+    local Button = Instance.new("TextButton")
+    Button.Name = "Button"
+    Button.Size = UDim2.new(1, 0, 1, 0)
+    Button.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    Button.BorderSizePixel = 0
+    Button.Text = title
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.SourceSansBold
+    Button.TextSize = 14
+    Button.Parent = ButtonContainer
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(function()
+        if callback then
+            callback()
+        end
+    end)
+    
+    Button.MouseEnter:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(255, 120, 180)
+    end)
+    
+    Button.MouseLeave:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end)
+    
+    ButtonContainer.Parent = parent
+    
+    return Button
+end
+
+-- Функция для уведомлений
+function createNotification(title, message, duration)
+    local Notification = Instance.new("Frame")
+    Notification.Name = "Notification"
+    Notification.Size = UDim2.new(0, 280, 0, 70)
+    Notification.Position = UDim2.new(1, -300, 1, -90)
+    Notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Notification.BorderSizePixel = 0
+    Notification.ZIndex = 1000000
+    Notification.Parent = ScreenGui
+    
+    local NotifCorner = Instance.new("UICorner")
+    NotifCorner.CornerRadius = UDim.new(0, 8)
+    NotifCorner.Parent = Notification
+    
+    local NotifStroke = Instance.new("UIStroke")
+    NotifStroke.Color = Color3.fromRGB(253, 104, 159)
+    NotifStroke.Thickness = 2
+    NotifStroke.Parent = Notification
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -20, 0, 25)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 5)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.TextSize = 16
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Notification
+    
+    local MessageLabel = Instance.new("TextLabel")
+    MessageLabel.Size = UDim2.new(1, -20, 1, -35)
+    MessageLabel.Position = UDim2.new(0, 10, 0, 30)
+    MessageLabel.BackgroundTransparency = 1
+    MessageLabel.Text = message
+    MessageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MessageLabel.Font = Enum.Font.SourceSans
+    MessageLabel.TextSize = 14
+    MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    MessageLabel.TextWrapped = true
+    MessageLabel.Parent = Notification
+    
+    task.spawn(function()
+        task.wait(duration or 3)
+        local tween = TweenService:Create(Notification, TweenInfo.new(0.5), {Position = UDim2.new(1, -300, 1, 100)})
+        tween:Play()
+        tween.Completed:Wait()
+        Notification:Destroy()
+    end)
+end
+
+-- Создаем групбоксы
+local TeleportGroup, TeleportContainer = createGroupbox("Телепортация", "Left", UDim2.new(1, 0, 0, 140))
+TeleportGroup.Parent = ScrollingFrame
+
+local OffsetGroup, OffsetContainer = createGroupbox("Настройка координат", "Right", UDim2.new(1, 0, 0, 180))
+OffsetGroup.Parent = ScrollingFrame
+
+local ModeGroup, ModeContainer = createGroupbox("Моды", "Left", UDim2.new(1, 0, 0, 180))
+ModeGroup.Parent = ScrollingFrame
+
+local KeybindGroup, KeybindContainer = createGroupbox("Контролер кнопки", "Right", UDim2.new(1, 0, 0, 100))
+KeybindGroup.Parent = ScrollingFrame
+
+-- НОВЫЕ ГРУППБОКСЫ ДЛЯ ЗАПРЕТНЫХ ЗОН И СОХРАНЕНИЯ
+local RestrictedGroup, RestrictedContainer = createGroupbox("Запретные зоны", "Left", UDim2.new(1, 0, 0, 300))
+RestrictedGroup.Parent = ScrollingFrame
+
+local ConfigGroup, ConfigContainer = createGroupbox("Сохранение/Загрузка", "Right", UDim2.new(1, 0, 0, 200))
+ConfigGroup.Parent = ScrollingFrame
+
+-- Создаем элементы управления
+local teleportToggle = createToggle(TeleportContainer, "Включить тп", false, function(value)
+    teleportEnabled = value
+    
+    if value then
+        createNotification("Teleport", "Teleportation enabled!", 2)
+        startTeleportation()
+    else
+        if teleportLoop then
+            task.cancel(teleportLoop)
+            teleportLoop = nil
+        end
+        isTeleporting = false
+        currentTarget = nil
+        createNotification("Teleport", "Teleportation disabled!", 2)
+    end
+end)
+
+local teleportDelaySlider = createSlider(TeleportContainer, "Скорость телепортации", 0.1, 5, 1, " sec", function(value)
+    teleportDelay = value
+end)
+
+local xOffsetSlider = createSlider(OffsetContainer, "Лево право", -50, 50, 0, " studs", function(value)
+    offset = Vector3.new(value, offset.Y, offset.Z)
+end)
+
+local yOffsetSlider = createSlider(OffsetContainer, "верх вниз", -50, 50, 0, " studs", function(value)
+    offset = Vector3.new(offset.X, value, offset.Z)
+end)
+
+local zOffsetSlider = createSlider(OffsetContainer, "назад веред", -50, 50, 0, " studs", function(value)
+    offset = Vector3.new(offset.X, offset.Y, value)
+end)
+
+local modeDropdown = createDropdown(ModeContainer, "Телепорт мод", {"Teleport", "Fly"}, "Teleport", function(value)
+    teleportMode = value
+end)
+
+local flySpeedSlider = createSlider(ModeContainer, "Флай скорость", 10, 200, 50, " studs/sec", function(value)
+    flySpeed = value
+end)
+
+local faceTargetToggle = createToggle(ModeContainer, "Поворот к игроку", false, function(value)
+    faceTarget = value
+    createNotification("Face Target", value and "Enabled - Will face same direction as target" or "Disabled", 2)
+end)
+
+local keybindButton = createKeybind(KeybindContainer, "Кнопка вклучения", Enum.KeyCode.T, function(key)
+    teleportKeybind = key
+    createNotification("Keybind", "Key set to: " .. tostring(key):gsub("Enum.KeyCode.", ""), 2)
+end)
+
+-- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ДОСТУПА К ФУНКЦИЯМ
+local updateRestrictedAreasList = nil
+local updateConfigsList = nil
+
+-- НОВЫЕ ЭЛЕМЕНТЫ ДЛЯ ЗАПРЕТНЫХ ЗОН
+local coordXTextBox, coordYTextBox, coordZTextBox, radiusTextBox, minYTextBox
+
+-- Задержка для создания элементов
+task.spawn(function()
+    task.wait(0.5) -- Ждем полсекунды чтобы GUI успел создаться
+    
+    -- Создаем TextBox'ы только после создания всех контейнеров
+    minYTextBox = createTextBox(RestrictedContainer, "Минимальный Y уровень", "-500", "Введите число", function(value)
+        local num = tonumber(value)
+        if num then
+            minYLevel = num
+            createNotification("Min Y Level", "Установлено: " .. num, 2)
+        else
+            createNotification("Ошибка", "Введите корректное число!", 2)
+        end
+    end)
+    
+    coordXTextBox = createTextBox(RestrictedContainer, "Координата X", "0", "X координата", function() end)
+    coordYTextBox = createTextBox(RestrictedContainer, "Координата Y", "0", "Y координата", function() end)
+    coordZTextBox = createTextBox(RestrictedContainer, "Координата Z", "0", "Z координата", function() end)
+    radiusTextBox = createTextBox(RestrictedContainer, "Радиус запрета", "10", "Введите радиус", function() end)
+    
+    -- Фрейм для списка запретных зон
+    local RestrictedListFrame = Instance.new("Frame")
+    RestrictedListFrame.Name = "RestrictedListFrame"
+    RestrictedListFrame.Size = UDim2.new(1, 0, 0, 150)
+    RestrictedListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    RestrictedListFrame.BorderSizePixel = 0
+    RestrictedListFrame.LayoutOrder = #RestrictedContainer:GetChildren()
+    RestrictedListFrame.Parent = RestrictedContainer
+    
+    local ListCorner = Instance.new("UICorner")
+    ListCorner.CornerRadius = UDim.new(0, 6)
+    ListCorner.Parent = RestrictedListFrame
+    
+    local RestrictedList = Instance.new("ScrollingFrame")
+    RestrictedList.Name = "RestrictedList"
+    RestrictedList.Size = UDim2.new(1, -10, 1, -10)
+    RestrictedList.Position = UDim2.new(0, 5, 0, 5)
+    RestrictedList.BackgroundTransparency = 1
+    RestrictedList.BorderSizePixel = 0
+    RestrictedList.ScrollBarThickness = 4
+    RestrictedList.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+    RestrictedList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    RestrictedList.Parent = RestrictedListFrame
+    
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Padding = UDim.new(0, 5)
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Parent = RestrictedList
+    
+    -- Функция обновления списка запретных зон
+    updateRestrictedAreasList = function()
+        if not RestrictedList or not RestrictedList:IsDescendantOf(game) then return end
+        
+        for _, child in ipairs(RestrictedList:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+        
+        local totalHeight = 0
+        
+        for i, area in ipairs(restrictedAreas) do
+            local areaFrame = Instance.new("Frame")
+            areaFrame.Name = "AreaFrame_" .. i
+            areaFrame.Size = UDim2.new(1, 0, 0, 30)
+            areaFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            areaFrame.BorderSizePixel = 0
+            areaFrame.LayoutOrder = i
+            
+            local areaCorner = Instance.new("UICorner")
+            areaCorner.CornerRadius = UDim.new(0, 4)
+            areaCorner.Parent = areaFrame
+            
+            local areaText = Instance.new("TextLabel")
+            areaText.Name = "AreaText"
+            areaText.Size = UDim2.new(0.7, 0, 1, 0)
+            areaText.BackgroundTransparency = 1
+            areaText.Text = string.format("X:%.1f, Y:%.1f, Z:%.1f | R:%.1f", 
+                area.position.X, area.position.Y, area.position.Z, area.radius)
+            areaText.TextColor3 = Color3.fromRGB(220, 220, 220)
+            areaText.Font = Enum.Font.SourceSans
+            areaText.TextSize = 12
+            areaText.TextXAlignment = Enum.TextXAlignment.Left
+            areaText.Parent = areaFrame
+            
+            local deleteButton = Instance.new("TextButton")
+            deleteButton.Name = "DeleteButton"
+            deleteButton.Size = UDim2.new(0, 60, 0, 24)
+            deleteButton.Position = UDim2.new(1, -65, 0.5, -12)
+            deleteButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+            deleteButton.BorderSizePixel = 0
+            deleteButton.Text = "Удалить"
+            deleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            deleteButton.Font = Enum.Font.SourceSans
+            deleteButton.TextSize = 12
+            deleteButton.Parent = areaFrame
+            
+            local deleteCorner = Instance.new("UICorner")
+            deleteCorner.CornerRadius = UDim.new(0, 4)
+            deleteCorner.Parent = deleteButton
+            
+            deleteButton.MouseButton1Click:Connect(function()
+                table.remove(restrictedAreas, i)
+                if updateRestrictedAreasList then
+                    updateRestrictedAreasList()
+                end
+                createNotification("Запретная зона", "Зона удалена!", 2)
+            end)
+            
+            deleteButton.MouseEnter:Connect(function()
+                deleteButton.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
+            end)
+            
+            deleteButton.MouseLeave:Connect(function()
+                deleteButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+            end)
+            
+            areaFrame.Parent = RestrictedList
+            totalHeight = totalHeight + 35
+        end
+        
+        RestrictedList.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    end
+    
+    -- Кнопка для добавления запретной зоны
+    local addRestrictedButton = createButton(RestrictedContainer, "Добавить запретную зону", function()
+        -- Проверяем что TextBox'ы существуют
+        if not coordXTextBox or not coordYTextBox or not coordZTextBox or not radiusTextBox then
+            createNotification("Ошибка", "Элементы не загрузились. Подождите немного.", 2)
+            return
+        end
+        
+        local x = tonumber(coordXTextBox.Get())
+        local y = tonumber(coordYTextBox.Get())
+        local z = tonumber(coordZTextBox.Get())
+        local radius = tonumber(radiusTextBox.Get())
+        
+        if x and y and z and radius then
+            local position = Vector3.new(x, y, z)
+            table.insert(restrictedAreas, {
+                position = position,
+                radius = radius
+            })
+            if updateRestrictedAreasList then
+                updateRestrictedAreasList()
+            end
+            createNotification("Запретная зона", "Добавлена новая зона!", 2)
+            
+            -- Очищаем поля после добавления
+            coordXTextBox.Set("0")
+            coordYTextBox.Set("0")
+            coordZTextBox.Set("0")
+            radiusTextBox.Set("10")
+        else
+            createNotification("Ошибка", "Введите корректные числа!", 2)
+        end
+    end)
+    
+    -- Инициализируем список запретных зон
+    if updateRestrictedAreasList then
+        updateRestrictedAreasList()
+    end
+end)
+
+-- НОВЫЕ ЭЛЕМЕНТЫ ДЛЯ СОХРАНЕНИЯ/ЗАГРУЗКИ
+local configNameTextBox
+
+task.spawn(function()
+    task.wait(0.5) -- Ждем полсекунды
+    
+    configNameTextBox = createTextBox(ConfigContainer, "Название конфига", "", "Введите название", function() end)
+    
+    -- Фрейм для списка конфигов
+    local ConfigListFrame = Instance.new("Frame")
+    ConfigListFrame.Name = "ConfigListFrame"
+    ConfigListFrame.Size = UDim2.new(1, 0, 0, 80)
+    ConfigListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    ConfigListFrame.BorderSizePixel = 0
+    ConfigListFrame.LayoutOrder = #ConfigContainer:GetChildren()
+    ConfigListFrame.Parent = ConfigContainer
+    
+    local ConfigListCorner = Instance.new("UICorner")
+    ConfigListCorner.CornerRadius = UDim.new(0, 6)
+    ConfigListCorner.Parent = ConfigListFrame
+    
+    local ConfigList = Instance.new("ScrollingFrame")
+    ConfigList.Name = "ConfigList"
+    ConfigList.Size = UDim2.new(1, -10, 1, -10)
+    ConfigList.Position = UDim2.new(0, 5, 0, 5)
+    ConfigList.BackgroundTransparency = 1
+    ConfigList.BorderSizePixel = 0
+    ConfigList.ScrollBarThickness = 4
+    ConfigList.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+    ConfigList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ConfigList.Parent = ConfigListFrame
+    
+    local ConfigListLayout = Instance.new("UIListLayout")
+    ConfigListLayout.Padding = UDim.new(0, 5)
+    ConfigListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ConfigListLayout.Parent = ConfigList
+    
+    -- Функция обновления списка конфигов
+    updateConfigsList = function()
+        if not ConfigList or not ConfigList:IsDescendantOf(game) then return end
+        
+        for _, child in ipairs(ConfigList:GetChildren()) do
+            if child:IsA("Frame") then
+                child:Destroy()
+            end
+        end
+        
+        local totalHeight = 0
+        local configNames = {}
+        
+        -- Получаем имена конфигов из файлов
+        if canUseFiles then
+            local fileConfigs = getConfigsFromFiles()
+            for _, name in ipairs(fileConfigs) do
+                if not table.find(configNames, name) then
+                    table.insert(configNames, name)
+                end
+            end
+        end
+        
+        -- Получаем имена из текущей сессии
+        for name, _ in pairs(configs) do
+            if not table.find(configNames, name) then
+                table.insert(configNames, name)
+            end
+        end
+        
+        table.sort(configNames)
+        
+        for i, name in ipairs(configNames) do
+            local configFrame = Instance.new("Frame")
+            configFrame.Name = "ConfigFrame_" .. name
+            configFrame.Size = UDim2.new(1, 0, 0, 25)
+            configFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            configFrame.BorderSizePixel = 0
+            configFrame.LayoutOrder = i
+            
+            local configCorner = Instance.new("UICorner")
+            configCorner.CornerRadius = UDim.new(0, 4)
+            configCorner.Parent = configFrame
+            
+            local configText = Instance.new("TextLabel")
+            configText.Name = "ConfigText"
+            configText.Size = UDim2.new(0.7, 0, 1, 0)
+            configText.BackgroundTransparency = 1
+            configText.Text = name
+            configText.TextColor3 = Color3.fromRGB(220, 220, 220)
+            configText.Font = Enum.Font.SourceSans
+            configText.TextSize = 12
+            configText.TextXAlignment = Enum.TextXAlignment.Left
+            configText.Parent = configFrame
+            
+            local loadButton = Instance.new("TextButton")
+            loadButton.Name = "LoadButton"
+            loadButton.Size = UDim2.new(0, 40, 0, 20)
+            loadButton.Position = UDim2.new(1, -85, 0.5, -10)
+            loadButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+            loadButton.BorderSizePixel = 0
+            loadButton.Text = "Загрузить"
+            loadButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            loadButton.Font = Enum.Font.SourceSans
+            loadButton.TextSize = 10
+            loadButton.Parent = configFrame
+            
+            local loadCorner = Instance.new("UICorner")
+            loadCorner.CornerRadius = UDim.new(0, 4)
+            loadCorner.Parent = loadButton
+            
+            loadButton.MouseButton1Click:Connect(function()
+                if configNameTextBox then
+                    configNameTextBox.Set(name)
+                end
+                createNotification("Загрузка", "Выбран конфиг: " .. name, 2)
+            end)
+            
+            loadButton.MouseEnter:Connect(function()
+                loadButton.BackgroundColor3 = Color3.fromRGB(80, 200, 80)
+            end)
+            
+            loadButton.MouseLeave:Connect(function()
+                loadButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+            end)
+            
+            configFrame.Parent = ConfigList
+            totalHeight = totalHeight + 30
+        end
+        
+        ConfigList.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    end
+    
+    -- Кнопка сохранения конфига
+    local saveButton = createButton(ConfigContainer, "Сохранить конфиг", function()
+        if not configNameTextBox then
+            createNotification("Ошибка", "Элементы не загрузились. Подождите немного.", 2)
+            return
+        end
+        
+        local configName = configNameTextBox.Get()
+        if configName == "" then
+            createNotification("Ошибка", "Введите название конфига!", 2)
+            return
+        end
+        
+        -- Создаем таблицу с настройками
+        local config = {
+            teleportDelay = teleportDelay,
+            offset = {X = offset.X, Y = offset.Y, Z = offset.Z},
+            flySpeed = flySpeed,
+            teleportMode = teleportMode,
+            faceTarget = faceTarget,
+            minYLevel = minYLevel,
+            restrictedAreas = {},
+            keybind = tostring(teleportKeybind):gsub("Enum.KeyCode.", "")
+        }
+        
+        -- Копируем запретные зоны
+        for _, area in ipairs(restrictedAreas) do
+            table.insert(config.restrictedAreas, {
+                position = {X = area.position.X, Y = area.position.Y, Z = area.position.Z},
+                radius = area.radius
+            })
+        end
+        
+        -- Сохраняем конфиг в памяти
+        configs[configName] = config
+        
+        -- Сохраняем конфиг в файл
+        if canUseFiles then
+            if saveConfigToFile(configName, config) then
+                createNotification("Сохранение", "Конфиг '" .. configName .. "' сохранен в файл!", 3)
+            else
+                createNotification("Ошибка", "Не удалось сохранить конфиг в файл", 2)
+            end
+        else
+            createNotification("Сохранение", "Конфиг '" .. configName .. "' сохранен в памяти!", 3)
+        end
+        
+        -- Обновляем список конфигов
+        if updateConfigsList then
+            updateConfigsList()
+        end
+    end)
+    
+    -- Кнопка загрузки конфига
+    local loadButton = createButton(ConfigContainer, "Загрузить конфиг", function()
+        if not configNameTextBox then
+            createNotification("Ошибка", "Элементы не загрузились. Подождите немного.", 2)
+            return
+        end
+        
+        local configName = configNameTextBox.Get()
+        if configName == "" then
+            createNotification("Ошибка", "Введите название конфига!", 2)
+            return
+        end
+        
+        local config = nil
+        
+        -- Сначала проверяем в памяти
+        config = configs[configName]
+        
+        -- Если нет в памяти, пробуем загрузить из файла
+        if not config and canUseFiles then
+            config = loadConfigFromFile(configName)
+            if config then
+                configs[configName] = config -- Сохраняем в память
+            end
+        end
+        
+        if not config then
+            createNotification("Ошибка", "Конфиг '" .. configName .. "' не найден!", 2)
+            return
+        end
+        
+        -- Загружаем настройки
+        teleportDelay = config.teleportDelay or 1
+        offset = Vector3.new(config.offset.X or 0, config.offset.Y or 0, config.offset.Z or 0)
+        flySpeed = config.flySpeed or 50
+        teleportMode = config.teleportMode or "Teleport"
+        faceTarget = config.faceTarget or false
+        minYLevel = config.minYLevel or -500
+        
+        -- Обновляем ключ
+        if config.keybind then
+            local success, key = pcall(function()
+                -- Пробуем разные форматы ключа
+                if string.find(config.keybind, "Enum%.KeyCode%.") then
+                    -- Формат "Enum.KeyCode.T"
+                    local keyName = string.gsub(config.keybind, "Enum%.KeyCode%.", "")
+                    return Enum.KeyCode[keyName]
+                else
+                    -- Просто имя ключа "T"
+                    return Enum.KeyCode[config.keybind]
+                end
+            end)
+            if success and key then
+                teleportKeybind = key
+            else
+                teleportKeybind = Enum.KeyCode.T
+            end
+        else
+            teleportKeybind = Enum.KeyCode.T
+        end
+        
+        -- Загружаем запретные зоны
+        restrictedAreas = {}
+        if config.restrictedAreas then
+            for _, area in ipairs(config.restrictedAreas) do
+                table.insert(restrictedAreas, {
+                    position = Vector3.new(area.position.X or 0, area.position.Y or 0, area.position.Z or 0),
+                    radius = area.radius or 10
+                })
+            end
+        end
+        
+        -- Обновляем элементы GUI СРАЗУ (это важно!)
+        task.spawn(function()
+            -- Даем время для обновления GUI
+            task.wait(0.1)
+            
+            -- Устанавливаем значения
+            teleportDelaySlider.Set(teleportDelay)
+            xOffsetSlider.Set(offset.X)
+            yOffsetSlider.Set(offset.Y)
+            zOffsetSlider.Set(offset.Z)
+            flySpeedSlider.Set(flySpeed)
+            modeDropdown.Set(teleportMode)
+            faceTargetToggle.Set(faceTarget)
+            
+            if minYTextBox then
+                minYTextBox.Set(tostring(minYLevel))
+            end
+            
+            keybindButton.Set(teleportKeybind)
+            
+            -- Обновляем список запретных зон
+            if updateRestrictedAreasList then
+                updateRestrictedAreasList()
+            end
+            
+            createNotification("Загрузка", "Конфиг '" .. configName .. "' загружен успешно!", 3)
+        end)
+    end)
+    
+    -- Кнопка удаления конфига
+    local deleteButton = createButton(ConfigContainer, "Удалить конфиг", function()
+        if not configNameTextBox then
+            createNotification("Ошибка", "Элементы не загрузились. Подождите немного.", 2)
+            return
+        end
+        
+        local configName = configNameTextBox.Get()
+        if configName == "" then
+            createNotification("Ошибка", "Введите название конфига!", 2)
+            return
+        end
+        
+        -- Удаляем из памяти
+        configs[configName] = nil
+        
+        -- Удаляем из файла если доступно
+        if canUseFiles then
+            pcall(function()
+                delfile("LoopTP_Configs/" .. configName .. ".json")
+            end)
+        end
+        
+        -- Обновляем список конфигов
+        if updateConfigsList then
+            updateConfigsList()
+        end
+        
+        createNotification("Удаление", "Конфиг '" .. configName .. "' удален!", 3)
+    end)
+    
+    -- Инициализируем список конфигов
+    if updateConfigsList then
+        updateConfigsList()
+    end
+end)
+
+-- ФУНКЦИИ ДЛЯ ТЕЛЕПОРТАЦИИ (ОПТИМИЗИРОВАННЫЕ)
+local function updatePlayerList()
+    playerList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(playerList, player)
+        end
+    end
+end
+
+local function getPlayerPosition(player)
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local targetCFrame = player.Character.HumanoidRootPart.CFrame
+        local offsetCFrame = CFrame.new(offset.X, offset.Y, offset.Z)
+        return (targetCFrame * offsetCFrame).Position
+    end
+    return nil
+end
+
+local function isValidPlayer(player)
+    return player and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+end
+
+-- ОПТИМИЗИРОВАННАЯ ФУНКЦИЯ: Проверка позиции на запрет
+local function isPositionAllowed(position)
+    local currentTime = tick()
+    
+    -- Используем кеширование для проверки позиций
+    local cacheKey = tostring(position.X) .. "_" .. tostring(position.Y) .. "_" .. tostring(position.Z)
+    
+    if positionCheckCache[cacheKey] and (currentTime - positionCheckCache[cacheKey].time) < POSITION_CHECK_INTERVAL then
+        return positionCheckCache[cacheKey].allowed, positionCheckCache[cacheKey].reason
+    end
+    
+    -- Проверка минимального Y уровня
+    if position.Y < minYLevel then
+        positionCheckCache[cacheKey] = {
+            allowed = false,
+            reason = "Ниже минимального Y уровня",
+            time = currentTime
+        }
+        return false, "Ниже минимального Y уровня"
+    end
+    
+    -- Проверка запретных зон
+    for _, area in ipairs(restrictedAreas) do
+        local distance = (position - area.position).Magnitude
+        if distance <= area.radius then
+            positionCheckCache[cacheKey] = {
+                allowed = false,
+                reason = "В запретной зоне",
+                time = currentTime
+            }
+            return false, "В запретной зоне"
+        end
+    end
+    
+    positionCheckCache[cacheKey] = {
+        allowed = true,
+        reason = "Разрешено",
+        time = currentTime
+    }
+    return true, "Разрешено"
+end
+
+-- ОПТИМИЗИРОВАННАЯ ФУНКЦИЯ телепортации
+local function goToTarget(targetPlayer)
+    if not isValidPlayer(targetPlayer) then
+        return false
+    end
+    
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    
+    local targetPosition = getPlayerPosition(targetPlayer)
+    if not targetPosition then
+        return false
+    end
+    
+    -- Проверка позиции
+    local allowed, reason = isPositionAllowed(targetPosition)
+    if not allowed then
+        createNotification("Запрет телепортации", "Цель в запретной зоне: " .. reason, 2)
+        return false
+    end
+    
+    isTeleporting = true
+    currentTarget = targetPlayer
+    
+    if teleportMode == "Teleport" then
+        -- ОПТИМИЗАЦИЯ: Используем task.wait вместо цикла с Heartbeat
+        local startTime = tick()
+        
+        -- Ожидание с периодической проверкой
+        while tick() - startTime < teleportDelay and teleportEnabled do
+            task.wait(0.1) -- Увеличиваем интервал ожидания
+            if not teleportEnabled then break end
+        end
+        
+        if teleportEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if targetPosition then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+                if faceTarget and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetLookVector = targetPlayer.Character.HumanoidRootPart.CFrame.LookVector
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition, targetPosition + targetLookVector)
+                end
+                isTeleporting = false
+                return true
+            end
+        end
+    else
+        -- ОПТИМИЗАЦИЯ: Уменьшаем частоту обновлений при полете
+        local startTime = tick()
+        local lastUpdate = 0
+        local UPDATE_INTERVAL = 0.05 -- Обновляем каждые 0.05 секунды вместо каждого кадра
+        
+        while teleportEnabled and isValidPlayer(targetPlayer) and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
+            local currentTime = tick()
+            
+            -- Пропускаем кадры для оптимизации
+            if currentTime - lastUpdate < UPDATE_INTERVAL then
+                task.wait(UPDATE_INTERVAL / 2)
+                continue
+            end
+            
+            lastUpdate = currentTime
+            
+            local currentTargetPosition = getPlayerPosition(targetPlayer)
+            if not currentTargetPosition then break end
+            
+            -- Проверка позиции во время полета (реже)
+            if currentTime - lastPositionCheck > POSITION_CHECK_INTERVAL then
+                lastPositionCheck = currentTime
+                local allowed, reason = isPositionAllowed(currentTargetPosition)
+                if not allowed then
+                    createNotification("Запрет телепортации", "Цель в запретной зоне: " .. reason, 2)
+                    break
+                end
+            end
+            
+            local currentPosition = LocalPlayer.Character.HumanoidRootPart.Position
+            local direction = (currentTargetPosition - currentPosition)
+            local distance = direction.Magnitude
+            
+            if faceTarget and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local targetLookVector = targetPlayer.Character.HumanoidRootPart.CFrame.LookVector
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(currentPosition, currentPosition + targetLookVector)
+            end
+            
+            if distance < 2 then
+                break
+            end
+            
+            local step = math.min(distance, flySpeed * UPDATE_INTERVAL)
+            local newPosition = currentPosition + (direction.Unit * step)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition)
+            
+            if tick() - startTime > 10 then
+                break
+            end
+            
+            task.wait(UPDATE_INTERVAL)
+        end
+        
+        if teleportEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local finalPosition = getPlayerPosition(targetPlayer)
+            if finalPosition then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(finalPosition)
+                if faceTarget and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetLookVector = targetPlayer.Character.HumanoidRootPart.CFrame.LookVector
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(finalPosition, finalPosition + targetLookVector)
+                end
+            end
+        end
+    end
+    
+    isTeleporting = false
+    return false
+end
+
+-- ОПТИМИЗИРОВАННАЯ ФУНКЦИЯ запуска телепортации
+function startTeleportation()
+    if teleportLoop then
+        task.cancel(teleportLoop)
+        teleportLoop = nil
+    end
+    
+    updatePlayerList()
+    
+    if #playerList == 0 then
+        createNotification("Teleport", "No other players found!", 3)
+        teleportEnabled = false
+        teleportToggle.Set(false)
+        return
+    end
+    
+    -- ОПТИМИЗАЦИЯ: Уменьшаем частоту обновления списка игроков
+    local lastPlayerListUpdate = 0
+    local PLAYER_LIST_UPDATE_INTERVAL = 5 -- Обновляем список игроков каждые 5 секунд
+    
+    teleportLoop = task.spawn(function()
+        while teleportEnabled do
+            local currentTime = tick()
+            
+            -- Обновляем список игроков реже
+            if currentTime - lastPlayerListUpdate > PLAYER_LIST_UPDATE_INTERVAL then
+                updatePlayerList()
+                lastPlayerListUpdate = currentTime
+                
+                if #playerList == 0 then
+                    createNotification("Teleport", "No players found!", 2)
+                    task.wait(1)
+                    continue
+                end
+            end
+            
+            -- Перемешиваем список игроков
+            for i = #playerList, 2, -1 do
+                local j = math.random(i)
+                playerList[i], playerList[j] = playerList[j], playerList[i]
+            end
+            
+            -- Телепортируемся к каждому игроку
+            for _, targetPlayer in ipairs(playerList) do
+                if not teleportEnabled then break end
+                
+                if isValidPlayer(targetPlayer) then
+                    goToTarget(targetPlayer)
+                end
+                
+                -- ОПТИМИЗАЦИЯ: Добавляем небольшую задержку между телепортациями
+                task.wait(0.1)
+                
+                while isTeleporting and teleportEnabled do
+                    task.wait(0.05)
+                end
+                
+                if not teleportEnabled then break end
+            end
+            
+            -- ОПТИМИЗАЦИЯ: Добавляем задержку перед следующим циклом
+            if teleportEnabled then
+                task.wait(0.5)
+            end
+        end
+    end)
+end
+
+-- Функционал перемещения GUI
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateInput(input)
+    end
+end)
+
+-- Функционал кнопок
+local isMinimized = false
+local originalSize = MainFrame.Size
+
+MinimizeButtonClick.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        MainFrame:TweenSize(UDim2.new(0, 394, 0, 50), "Out", "Quad", 0.3, true)
+        ContentFrame.Visible = false
+        MinimizeText.Text = "+"
+    else
+        MainFrame:TweenSize(originalSize, "Out", "Quad", 0.3, true)
+        ContentFrame.Visible = true
+        MinimizeText.Text = "-"
+    end
+end)
+
+CloseButtonClick.MouseButton1Click:Connect(function()
+    if teleportLoop then
+        task.cancel(teleportLoop)
+        teleportLoop = nil
+    end
+    ScreenGui:Destroy()
+end)
+
+-- Эффекты при наведении на кнопки
+MinimizeButtonClick.MouseEnter:Connect(function()
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+end)
+
+MinimizeButtonClick.MouseLeave:Connect(function()
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+end)
+
+CloseButtonClick.MouseEnter:Connect(function()
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
+end)
+
+CloseButtonClick.MouseLeave:Connect(function()
+    CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+end)
+
+-- Обновление размера ScrollingFrame
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 20)
+end)
+
+-- Горячая клавиша для телепортации
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == teleportKeybind then
+        teleportToggle.Set(not teleportToggle.Get())
+    end
+end)
+
+-- ОПТИМИЗАЦИЯ: Очистка кеша при отключении телепортации
+local function clearCache()
+    positionCheckCache = {}
+    collectgarbage("collect")
+end
+
+-- Очищаем кеш каждые 30 секунд
+task.spawn(function()
+    while true do
+        task.wait(30)
+        if not teleportEnabled then
+            clearCache()
+        end
+    end
+end)
+
+-- Загружаем конфиги при старте
+task.spawn(function()
+    task.wait(2)
+    if canUseFiles then
+        createNotification("Loop Menu", "GUI loaded successfully! Files support enabled.", 5)
+    else
+        createNotification("Loop Menu", "GUI loaded successfully! Files support disabled.", 5)
+    end
+    createNotification("Loop Menu", "Press " .. tostring(teleportKeybind):gsub("Enum.KeyCode.", "") .. " to toggle teleport", 5)
+end)

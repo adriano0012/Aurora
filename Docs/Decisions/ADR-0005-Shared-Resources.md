@@ -1,0 +1,1 @@
+# ADR-0005 Shared Resources`n`nDecisão: só mover algo para Shared quando houver uso real confirmado por mais de um produto.

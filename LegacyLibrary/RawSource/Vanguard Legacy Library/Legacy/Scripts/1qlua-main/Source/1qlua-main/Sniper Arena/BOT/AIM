@@ -1,0 +1,223 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local aimedTargetModel = nil
+local aimSettleStart = 0
+local AIM_SETTLE_TIME = 0.08 
+
+local Settings = {
+    Enabled = true,
+    AutoShoot = true,
+    MaxDistance = 9999, 
+    AimPart = "Head",
+    AimTolerance = math.rad(2),
+    ShootDelay = 0.08,
+    DeadCooldown = 1.5,
+    ToggleKey = Enum.KeyCode.E,
+}
+
+local function getEnemyHolder()
+    local ok, holder = pcall(function()
+        return Workspace:WaitForChild("Highlight", 5)
+                        :WaitForChild("Enemy", 5)
+                        :WaitForChild("HighlightHolder", 5)
+    end)
+    if ok then return holder end
+    return nil
+end
+local EnemyHolder = getEnemyHolder()
+if not EnemyHolder then
+    return
+end
+
+local DeadTable = {}
+
+local function getBody(model)
+    if not model or not model.Parent then return nil end
+    local collider = model:FindFirstChild("Collider")
+    if collider then return collider end
+    return model
+end
+
+local function isAlive(model)
+    if not model or not model.Parent then return false end
+    if DeadTable[model] and tick() - DeadTable[model] < Settings.DeadCooldown then
+        return false
+    end
+    local body = getBody(model)
+    if not body then return false end
+    local npcLimbs = {"Arm", "Leg"}
+    local playerLimbs = {
+        "Left Arm","Right Arm","Left Leg","Right Leg",
+        "LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg",
+        "LeftHand","RightHand","LeftFoot","RightFoot"
+    }
+    local hasLimb = false
+    for _, child in ipairs(body:GetChildren()) do
+        if child:IsA("BasePart") then
+            for _, limbName in ipairs(npcLimbs) do
+                if child.Name == limbName then
+                    hasLimb = true
+                    break
+                end
+            end
+            if hasLimb then break end
+            for _, limbName in ipairs(playerLimbs) do
+                if child.Name == limbName then
+                    hasLimb = true
+                    break
+                end
+            end
+            if hasLimb then break end
+        end
+    end
+    if not hasLimb then
+        DeadTable[model] = tick()
+        return false
+    end
+    return true
+end
+local function isVisible(targetPart, model)
+    if not targetPart then return false end
+    local origin = Camera.CFrame.Position
+    local direction = (targetPart.Position - origin)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    local filter = {LocalPlayer.Character, Camera}
+    table.insert(filter, model)
+    params.FilterDescendantsInstances = filter
+    params.IgnoreWater = true
+    local result = Workspace:Raycast(origin, direction, params)
+    return result == nil
+end
+local function getAimPart(model)
+    local body = getBody(model)
+    if not body then return nil end
+    return body:FindFirstChild(Settings.AimPart)
+        or body:FindFirstChild("Head")
+        or body:FindFirstChild("Body")
+        or body:FindFirstChild("HumanoidRootPart")
+        or body:FindFirstChild("Torso")
+        or body:FindFirstChild("UpperTorso")
+end
+local function getClosestTarget()
+    local closest = nil
+    local closestModel = nil
+    local shortestDist = math.huge
+    local camPos = Camera.CFrame.Position
+    for _, model in ipairs(EnemyHolder:GetChildren()) do
+        if (model:IsA("Model") or model:IsA("Folder")) and isAlive(model) then
+            local part = getAimPart(model)
+            if part then
+                local dist = (part.Position - camPos).Magnitude
+                if dist <= Settings.MaxDistance and isVisible(part, model) then
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        closest = part
+                        closestModel = model
+                    end
+                end
+            end
+        end
+    end
+    return closest, closestModel
+end
+
+local function hasShield(model)
+    if not model then return false end
+    if model:FindFirstChildOfClass("ForceField") then
+        return true
+    end
+    local body = getBody(model)
+    if body and body:FindFirstChildOfClass("ForceField") then
+        return true
+    end
+    return false
+end
+
+local function getAngleToTarget(part)
+    local camPos = Camera.CFrame.Position
+    local targetDir = (part.Position - camPos).Unit
+    local lookDir = Camera.CFrame.LookVector
+    return math.acos(math.clamp(lookDir:Dot(targetDir), -1, 1))
+end
+
+local function aimAt(part)
+    if not part then return end
+    Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
+end
+
+local lastShot = 0
+local function shoot()
+    if not Settings.AutoShoot then return end
+    if tick() - lastShot < Settings.ShootDelay then return end
+    lastShot = tick()
+
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:Button1Down(Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2), Camera.CFrame)
+        task.wait(0.02)
+        VirtualUser:Button1Up(Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2), Camera.CFrame)
+    end)
+
+    if mouse1click then pcall(mouse1click) end
+end
+
+
+RunService.RenderStepped:Connect(function()
+    if not Settings.Enabled then return end
+
+    for model, t in pairs(DeadTable) do
+        if not model.Parent then DeadTable[model] = nil
+        elseif tick() - t > Settings.DeadCooldown then DeadTable[model] = nil end
+    end
+
+    local targetPart, targetModel = nil, nil
+    local shortestDist = math.huge
+    local camPos = Camera.CFrame.Position
+    for _, model in ipairs(EnemyHolder:GetChildren()) do
+        if (model:IsA("Model") or model:IsA("Folder")) and isAlive(model) and not hasShield(model) then
+            local part = getAimPart(model)
+            if part then
+                local dist = (part.Position - camPos).Magnitude
+                if dist <= Settings.MaxDistance and isVisible(part, model) then
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        targetPart = part
+                        targetModel = model
+                    end
+                end
+            end
+        end
+    end
+
+    if targetPart then
+        aimAt(targetPart)
+        local angle = getAngleToTarget(targetPart)
+
+        if angle <= Settings.AimTolerance then
+            if targetModel ~= aimedTargetModel then
+                aimedTargetModel = targetModel
+                aimSettleStart = tick()
+            end
+            if tick() - aimSettleStart >= AIM_SETTLE_TIME then
+                shoot()
+            end
+        else
+            aimedTargetModel = nil
+        end
+    else
+        aimedTargetModel = nil
+    end
+end)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Settings.ToggleKey then
+        Settings.Enabled = not Settings.Enabled
+    end
+end)

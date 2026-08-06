@@ -1,0 +1,520 @@
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AimlockGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 331)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+MainFrame.Parent = ScreenGui
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+TopBar.Parent = MainFrame
+
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 12, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopBar
+
+local Decoration = Instance.new("Frame")
+Decoration.Name = "Decoration"
+Decoration.Size = UDim2.new(0, 5, 0, 16)
+Decoration.Position = UDim2.new(0, 40, 0.5, -8)
+Decoration.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+Decoration.BorderSizePixel = 0
+local DecorationCorner = Instance.new("UICorner")
+DecorationCorner.CornerRadius = UDim.new(1, 0)
+DecorationCorner.Parent = Decoration
+Decoration.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0, 200, 1, 0)
+Title.Position = UDim2.new(0, 50, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "AIMLOCK"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 31
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 24
+MinimizeButton.TextWrapped = true
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+MinimizeButton.Parent = TopBar
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 24
+CloseButton.TextWrapped = true
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+CloseButton.Parent = TopBar
+
+local SettingsContainer = Instance.new("ScrollingFrame")
+SettingsContainer.Name = "SettingsContainer"
+SettingsContainer.Size = UDim2.new(1, -20, 1, -70)
+SettingsContainer.Position = UDim2.new(0, 10, 0, 60)
+SettingsContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SettingsContainer.BackgroundTransparency = 1
+SettingsContainer.BorderSizePixel = 0
+SettingsContainer.ScrollBarThickness = 4
+SettingsContainer.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+SettingsContainer.CanvasSize = UDim2.new(0, 0, 0, 400) -- будет увеличено по мере добавления элементов
+SettingsContainer.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = SettingsContainer
+
+local function CreateSectionTitle(text)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 25)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(253, 104, 159)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 18
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = SettingsContainer
+	return label
+end
+
+local function CreateSlider(name, min, max, default, callback)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, -10, 0, 50)
+	container.BackgroundTransparency = 1
+	container.Parent = SettingsContainer
+	
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 0, 20)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = name
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 14
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Parent = container
+	
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Size = UDim2.new(0, 40, 0, 20)
+	valueLabel.Position = UDim2.new(1, -45, 0, 0)
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Text = tostring(default)
+	valueLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+	valueLabel.Font = Enum.Font.GothamBold
+	valueLabel.TextSize = 14
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+	valueLabel.Parent = container
+	
+	local slider = Instance.new("TextBox")
+	slider.Size = UDim2.new(1, -50, 0, 20)
+	slider.Position = UDim2.new(0, 0, 0, 25)
+	slider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	slider.Text = tostring(default)
+	slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+	slider.Font = Enum.Font.Gotham
+	slider.TextSize = 14
+	slider.ClearTextOnFocus = false
+	local sliderCorner = Instance.new("UICorner")
+	sliderCorner.CornerRadius = UDim.new(0, 4)
+	sliderCorner.Parent = slider
+	slider.Parent = container
+	
+	local function update(value)
+		local num = tonumber(value)
+		if num then
+			num = math.clamp(num, min, max)
+			valueLabel.Text = tostring(num)
+			callback(num)
+		else
+			valueLabel.Text = tostring(default)
+			callback(default)
+		end
+	end
+	
+	slider.FocusLost:Connect(function()
+		update(slider.Text)
+	end)
+	
+	slider:GetPropertyChangedSignal("Text"):Connect(function()
+		local num = tonumber(slider.Text)
+		if num then
+			num = math.clamp(num, min, max)
+			valueLabel.Text = tostring(num)
+		end
+	end)
+	
+	return slider, valueLabel
+end
+
+local function CreateCheckbox(name, default, callback)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, -10, 0, 30)
+	container.BackgroundTransparency = 1
+	container.Parent = SettingsContainer
+	
+	local checkbox = Instance.new("TextButton")
+	checkbox.Size = UDim2.new(0, 20, 0, 20)
+	checkbox.Position = UDim2.new(0, 0, 0.5, -10)
+	checkbox.BackgroundColor3 = default and Color3.fromRGB(253, 104, 159) or Color3.fromRGB(60, 60, 60)
+	checkbox.Text = ""
+	local checkboxCorner = Instance.new("UICorner")
+	checkboxCorner.CornerRadius = UDim.new(0, 4)
+	checkboxCorner.Parent = checkbox
+	checkbox.Parent = container
+	
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -30, 1, 0)
+	label.Position = UDim2.new(0, 25, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = container
+	
+	local state = default
+	local function updateColor()
+		checkbox.BackgroundColor3 = state and Color3.fromRGB(253, 104, 159) or Color3.fromRGB(60, 60, 60)
+	end
+	updateColor()
+	
+	checkbox.MouseButton1Click:Connect(function()
+		state = not state
+		updateColor()
+		callback(state)
+	end)
+	
+	return checkbox
+end
+
+local function CreateColorPicker(name, defaultColor, callback)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, -10, 0, 100)
+	container.BackgroundTransparency = 1
+	container.Parent = SettingsContainer
+	
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 0, 20)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = name
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 14
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Parent = container
+	
+	local preview = Instance.new("Frame")
+	preview.Size = UDim2.new(0, 30, 0, 30)
+	preview.Position = UDim2.new(1, -35, 0, 0)
+	preview.BackgroundColor3 = defaultColor
+	local previewCorner = Instance.new("UICorner")
+	previewCorner.CornerRadius = UDim.new(0, 4)
+	previewCorner.Parent = preview
+	preview.Parent = container
+	
+	local rSlider, rVal = CreateSlider("R", 0, 255, defaultColor.R * 255, function(val)
+		local newColor = Color3.new(val/255, defaultColor.G, defaultColor.B)
+		preview.BackgroundColor3 = newColor
+		callback(newColor)
+	end)
+	rSlider.Position = UDim2.new(0, 0, 0, 25)
+	rSlider.Size = UDim2.new(0.9, -10, 0, 20)
+	rSlider.Parent = container
+	
+	local gSlider, gVal = CreateSlider("G", 0, 255, defaultColor.G * 255, function(val)
+		local newColor = Color3.new(defaultColor.R, val/255, defaultColor.B)
+		preview.BackgroundColor3 = newColor
+		callback(newColor)
+	end)
+	gSlider.Position = UDim2.new(0, 0, 0, 50)
+	gSlider.Size = UDim2.new(0.9, -10, 0, 20)
+	gSlider.Parent = container
+	
+	local bSlider, bVal = CreateSlider("B", 0, 255, defaultColor.B * 255, function(val)
+		local newColor = Color3.new(defaultColor.R, defaultColor.G, val/255)
+		preview.BackgroundColor3 = newColor
+		callback(newColor)
+	end)
+	bSlider.Position = UDim2.new(0, 0, 0, 75)
+	bSlider.Size = UDim2.new(0.9, -10, 0, 20)
+	bSlider.Parent = container
+end
+
+CreateSectionTitle("Основные настройки")
+
+local maxFovSlider, maxFovValue = CreateSlider("Угол обзора (FOV) 0-180", 0, 180, 90, function(val)
+	maxFov = val
+end)
+
+CreateCheckbox("Проверять стены", true, function(val)
+	checkWalls = val
+end)
+
+CreateCheckbox("Показывать круг FOV", true, function(val)
+	showFovCircle = val
+	if fovCircle then
+		fovCircle.Visible = val
+	end
+end)
+
+CreateSectionTitle("Настройки круга")
+
+CreateSlider("Множитель радиуса", 1, 10, 3.5, function(val)
+	circleRadiusFactor = val
+end)
+
+CreateColorPicker("Цвет круга", Color3.fromRGB(0, 255, 0), function(val)
+	circleColor = val
+	if fovCircle then
+		fovCircle.Color = val
+	end
+end)
+
+CreateSlider("Прозрачность круга", 0, 1, 0.6, function(val)
+	circleTransparency = val
+	if fovCircle then
+		fovCircle.Transparency = val
+	end
+end)
+
+CreateSectionTitle("Отладка")
+
+CreateCheckbox("Режим отладки", false, function(val)
+	debugMode = val
+end)
+
+SettingsContainer.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 20)
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	SettingsContainer.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 20)
+end)
+
+local isMinimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	MainFrame.Size = isMinimized and UDim2.new(0, 394, 0, 50) or UDim2.new(0, 394, 0, 331)
+	SettingsContainer.Visible = not isMinimized
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
+end)
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+	MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TopBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		updateDrag(input)
+	end
+end)
+
+maxFov = 90   
+checkWalls = true  
+showFovCircle = true     
+circleRadiusFactor = 3.5   
+circleColor = Color3.fromRGB(255, 255, 255)  
+circleTransparency = 0.6  
+debugMode = false         
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local isAiming = false
+fovCircle = nil
+
+local function isTargetVisible(targetPart, targetCharacter)
+	if not checkWalls then return true end
+
+	local cameraPos = Camera.CFrame.Position
+	local targetPos = targetPart.Position
+	local direction = (targetPos - cameraPos).Unit
+	local distance = (targetPos - cameraPos).Magnitude
+
+	local ignoreList = {Camera}
+	if LocalPlayer.Character then
+		for _, v in ipairs(LocalPlayer.Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				table.insert(ignoreList, v)
+			end
+		end
+	end
+
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+	raycastParams.FilterDescendantsInstances = ignoreList
+
+	local result = workspace:Raycast(cameraPos, direction * distance, raycastParams)
+
+	if result then
+		if result.Instance:IsDescendantOf(targetCharacter) then
+			return true
+		else
+			return false
+		end
+	else
+		return true
+	end
+end
+
+local function getBestTarget()
+	local bestPart = nil
+	local bestCharacter = nil
+	local bestDist = math.huge
+	local cameraPos = Camera.CFrame.Position
+	local cameraDir = Camera.CFrame.LookVector
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			local character = player.Character
+			if character then
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.Health > 0 then
+					local targetPart = character:FindFirstChild("Head")
+									or character:FindFirstChild("HumanoidRootPart")
+									or character:FindFirstChild("Torso")
+									or character:FindFirstChild("UpperTorso")
+					if targetPart then
+						local targetPos = targetPart.Position
+						local dirToTarget = (targetPos - cameraPos).Unit
+						local dot = cameraDir:Dot(dirToTarget)
+						local angle = math.acos(math.clamp(dot, -1, 1)) * (180 / math.pi)
+
+						if angle <= maxFov then
+							if isTargetVisible(targetPart, character) then
+								local dist = (targetPos - cameraPos).Magnitude
+								if dist < bestDist then
+									bestDist = dist
+									bestPart = targetPart
+									bestCharacter = character
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return bestPart, bestCharacter
+end
+
+local function createFovCircle()
+	local success, drawingLib = pcall(function() return Drawing end)
+	if success and drawingLib then
+		fovCircle = Drawing.new("Circle")
+		fovCircle.Visible = false
+		fovCircle.Color = circleColor
+		fovCircle.Transparency = circleTransparency
+		fovCircle.NumSides = 60
+		fovCircle.Filled = false
+		fovCircle.Thickness = 2
+	else
+		fovCircle = nil
+	end
+end
+local function updateFovCircle()
+	if fovCircle and showFovCircle then
+		local viewportSize = Camera.ViewportSize
+		fovCircle.Position = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+		fovCircle.Radius = maxFov * circleRadiusFactor
+		fovCircle.Visible = true
+	elseif fovCircle then
+		fovCircle.Visible = false
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 and not gameProcessed then
+		isAiming = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		isAiming = false
+	end
+end)
+
+createFovCircle()
+
+RunService.RenderStepped:Connect(function()
+	updateFovCircle()
+
+	if isAiming then
+		local targetPart, targetChar = getBestTarget()
+		if targetPart then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+		end
+	end
+end)
+
+ScreenGui.Parent = game:GetService("CoreGui")

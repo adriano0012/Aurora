@@ -1,0 +1,32 @@
+-- Локальный скрипт (LocalScript) должен находиться в StarterPack, StarterGui или StarterCharacterScripts
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local function onJumpRequest()
+    if humanoidRootPart then
+        -- Получаем текущую позицию и добавляем 5 studs по оси Y (вверх)
+        local currentPosition = humanoidRootPart.Position
+        local newPosition = currentPosition + Vector3.new(0, 5, 0)
+        
+        -- Телепортируем персонажа
+        humanoidRootPart.CFrame = CFrame.new(newPosition)
+    end
+end
+
+-- Обработка нажатия пробела
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Space and not gameProcessed then
+        onJumpRequest()
+    end
+end)
+
+-- Обновление ссылок на персонажа при его смене
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+end)

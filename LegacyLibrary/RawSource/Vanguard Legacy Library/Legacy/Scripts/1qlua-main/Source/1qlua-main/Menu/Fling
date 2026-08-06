@@ -1,0 +1,477 @@
+
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Состояния
+local walkflinging = false
+local antifling = nil
+local noClipEnabled = false
+local noClipConnection = nil
+
+-- Функции флинга
+local function enableWalkFling()
+    if walkflinging then return end
+    walkflinging = true
+    task.spawn(function()
+        local RunService = game:GetService("RunService")
+        local LocalPlayer = game.Players.LocalPlayer
+        while walkflinging do
+            RunService.Heartbeat:Wait()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local vel = root.Velocity
+                root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                
+                RunService.RenderStepped:Wait()
+                if root then
+                    root.Velocity = vel
+                end
+            end
+        end
+    end)
+end
+
+local function disableWalkFling()
+    walkflinging = false
+end
+
+local function enableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+    end
+    antifling = game:GetService("RunService").Stepped:Connect(function()
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                for _, v in pairs(player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function disableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+        antifling = nil
+    end
+end
+
+-- Функция NoClip
+local function enableNoClip()
+    if noClipEnabled then return end
+    noClipEnabled = true
+    
+    noClipConnection = RunService.Stepped:Connect(function()
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+
+local function disableNoClip()
+    if not noClipEnabled then return end
+    noClipEnabled = false
+    
+    if noClipConnection then
+        noClipConnection:Disconnect()
+        noClipConnection = nil
+    end
+    
+    if LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+-- Основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LoopMenu"
+ScreenGui.DisplayOrder = 9999
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 331)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Закругление основного окна
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+-- Верхняя панель
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 50)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+-- Закругление верхней панели
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TitleBar
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 5, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 42, 0.5, -8)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+DecorativeLine.Parent = TitleBar
+
+-- Закругление полоски
+local LineCorner = Instance.new("UICorner")
+LineCorner.CornerRadius = UDim.new(0, 2)
+LineCorner.Parent = DecorativeLine
+
+-- Заголовок (исправленный шрифт)
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, -150, 1, 0)
+TitleLabel.Position = UDim2.new(0, 55, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Fling Menu"
+TitleLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 31
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+-- Кнопка "Свернуть"
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Parent = TitleBar
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.Font = Enum.Font.GothamBold
+MinimizeText.TextSize = 20
+MinimizeText.Parent = MinimizeButton
+
+local MinimizeImageButton = Instance.new("ImageButton")
+MinimizeImageButton.Name = "MinimizeImageButton"
+MinimizeImageButton.Size = UDim2.new(1, 0, 1, 0)
+MinimizeImageButton.BackgroundTransparency = 1
+MinimizeImageButton.Image = ""
+MinimizeImageButton.Parent = MinimizeButton
+
+-- Кнопка "Закрыть"
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.Parent = TitleBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.Font = Enum.Font.GothamBold
+CloseText.TextSize = 18
+CloseText.Parent = CloseButton
+
+local CloseImageButton = Instance.new("ImageButton")
+CloseImageButton.Name = "CloseImageButton"
+CloseImageButton.Size = UDim2.new(1, 0, 1, 0)
+CloseImageButton.BackgroundTransparency = 1
+CloseImageButton.Image = ""
+CloseImageButton.Parent = CloseButton
+
+-- Основная область для кнопок
+local ButtonsContainer = Instance.new("Frame")
+ButtonsContainer.Name = "ButtonsContainer"
+ButtonsContainer.Size = UDim2.new(1, -30, 1, -80)
+ButtonsContainer.Position = UDim2.new(0, 15, 0, 65)
+ButtonsContainer.BackgroundTransparency = 1
+ButtonsContainer.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = ButtonsContainer
+
+-- Функция создания стилизованной кнопки
+local function CreateButton(text, buttonColor)
+    local Button = Instance.new("TextButton")
+    Button.Name = text .. "Button"
+    Button.Size = UDim2.new(1, 0, 0, 45)
+    Button.BackgroundColor3 = buttonColor
+    Button.BorderSizePixel = 0
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 16
+    Button.AutoButtonColor = false
+    Button.Parent = ButtonsContainer
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 8)
+    ButtonCorner.Parent = Button
+    
+    local ButtonStroke = Instance.new("UIStroke")
+    ButtonStroke.Color = Color3.fromRGB(60, 60, 60)
+    ButtonStroke.Thickness = 1
+    ButtonStroke.Parent = Button
+    
+    -- Анимация при наведении
+    Button.MouseEnter:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = buttonColor:Lerp(Color3.fromRGB(255, 255, 255), 0.1)}):Play()
+    end)
+    
+    Button.MouseLeave:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.2), {BackgroundColor3 = buttonColor}):Play()
+    end)
+    
+    Button.MouseButton1Down:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.1), {Size = UDim2.new(1, -5, 0, 43)}):Play()
+    end)
+    
+    Button.MouseButton1Up:Connect(function()
+        TweenService:Create(Button, TweenInfo.new(0.1), {Size = UDim2.new(1, 0, 0, 45)}):Play()
+    end)
+    
+    return Button
+end
+
+-- Создаем кнопки
+local WalkFlingButton = CreateButton("WalkFling: OFF", Color3.fromRGB(50, 50, 50))
+local AntiFlingButton = CreateButton("AntiFling: OFF", Color3.fromRGB(50, 50, 50))
+local NoClipButton = CreateButton("NoClip: OFF", Color3.fromRGB(50, 50, 50))
+local TPButton = CreateButton("TP к игрокам", Color3.fromRGB(50, 50, 50))
+local CloseScriptButton = CreateButton("Отключить скрипт", Color3.fromRGB(50, 50, 50))
+
+-- Функция для обновления состояния кнопок
+local function UpdateButtonState()
+    -- WalkFling
+    if walkflinging then
+        WalkFlingButton.Text = "WalkFling: ON"
+        WalkFlingButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        WalkFlingButton.TextColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        WalkFlingButton.Text = "WalkFling: OFF"
+        WalkFlingButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        WalkFlingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+    
+    -- AntiFling
+    if antifling then
+        AntiFlingButton.Text = "AntiFling: ON"
+        AntiFlingButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        AntiFlingButton.TextColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        AntiFlingButton.Text = "AntiFling: OFF"
+        AntiFlingButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        AntiFlingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+    
+    -- NoClip
+    if noClipEnabled then
+        NoClipButton.Text = "NoClip: ON"
+        NoClipButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        NoClipButton.TextColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        NoClipButton.Text = "NoClip: OFF"
+        NoClipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        NoClipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end
+
+-- Обработчики кнопок
+WalkFlingButton.MouseButton1Click:Connect(function()
+    if not walkflinging then
+        enableWalkFling()
+    else
+        disableWalkFling()
+    end
+    UpdateButtonState()
+end)
+
+AntiFlingButton.MouseButton1Click:Connect(function()
+    if not antifling then
+        enableAntiFling()
+    else
+        disableAntiFling()
+    end
+    UpdateButtonState()
+end)
+
+NoClipButton.MouseButton1Click:Connect(function()
+    if not noClipEnabled then
+        enableNoClip()
+    else
+        disableNoClip()
+    end
+    UpdateButtonState()
+end)
+
+TPButton.MouseButton1Click:Connect(function()
+    print("Функция TP к игрокам (будет добавлена позже)")
+    
+    -- Временная анимация кнопки
+    local originalText = TPButton.Text
+    TPButton.Text = "Скоро..."
+    TPButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+    wait(1)
+    TPButton.Text = originalText
+    TPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+end)
+
+CloseScriptButton.MouseButton1Click:Connect(function()
+    -- Отключаем все функции перед закрытием
+    if walkflinging then
+        disableWalkFling()
+    end
+    if antifling then
+        disableAntiFling()
+    end
+    if noClipEnabled then
+        disableNoClip()
+    end
+    
+    -- Анимация закрытия
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 331)}):Play()
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.146, 197, 0.3, 0)}):Play()
+    wait(0.3)
+    ScreenGui:Destroy()
+end)
+
+-- Функция для перемещения GUI
+local Dragging, DragInput, DragStart, StartPos
+
+local function UpdateInput(input)
+    local Delta = input.Position - DragStart
+    MainFrame.Position = UDim2.new(
+        StartPos.X.Scale, 
+        StartPos.X.Offset + Delta.X, 
+        StartPos.Y.Scale, 
+        StartPos.Y.Offset + Delta.Y
+    )
+end
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        StartPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        DragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == DragInput and Dragging then
+        UpdateInput(input)
+    end
+end)
+
+-- Функция сворачивания/разворачивания
+local Minimized = false
+local OriginalSize = MainFrame.Size
+local OriginalPosition = MainFrame.Position
+
+MinimizeImageButton.MouseButton1Click:Connect(function()
+    if not Minimized then
+        -- Сворачиваем
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 394, 0, 50)}):Play()
+        Minimized = true
+        MinimizeText.Text = "+"
+        ButtonsContainer.Visible = false
+    else
+        -- Разворачиваем
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = OriginalSize}):Play()
+        Minimized = false
+        MinimizeText.Text = "-"
+        ButtonsContainer.Visible = true
+    end
+end)
+
+-- Функция закрытия GUI
+CloseImageButton.MouseButton1Click:Connect(function()
+    -- Анимация закрытия
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 331)}):Play()
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Position = UDim2.new(0.146, 197, 0.3, 0)}):Play()
+    wait(0.3)
+    ScreenGui:Destroy()
+end)
+
+UpdateButtonState()
+local DropShadow = Instance.new("ImageLabel")
+DropShadow.Name = "DropShadow"
+DropShadow.Size = UDim2.new(1, 10, 1, 10)
+DropShadow.Position = UDim2.new(0, -5, 0, -5)
+DropShadow.BackgroundTransparency = 1
+DropShadow.Image = "rbxassetid://6015897843"
+DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+DropShadow.ImageTransparency = 0.5
+DropShadow.ScaleType = Enum.ScaleType.Slice
+DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+DropShadow.Parent = MainFrame
+

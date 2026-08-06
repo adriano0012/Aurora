@@ -1,0 +1,1 @@
+# Logging`n`nEstrutura futura para logs, níveis e histórico. Ainda não implementado.

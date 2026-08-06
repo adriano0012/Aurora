@@ -1,0 +1,367 @@
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local coreGui = game:GetService("CoreGui")
+local httpService = game:GetService("HttpService")
+local lighting = game:GetService("Lighting")
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local guiService = game:GetService("GuiService")
+local statsService = game:GetService("Stats")
+local starterGui = game:GetService("StarterGui")
+local teleportService = game:GetService("TeleportService")
+local tweenService = game:GetService("TweenService")
+local userInputService = game:GetService('UserInputService')
+local gameSettings = UserSettings():GetService("UserGameSettings")
+
+local camera = workspace.CurrentCamera
+local localPlayer = players.LocalPlayer
+local mouse = localPlayer:GetMouse()
+local smartBarOpen = true
+local debounce = false
+local checkingForKey = true
+local oldVolume = gameSettings.MasterVolume
+
+local siriusValues = {
+    siriusVersion = "1.26",
+    siriusName = "Sirius",
+    interfaceAsset = 14183548964,
+    actions = {},
+}
+
+local siriusSettings = {
+    {
+        name = 'Keybinds',
+        color = Color3.new(0.0941176, 0.686275, 0.509804),
+        categorySettings = {
+            {
+                name = 'Toggle smartBar',
+                settingType = 'Key',
+                current = "K",
+                id = 'smartbar'
+            },
+        }
+    }
+}
+
+local guiParent = gethui and gethui() or coreGui
+local sirius = guiParent:FindFirstChild("Sirius")
+if sirius then sirius:Destroy() end
+
+local UI = game:GetObjects('rbxassetid://'..siriusValues.interfaceAsset)[1]
+UI.Name = siriusValues.siriusName
+UI.Parent = guiParent
+UI.Enabled = false
+UI.DisplayOrder = 100  -- высокий приоритет отображения
+
+local notificationContainer = UI.Notifications
+local smartBar = UI.SmartBar
+local toggle = UI.Toggle
+local toastsContainer = UI.Toasts
+
+for _, child in ipairs(UI:GetChildren()) do
+    if child:IsA("Frame") and child.Name ~= "SmartBar" and child.Name ~= "Notifications" and child.Name ~= "Toasts" and child.Name ~= "Toggle" then
+        child:Destroy()
+    end
+end
+
+for _, btn in ipairs(smartBar.Buttons:GetChildren()) do
+    if btn:IsA("Frame") then btn:Destroy() end
+end
+
+local buttonContainer = smartBar.Buttons
+buttonContainer:ClearAllChildren()
+buttonContainer.ZIndex = 100  -- высокий ZIndex для контейнера
+
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.VerticalAlignment = Enum.VerticalAlignment.Center
+layout.Padding = UDim.new(0, 8)
+layout.Parent = buttonContainer
+
+local padding = Instance.new("UIPadding")
+padding.PaddingLeft = UDim.new(0, 10)
+padding.PaddingRight = UDim.new(0, 10)
+padding.Parent = buttonContainer
+
+function addCustomButton(name, config)
+    assert(name and type(name) == "string")
+    assert(config and type(config) == "table")
+    assert(config.image1 and config.image2)
+    assert(config.color1 and config.color2)
+    assert(config.script1 and config.script2)
+
+    local button = Instance.new("Frame")
+    button.Name = name
+    button.Size = UDim2.new(0, 36, 0, 36)
+    button.BackgroundColor3 = config.color1
+    button.BackgroundTransparency = 0
+    button.ZIndex = 1010  -- выше контейнера
+    button.Parent = buttonContainer
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = config.color1
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0
+    stroke.ZIndex = 1011
+    stroke.Parent = button
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 50
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+        ColorSequenceKeypoint.new(1, config.color1)
+    })
+    gradient.Parent = button
+
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 20, 0, 20)
+    icon.AnchorPoint = Vector2.new(0.5,0.5)
+    icon.Position = UDim2.new(0.5,0,0.5,0)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://" .. config.image1
+    icon.ImageTransparency = 0.5
+    icon.ZIndex = 1012
+    icon.Parent = button
+
+    local interact = Instance.new("TextButton")
+    interact.Name = "Interact"
+    interact.Size = UDim2.new(1,0,1,0)
+    interact.BackgroundTransparency = 1
+    interact.Text = ""
+    interact.ZIndex = 1013
+    interact.Parent = button
+
+    local currentState = 1
+
+    local function updateButton()
+        if currentState == 1 then
+            tweenService:Create(button, TweenInfo.new(0.3), { BackgroundColor3 = config.color1 }):Play()
+            tweenService:Create(stroke, TweenInfo.new(0.3), { Color = config.color1 }):Play()
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+                ColorSequenceKeypoint.new(1, config.color1)
+            })
+            icon.Image = "rbxassetid://" .. config.image1
+        else
+            tweenService:Create(button, TweenInfo.new(0.3), { BackgroundColor3 = config.color2 }):Play()
+            tweenService:Create(stroke, TweenInfo.new(0.3), { Color = config.color2 }):Play()
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+                ColorSequenceKeypoint.new(1, config.color2)
+            })
+            icon.Image = "rbxassetid://" .. config.image2
+        end
+    end
+
+    interact.MouseButton1Click:Connect(function()
+        if debounce then return end
+        currentState = currentState == 1 and 2 or 1
+        updateButton()
+        local scriptToRun = (currentState == 1) and config.script1 or config.script2
+        if type(scriptToRun) == "string" then
+            loadstring(scriptToRun)()
+        elseif type(scriptToRun) == "function" then
+            scriptToRun()
+        end
+        tweenService:Create(button, TweenInfo.new(0.1), { Size = UDim2.new(0,32,0,32) }):Play()
+        task.wait(0.1)
+        tweenService:Create(button, TweenInfo.new(0.2), { Size = UDim2.new(0,36,0,36) }):Play()
+    end)
+
+    interact.MouseEnter:Connect(function()
+        if debounce then return end
+        tweenService:Create(button, TweenInfo.new(0.3), { BackgroundTransparency = 0.2 }):Play()
+        tweenService:Create(stroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
+        tweenService:Create(icon, TweenInfo.new(0.2), { ImageTransparency = 0 }):Play()
+    end)
+
+    interact.MouseLeave:Connect(function()
+        if debounce then return end
+        tweenService:Create(button, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+        tweenService:Create(stroke, TweenInfo.new(0.3), { Transparency = 0 }):Play()
+        tweenService:Create(icon, TweenInfo.new(0.2), { ImageTransparency = 0.5 }):Play()
+    end)
+
+    table.insert(siriusValues.actions, { name = name, button = button, config = config })
+    layout:ApplyLayout()
+    return button
+end
+
+local function checkTools()
+    task.wait(0.03)
+    if localPlayer.Backpack and localPlayer.Character then
+        if localPlayer.Backpack:FindFirstChildOfClass('Tool') or localPlayer.Character:FindFirstChildOfClass('Tool') then
+            return true
+        end
+    end
+    return false
+end
+
+local function openSmartBar()
+    smartBarOpen = true
+    smartBar.Visible = true
+    smartBar.BackgroundTransparency = 1
+    smartBar.UIStroke.Transparency = 1
+    smartBar.Shadow.ImageTransparency = 1
+    smartBar.Position = UDim2.new(0.5, 0, 1.05, 0)
+    smartBar.Size = UDim2.new(0, 531, 0, 64)
+    toggle.Rotation = 180
+    if checkTools() then
+        toggle.Position = UDim2.new(0.5,0,1,-68)
+    else
+        toggle.Position = UDim2.new(0.5,0,1,-5)
+    end
+    for _, btn in ipairs(buttonContainer:GetChildren()) do
+        if btn:IsA("Frame") then
+            btn.BackgroundTransparency = 1
+            if btn:FindFirstChild("UIStroke") then btn.UIStroke.Transparency = 1 end
+            if btn:FindFirstChild("Icon") then btn.Icon.ImageTransparency = 1 end
+        end
+    end
+    tweenService:Create(smartBar, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -12) }):Play()
+    tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -110) }):Play()
+    tweenService:Create(toggle, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -85) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.6, Enum.EasingStyle.Quint), { Size = UDim2.new(0,581,0,70) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { BackgroundTransparency = 0 }):Play()
+    tweenService:Create(smartBar.Shadow, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { ImageTransparency = 0.7 }):Play()
+    tweenService:Create(smartBar.UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Transparency = 0.95 }):Play()
+    tweenService:Create(toggle, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 0 }):Play()
+    for _, btn in ipairs(buttonContainer:GetChildren()) do
+        if btn:IsA("Frame") then
+            tweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Size = UDim2.new(0, 36, 0, 36) }):Play()
+            tweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { BackgroundTransparency = 0 }):Play()
+            if btn:FindFirstChild("UIStroke") then
+                tweenService:Create(btn.UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Transparency = 0 }):Play()
+            end
+            if btn:FindFirstChild("Icon") then
+                tweenService:Create(btn.Icon, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { ImageTransparency = 0 }):Play()
+            end
+        end
+        task.wait(0.03)
+    end
+    task.delay(0.9, function()
+        if smartBarOpen then
+            for _, btn in ipairs(buttonContainer:GetChildren()) do
+                if btn:IsA("Frame") then
+                    btn.BackgroundTransparency = 0
+                    if btn:FindFirstChild("UIStroke") then btn.UIStroke.Transparency = 0 end
+                    if btn:FindFirstChild("Icon") then btn.Icon.ImageTransparency = 0 end
+                end
+            end
+        end
+    end)
+end
+
+local function closeSmartBar()
+    smartBarOpen = false
+    for _, btn in ipairs(buttonContainer:GetChildren()) do
+        if btn:IsA("Frame") then
+            tweenService:Create(btn, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { BackgroundTransparency = 1 }):Play()
+            if btn:FindFirstChild("UIStroke") then
+                tweenService:Create(btn.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { Transparency = 1 }):Play()
+            end
+            if btn:FindFirstChild("Icon") then
+                tweenService:Create(btn.Icon, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 1 }):Play()
+            end
+        end
+    end
+    tweenService:Create(smartBar, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { BackgroundTransparency = 1 }):Play()
+    tweenService:Create(smartBar.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { Transparency = 1 }):Play()
+    tweenService:Create(smartBar.Shadow, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 1 }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.5, Enum.EasingStyle.Back), { Size = UDim2.new(0,531,0,64) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0,1, 73) }):Play()
+    if checkTools() then
+        tweenService:Create(toggle, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-68) }):Play()
+        tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-90) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Rotation = 180 }):Play()
+    else
+        tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-28) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.45, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-5) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Rotation = 180 }):Play()
+    end
+    task.delay(0.6, function()
+        if not smartBarOpen then smartBar.Visible = false end
+    end)
+end
+
+toggle.MouseButton1Click:Connect(function()
+    if smartBarOpen then closeSmartBar() else openSmartBar() end
+end)
+
+userInputService.InputBegan:Connect(function(input, processed)
+    if not UI.Enabled then return end
+    local toggleKey = "K"
+    for _, cat in ipairs(siriusSettings) do
+        for _, set in ipairs(cat.categorySettings) do
+            if set.id == "smartbar" and set.current then
+                toggleKey = set.current
+                break
+            end
+        end
+    end
+    if input.KeyCode == Enum.KeyCode[toggleKey] and not processed and not debounce then
+        if smartBarOpen then closeSmartBar() else openSmartBar() end
+    end
+end)
+
+local function queueNotification(Title, Description, Image)
+    print("Notification:", Title, Description)
+end
+
+local function start()
+    UI.Enabled = true
+    notificationContainer.Visible = true
+    toastsContainer.Visible = true
+    smartBar.Visible = true
+    toggle.Visible = true
+
+    addCustomButton("Example", {
+        image1 = 6479819618,
+        image2 = 6479819618,
+        color1 = Color3.fromRGB(62, 211, 201),
+        color2 = Color3.fromRGB(0, 170, 127),
+        script1 = function() 
+
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/offmenu"))()
+
+         end,
+
+        script2 = function() 
+        
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/EngMenu"))()
+        
+         end
+    })
+
+    addCustomButton("Example", {
+        image1 = 9753762469,
+        image2 = 9753762469,
+        color1 = Color3.fromRGB(211, 141, 55),
+        color2 = Color3.fromRGB(0, 170, 127),
+        script1 = function() 
+
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/ENDV2SCRIPT"))()
+
+         end,
+
+        script2 = function() 
+        
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/ru/key/RuV2"))()
+        
+         end
+    })
+
+    task.spawn(function()
+        while UI.Enabled do
+            if smartBar and smartBar:FindFirstChild("Time") then
+                smartBar.Time.Text = os.date("%H") .. ":" .. os.date("%M")
+            end
+            task.wait(1)
+        end
+    end)
+end
+
+start()

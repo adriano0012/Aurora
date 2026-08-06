@@ -1,0 +1,1 @@
+# LT2 Tests`n`nReservado para testes do adaptador de LT2.

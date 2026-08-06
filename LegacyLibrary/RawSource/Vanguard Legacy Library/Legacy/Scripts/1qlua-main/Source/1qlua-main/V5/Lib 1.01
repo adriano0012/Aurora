@@ -1,0 +1,1543 @@
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+task.wait(0.5)
+
+local coreGui = game:GetService("CoreGui")
+local httpService = game:GetService("HttpService")
+local lighting = game:GetService("Lighting")
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local guiService = game:GetService("GuiService")
+local statsService = game:GetService("Stats")
+local starterGui = game:GetService("StarterGui")
+local teleportService = game:GetService("TeleportService")
+local tweenService = game:GetService("TweenService")
+local userInputService = game:GetService('UserInputService')
+local gameSettings = UserSettings():GetService("UserGameSettings")
+local camera = workspace.CurrentCamera
+local localPlayer = players.LocalPlayer
+if not localPlayer then
+    localPlayer = players:GetPropertyChangedSignal("LocalPlayer"):Wait() or players.LocalPlayer
+end 
+local mouse = localPlayer:GetMouse()
+local smartBarOpen = true  
+local debounce = false
+local siriusValues = {
+    siriusVersion = "1.26",
+    siriusName = "SiriusSmartBar",
+    interfaceAsset = 14183548964,  
+    actions = {},
+}
+
+local siriusSettings = {
+    { 
+        name = 'Keybinds',
+        color = Color3.new(0.0941176, 0.686275, 0.509804),
+        categorySettings = {
+            { name = 'Toggle smartBar', settingType = 'Key', current = "K", id = 'smartbar' },
+        }
+    } 
+}
+
+local guiParent = gethui and gethui() or coreGui 
+local sirius = guiParent:FindFirstChild("Sirius")
+if sirius then sirius:Destroy() end 
+
+local UI
+local success, err = pcall(function()
+    UI = game:GetObjects('rbxassetid://'..siriusValues.interfaceAsset)[1]
+end)
+
+if not success or not UI then
+    return
+end
+
+task.wait(0.3)
+
+UI.Name = siriusValues.siriusName
+UI.Parent = guiParent
+UI.Enabled = false  
+UI.DisplayOrder = 100 
+
+local notificationContainer = UI:WaitForChild("Notifications")
+local smartBar = UI:WaitForChild("SmartBar")
+local toggle = UI:WaitForChild("Toggle")
+local toastsContainer = UI:WaitForChild("Toasts")
+
+local smartBarStroke = smartBar:WaitForChild("UIStroke")
+local smartBarShadow = smartBar:WaitForChild("Shadow") 
+local buttonContainer = smartBar:WaitForChild("Buttons")
+
+for _, child in ipairs(UI:GetChildren()) do
+    if child:IsA("Frame") and child.Name ~= "SmartBar" and child.Name ~= "Notifications" and child.Name ~= "Toasts" and child.Name ~= "Toggle" then
+        child:Destroy()
+    end
+end
+
+if buttonContainer then
+    for _, btn in ipairs(buttonContainer:GetChildren()) do
+        if btn:IsA("Frame") then btn:Destroy() end
+    end
+    buttonContainer:ClearAllChildren()
+    buttonContainer.ZIndex = 100
+end
+
+local layout = Instance.new("UIListLayout")
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center 
+layout.VerticalAlignment = Enum.VerticalAlignment.Center
+layout.Padding = UDim.new(0, 8)
+layout.Parent = buttonContainer
+
+local padding = Instance.new("UIPadding")
+padding.PaddingLeft = UDim.new(0, 10)
+padding.PaddingRight = UDim.new(0, 10)
+padding.Parent = buttonContainer
+
+function addCustomButton(name, config)
+    assert(name and type(name) == "string")
+    assert(config and type(config) == "table")
+    assert(config.image1 and config.image2)
+    assert(config.color1 and config.color2)
+    assert(config.script1 and config.script2)
+
+    local button = Instance.new("Frame")
+    button.Name = name
+    button.Size = UDim2.new(0, 36, 0, 36)
+    button.BackgroundColor3 = config.color1
+    button.BackgroundTransparency = 0
+    button.ZIndex = 1010
+    button.Parent = buttonContainer
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = config.color1
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0
+    stroke.ZIndex = 1011
+    stroke.Parent = button
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 50
+    gradient.Color = ColorSequence.new({ 
+        ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+        ColorSequenceKeypoint.new(1, config.color1)
+    })
+    gradient.Parent = button
+
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 20, 0, 20)
+    icon.AnchorPoint = Vector2.new(0.5,0.5)
+    icon.Position = UDim2.new(0.5,0,0.5,0)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://" .. config.image1
+    icon.ImageTransparency = 0.5
+    icon.ZIndex = 1012
+    icon.Parent = button
+
+    local interact = Instance.new("TextButton")
+    interact.Name = "Interact"
+    interact.Size = UDim2.new(1,0,1,0)
+    interact.BackgroundTransparency = 1
+    interact.Text = ""
+    interact.ZIndex = 1013
+    interact.Parent = button
+
+    local currentState = 1
+    local function updateButton()
+        if currentState == 1 then
+            tweenService:Create(button, TweenInfo.new(0.3), { BackgroundColor3 = config.color1 }):Play()
+            tweenService:Create(stroke, TweenInfo.new(0.3), { Color = config.color1 }):Play()
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+                ColorSequenceKeypoint.new(1, config.color1)
+            })
+            icon.Image = "rbxassetid://" .. config.image1
+        else
+            tweenService:Create(button, TweenInfo.new(0.3), { BackgroundColor3 = config.color2 }):Play()
+            tweenService:Create(stroke, TweenInfo.new(0.3), { Color = config.color2 }):Play()
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.new(0.1,0.1,0.1)),
+                ColorSequenceKeypoint.new(1, config.color2)
+            })
+            icon.Image = "rbxassetid://" .. config.image2
+        end
+    end
+
+    interact.MouseButton1Click:Connect(function()
+        if debounce then return end
+        currentState = currentState == 1 and 2 or 1
+        updateButton()
+        local scriptToRun = (currentState == 1) and config.script1 or config.script2
+        if type(scriptToRun) == "string" then
+            loadstring(scriptToRun)()
+        elseif type(scriptToRun) == "function" then
+            scriptToRun()
+        end
+        tweenService:Create(button, TweenInfo.new(0.1), { Size = UDim2.new(0,32,0,32) }):Play()
+        task.wait(0.1)
+        tweenService:Create(button, TweenInfo.new(0.2), { Size = UDim2.new(0,36,0,36) }):Play()
+    end)
+
+    interact.MouseEnter:Connect(function()
+        if debounce then return end
+        tweenService:Create(button, TweenInfo.new(0.3), { BackgroundTransparency = 0.2 }):Play()
+        tweenService:Create(stroke, TweenInfo.new(0.3), { Transparency = 1 }):Play()
+        tweenService:Create(icon, TweenInfo.new(0.2), { ImageTransparency = 0 }):Play()
+    end)
+
+    interact.MouseLeave:Connect(function()
+        if debounce then return end
+        tweenService:Create(button, TweenInfo.new(0.3), { BackgroundTransparency = 0 }):Play()
+        tweenService:Create(stroke, TweenInfo.new(0.3), { Transparency = 0 }):Play()
+        tweenService:Create(icon, TweenInfo.new(0.2), { ImageTransparency = 0.5 }):Play()
+    end)
+
+    table.insert(siriusValues.actions, { name = name, button = button, config = config })
+    layout:ApplyLayout()
+    return button
+end
+
+local function checkTools()
+    task.wait(0.03)
+    if localPlayer.Backpack and localPlayer.Character then
+        if localPlayer.Backpack:FindFirstChildOfClass('Tool') or localPlayer.Character:FindFirstChildOfClass('Tool') then
+            return true
+        end
+    end 
+    return false
+end
+local function openSmartBar()
+    smartBarOpen = true 
+    smartBar.Visible = true
+    smartBar.BackgroundTransparency = 1
+    
+    if smartBarStroke then smartBarStroke.Transparency = 1 end
+    if smartBarShadow then smartBarShadow.ImageTransparency = 1 end
+    
+    smartBar.Position = UDim2.new(0.5, 0, 1.05, 0)
+    smartBar.Size = UDim2.new(0, 531, 0, 64)
+    toggle.Rotation = 180
+    if checkTools() then
+        toggle.Position = UDim2.new(0.5,0,1,-68)
+    else
+        toggle.Position = UDim2.new(0.5,0,1,-5)
+    end
+    
+    if buttonContainer then
+        for _, btn in ipairs(buttonContainer:GetChildren()) do
+            if btn:IsA("Frame") then
+                btn.BackgroundTransparency = 1
+                if btn:FindFirstChild("UIStroke") then btn.UIStroke.Transparency = 1 end
+                if btn:FindFirstChild("Icon") then btn.Icon.ImageTransparency = 1 end
+            end
+        end
+    end
+    
+    tweenService:Create(smartBar, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -12) }):Play()
+    tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -110) }):Play()
+    tweenService:Create(toggle, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0, 1, -85) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.6, Enum.EasingStyle.Quint), { Size = UDim2.new(0,581,0,70) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { BackgroundTransparency = 0 }):Play()
+    
+    if smartBarShadow then
+        tweenService:Create(smartBarShadow, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { ImageTransparency = 0.7 }):Play()
+    end
+    if smartBarStroke then
+        tweenService:Create(smartBarStroke, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Transparency = 0.95 }):Play()
+    end
+    
+    tweenService:Create(toggle, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 0 }):Play()
+    
+    if buttonContainer then
+        for _, btn in ipairs(buttonContainer:GetChildren()) do 
+            if btn:IsA("Frame") then
+                tweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Size = UDim2.new(0, 36, 0, 36) }):Play()
+                tweenService:Create(btn, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { BackgroundTransparency = 0 }):Play()
+                if btn:FindFirstChild("UIStroke") then
+                    tweenService:Create(btn.UIStroke, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { Transparency = 0 }):Play()
+                end
+                if btn:FindFirstChild("Icon") then
+                    tweenService:Create(btn.Icon, TweenInfo.new(0.8, Enum.EasingStyle.Quint), { ImageTransparency = 0 }):Play()
+                end
+            end
+            task.wait(0.03)
+        end
+    end
+end
+local function closeSmartBar()
+    smartBarOpen = false
+    if buttonContainer then
+        for _, btn in ipairs(buttonContainer:GetChildren()) do
+            if btn:IsA("Frame") then
+                tweenService:Create(btn, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { BackgroundTransparency = 1 }):Play()
+                if btn:FindFirstChild("UIStroke") then
+                    tweenService:Create(btn.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { Transparency = 1 }):Play()
+                end
+                if btn:FindFirstChild("Icon") then
+                    tweenService:Create(btn.Icon, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 1 }):Play()
+                end
+            end
+        end
+    end
+    
+    tweenService:Create(smartBar, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { BackgroundTransparency = 1 }):Play()
+    
+    if smartBarStroke then
+        tweenService:Create(smartBarStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { Transparency = 1 }):Play()
+    end
+    if smartBarShadow then
+        tweenService:Create(smartBarShadow, TweenInfo.new(0.3, Enum.EasingStyle.Quint), { ImageTransparency = 1 }):Play()
+    end
+    
+    tweenService:Create(smartBar, TweenInfo.new(0.5, Enum.EasingStyle.Back), { Size = UDim2.new(0,531,0,64) }):Play()
+    tweenService:Create(smartBar, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5, 0,1, 73) }):Play()
+    if checkTools() then
+        tweenService:Create(toggle, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-68) }):Play()
+        tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-90) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Rotation = 180 }):Play()
+    else
+        tweenService:Create(toastsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-28) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.45, Enum.EasingStyle.Quint), { Position = UDim2.new(0.5,0,1,-5) }):Play()
+        tweenService:Create(toggle, TweenInfo.new(0.7, Enum.EasingStyle.Quint), { Rotation = 180 }):Play()
+    end
+    task.delay(0.6, function()
+        if not smartBarOpen then smartBar.Visible = false end
+    end)
+end
+
+toggle.MouseButton1Click:Connect(function()
+    if smartBarOpen then closeSmartBar() else openSmartBar() end
+end)
+
+userInputService.InputBegan:Connect(function(input, processed)
+    if not UI.Enabled then return end
+    local toggleKey = "K"
+    for _, cat in ipairs(siriusSettings) do
+        for _, set in ipairs(cat.categorySettings) do
+            if set.id == "smartbar" and set.current then
+                toggleKey = set.current
+                break
+            end
+        end
+    end
+    if input.KeyCode == Enum.KeyCode[toggleKey] and not processed and not debounce then
+        if smartBarOpen then closeSmartBar() else openSmartBar() end
+    end
+end)
+
+-- НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ
+-- НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ
+-- НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ
+-- НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ НАЧАЛО БИБЛЕОТЕКИ
+local Library = (function()
+
+local Library = {}
+Library.__index = Library
+
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+local function Tween(obj, time, props) 
+    TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
+end
+
+local function New(class, props)
+    local inst = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        if k ~= "Parent" then inst[k] = v end
+    end
+    if props and props.Parent then inst.Parent = props.Parent end
+    return inst
+end
+
+function Library:Init(title)
+    title = title or "Setting"
+    local self = setmetatable({}, Library)
+    self.Menus = {}
+    self.CurrentMenu = nil
+    self.DefaultTitle = title
+    self.IsOpen = false
+
+    task.wait(0.5)
+
+    pcall(function() 
+        local existing = (gethui and gethui() or game.CoreGui):FindFirstChild("1qluaLib")
+        if existing then existing:Destroy() end
+    end)
+ 
+    local ScreenGui = New("ScreenGui", {
+        Name = "1qluaLib",
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        DisplayOrder = 200,
+    })
+    pcall(function()
+        if syn and syn.protect_gui then
+            syn.protect_gui(ScreenGui)
+            ScreenGui.Parent = game.CoreGui
+        elseif gethui then
+            ScreenGui.Parent = gethui()
+        else
+            ScreenGui.Parent = game.CoreGui
+        end
+    end)
+    if not ScreenGui.Parent then
+        ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    end
+    self.ScreenGui = ScreenGui
+
+    local Frame2 = New("Frame", {
+        Parent = ScreenGui, Name = "MainFrame",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 873, 0, 783),
+        Visible = false,
+    })
+    self.Frame2 = Frame2
+
+    local FrameF = New("Frame", {
+        Parent = Frame2, Name = "FrameF",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 873, 0, 783),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+    })
+    New("UICorner", {Parent = FrameF})
+
+    New("UIGridLayout", {
+        Parent = FrameF,
+        FillDirection = Enum.FillDirection.Vertical,
+        CellPadding = UDim2.new(100, 0, 100, 0),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        FillDirectionMaxCells = 15,
+        CellSize = UDim2.new(1, 0, 1, 0),
+    })
+    self.FrameF = FrameF
+
+    local SettingFrame = New("Frame", {
+        Parent = FrameF, Name = "setting",
+        LayoutOrder = 1,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 486, 0.5, 0),
+        Size = UDim2.new(0, 973, 0, 774),
+    })
+
+    local SettingInner = New("Frame", {
+        Parent = SettingFrame,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 486, 0.54, 0),
+        Size = UDim2.new(0, 973, 0, 720),
+    })
+
+    local MenusHolder = New("Frame", {
+        Parent = SettingInner,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 907, 0, 658),
+    })
+    New("UIGridLayout", {
+        Parent = MenusHolder,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        CellSize = UDim2.new(0, 292, 0, 134),
+        CellPadding = UDim2.new(0, 15, 0, 15),
+    })
+    self.SettingFrame = SettingFrame
+    self.MenusHolder = MenusHolder
+
+    local TopBar = New("Frame", {
+        Parent = Frame2, Name = "FrameAll",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 873, 0, 783),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+    })
+    New("UICorner", {Parent = TopBar})
+
+    local TitleLabel = New("TextLabel", {
+        Parent = TopBar, Name = "NameF",
+        TextWrapped = true, TextColor3 = Color3.new(1, 1, 1),
+        Text = title,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 35, Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.0236, 0, 0, 10),
+        Size = UDim2.new(0, 400, 0, 31),
+        ZIndex = 4,
+    })
+    self.TitleLabel = TitleLabel
+
+    New("Frame", {
+        Parent = TopBar,
+        Size = UDim2.new(0, 845, 0, 2),
+        Position = UDim2.new(0.0164, 0, 0, 54),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(68, 71, 70),
+        ZIndex = 4,
+    })
+
+    local BackArrow1 = New("Frame", {
+        Parent = TopBar, Rotation = 49,
+        Size = UDim2.new(0, 6, 0, 18),
+        Position = UDim2.new(0.9698, -5, 0.0231, 4),
+        BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1),
+        ZIndex = 2, Visible = false,
+    })
+    New("UICorner", {Parent = BackArrow1})
+    local BackArrow2 = New("Frame", {
+        Parent = TopBar, Rotation = -49,
+        Size = UDim2.new(0, 6, 0, 18),
+        Position = UDim2.new(0.9698, -5, 0.0231, -5),
+        BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1),
+        ZIndex = 2, Visible = false,
+    })
+    New("UICorner", {Parent = BackArrow2})
+    local BackArrow3 = New("Frame", {
+        Parent = TopBar, Rotation = 90,
+        Position = UDim2.new(0.9623, -6, 0.0224, -4),
+        Size = UDim2.new(0, 6, 0, 27),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(236, 236, 236),
+        ZIndex = 2, Visible = false,
+    })
+    New("UICorner", {Parent = BackArrow3})
+
+local BackButton = New("ImageButton", {
+        Parent = TopBar, Name = "Buttondown",
+        Size = UDim2.new(0, 36, 0, 31),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.9445, 0, 0.0128, 0), 
+        ZIndex = 6, Visible = false,
+    })
+
+    local CloseBtn = New("ImageButton", {
+        Parent = TopBar, Name = "CloseButton",
+        Size = UDim2.new(0, 30, 0, 30),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.965, 0, 0.015, 0),
+        ZIndex = 6,
+    })
+    CloseBtn.MouseButton1Click:Connect(function() end)
+
+    New("UICorner", {Parent = CloseBtn})
+    self.CloseBtn = CloseBtn
+
+    self.BackArrows = {BackArrow1, BackArrow2, BackArrow3}
+    self.BackButton = BackButton
+
+    BackButton.MouseButton1Click:Connect(function() self:ShowSettings() end)
+
+
+    local DragHandle = New("Frame", {
+        Parent = TopBar, Name = "DragHandle",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 54),
+        Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 1,
+    })
+    self.DragHandle = DragHandle
+
+    self:MakeDraggable(Frame2, DragHandle)
+    self:SetupAdaptiveScale(Frame2)
+    return self
+end
+
+function Library:Open()
+    self.IsOpen = true
+    self.Frame2.Visible = true
+    if self._UpdateScale then self._UpdateScale() end
+    if self._ApplyUserSize then self._ApplyUserSize() end
+end
+
+function Library:Close()
+    self.IsOpen = false
+    self.Frame2.Visible = false
+end
+
+function Library:Toggle()
+    if self.IsOpen then self:Close() else self:Open() end
+end
+
+function Library:MakeDraggable(frame, dragArea)
+    local dragging, dragInput, dragStart, startPos
+    dragArea.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    dragArea.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+function Library:SetupAdaptiveScale(frame)
+    local BASE_SIZE = Vector2.new(873, 783)
+    local MIN_SCALE = 0.3
+    local MAX_SCALE = 2
+    local SCREEN_PADDING = 40
+
+    self.UserScaleMult = 1
+    self.UserOffsetX = 0
+    self.UserOffsetY = 0
+
+    local UIScaleInst = New("UIScale", { Parent = frame, Scale = 1 })
+    self.UIScaleInst = UIScaleInst
+
+    local function UpdateScale()
+        local cam = workspace.CurrentCamera
+        if not cam then return end
+        local viewport = cam.ViewportSize
+        if viewport.X <= 0 or viewport.Y <= 0 then return end
+        local availableX = math.max(viewport.X - SCREEN_PADDING, 1)
+        local availableY = math.max(viewport.Y - SCREEN_PADDING, 1)
+        local scaleX = availableX / BASE_SIZE.X
+        local scaleY = availableY / BASE_SIZE.Y
+        local scale = math.min(scaleX, scaleY, 1)
+        if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+            scale = scale * 0.85
+        end
+        scale = scale * (self.UserScaleMult or 1)
+        scale = math.clamp(scale, MIN_SCALE, MAX_SCALE)
+        Tween(UIScaleInst, 0.2, {Scale = scale})
+    end
+
+    local function ApplyUserSize()
+        frame.Position = UDim2.new(0.5, self.UserOffsetX or 0, 0.5, self.UserOffsetY or 0)
+        UpdateScale()
+    end
+
+    self._UpdateScale = UpdateScale
+    self._ApplyUserSize = ApplyUserSize
+
+    if workspace.CurrentCamera then
+        workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
+    end
+    workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+        local cam = workspace.CurrentCamera
+        if cam then
+            cam:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
+            UpdateScale()
+        end
+    end)
+    UpdateScale()
+end
+
+function Library:ShowSettings()
+    self.SettingFrame.LayoutOrder = 1
+    for _, menu in ipairs(self.Menus) do
+        menu.Frame.LayoutOrder = 2
+    end
+    self.TitleLabel.Text = self.DefaultTitle
+    self.CurrentMenu = nil
+    for _, arrow in ipairs(self.BackArrows) do arrow.Visible = false end
+    self.BackButton.Visible = false
+end
+
+function Library:ShowMenu(menu)
+    self.SettingFrame.LayoutOrder = 2
+    for _, m in ipairs(self.Menus) do
+        m.Frame.LayoutOrder = (m == menu) and 1 or 2
+    end
+    self.TitleLabel.Text = menu.Name
+    self.CurrentMenu = menu
+    for _, arrow in ipairs(self.BackArrows) do arrow.Visible = true end
+    self.BackButton.Visible = true
+end
+
+function Library:CreateMenu(name, color)
+    name = name or "Menu"
+    color = color or Color3.fromRGB(129, 0, 0)
+    local menu = {}
+    menu.Name = name
+    menu.Color = color
+    menu.Lib = self
+
+    local Btn = New("TextButton", {
+        Parent = self.MenusHolder, Name = name,
+        Text = "", TextColor3 = Color3.new(0, 0, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        Font = Enum.Font.SourceSans, TextSize = 14,
+        Size = UDim2.new(0, 276, 0, 134),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.new(1, 1, 1),
+    })
+    New("UICorner", {Parent = Btn})
+    New("UIGradient", {
+        Parent = Btn,
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, color),
+            ColorSequenceKeypoint.new(0.761, Color3.fromRGB(30, 33, 38)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 33, 38)),
+        },
+        Offset = Vector2.new(0, -0.5), Rotation = 49,
+    })
+    New("TextLabel", {
+        Parent = Btn, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        Font = Enum.Font.SourceSans, BackgroundTransparency = 1,
+        Position = UDim2.new(0.138, 0, 0.313, 0),
+        TextSize = 38, Size = UDim2.new(0, 200, 0, 50),
+    })
+    local Stroke = New("UIStroke", {
+        Parent = Btn, ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Color = Color3.new(1, 1, 1),
+    })
+    local lightColor = Color3.new(
+        math.min(color.R + 0.4, 1),
+        math.min(color.G + 0.4, 1),
+        math.min(color.B + 0.4, 1)
+    )
+    New("UIGradient", {
+        Parent = Stroke,
+        Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, lightColor),
+            ColorSequenceKeypoint.new(0.761, Color3.fromRGB(88, 97, 112)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(88, 97, 112)),
+        },
+        Offset = Vector2.new(0, -0.5), Rotation = 49,
+    })
+
+    local MenuFrame = New("Frame", {
+        Parent = self.FrameF, Name = name, LayoutOrder = 2,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 486, 0.5, 0),
+        Size = UDim2.new(0, 973, 0, 774),
+    })
+    local MenuInner = New("Frame", {
+        Parent = MenuFrame,
+        Size = UDim2.new(0, 973, 0, 720),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0.08, 0),
+    })
+    local Scroll = New("ScrollingFrame", {
+        Parent = MenuInner,
+        ScrollBarImageColor3 = Color3.new(0, 0, 0),
+        ScrollBarThickness = 4,
+        Size = UDim2.new(0, 940, 0, 689),
+        BackgroundTransparency = 1, Active = true,
+        Position = UDim2.new(0.0175, 0, 0.019, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    })
+    New("UIListLayout", {
+        Parent = Scroll,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+    })
+    New("UIPadding", { Parent = Scroll, PaddingTop = UDim.new(0, 8) })
+
+    menu.Frame = MenuFrame
+    menu.Scroll = Scroll
+    menu.Elements = {}
+
+    Btn.MouseButton1Click:Connect(function() self:ShowMenu(menu) end)
+    table.insert(self.Menus, menu)
+    setmetatable(menu, {__index = self})
+    menu.CreateButton = Library.CreateButton
+    menu.CreateSlider = Library.CreateSlider
+    menu.CreateToggle = Library.CreateToggle
+    menu.CreateSubtitle = Library.CreateSubtitle
+    menu.CreateTextBox = Library.CreateTextBox
+    return menu
+end
+
+function Library:CreateButton(opts)
+    opts = opts or {}
+    local name = opts.Name or "Button"
+    local description = opts.Description or ""
+    local callback = opts.Callback or function() end
+    local key = opts.Key
+
+    local Container = New("Frame", {
+        Parent = self.Scroll,
+        Size = UDim2.new(0, 917, 0, 60),
+        BackgroundTransparency = 1, Name = "Butten",
+    })
+    local IconBox = New("Frame", {
+        Parent = Container,
+        Size = UDim2.new(0, 68, 0, 36), Name = "Butten",
+        Position = UDim2.new(0.0164, 0, 0.197, 0),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(37, 97, 0),
+        ZIndex = 2,
+    })
+    New("UIStroke", {Parent = IconBox, Color = Color3.fromRGB(0, 157, 31)})
+    New("UICorner", {Parent = IconBox})
+    local BG = New("Frame", {
+        Parent = Container,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 400, 0.494, 1),
+        Size = UDim2.new(0, 800, 0, 56),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+    })
+    New("UICorner", {Parent = BG})
+    local ClickBtn = New("ImageButton", {
+        Parent = Container,
+        Size = UDim2.new(0, 901, 0, 56),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.05, 0, 0.04, 0),
+        ZIndex = 4,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 26, Name = "name",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.233, -2),
+        Size = UDim2.new(0, 806, 0, 24), ZIndex = 2,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.fromRGB(141, 141, 141),
+        Text = description,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 13, Name = "description",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.633, -4),
+        Size = UDim2.new(0, 806, 0, 20), ZIndex = 2,
+    })
+    local KeyBox = New("Frame", {
+        Parent = Container, Size = UDim2.new(0, 50, 0, 42),
+        Name = "Key",
+        Position = UDim2.new(0.7995, 0, 0.160, 0),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(28, 30, 35),
+        ZIndex = 6, Visible = key ~= nil,
+    })
+    local KeyText = New("TextBox", {
+        Parent = KeyBox, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = key or "",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1, TextSize = 18,
+        Size = UDim2.new(0, 47, 0, 42),
+        ZIndex = 6, ClearTextOnFocus = false,
+    })
+    New("UIStroke", {Parent = KeyBox, Color = Color3.fromRGB(85, 85, 85)})
+    New("UICorner", {Parent = KeyBox})
+
+    local function runCallback()
+        local ok, err = pcall(callback)
+        if not ok then  end
+    end
+
+    ClickBtn.MouseButton1Click:Connect(function()
+        Tween(IconBox, 0.1, {BackgroundColor3 = Color3.fromRGB(60, 160, 0)})
+        wait(0.1)
+        Tween(IconBox, 0.1, {BackgroundColor3 = Color3.fromRGB(37, 97, 0)})
+        runCallback()
+    end)
+
+    local currentKey = key
+    KeyText.Focused:Connect(function() KeyText.Text = "" end)
+    KeyText:GetPropertyChangedSignal("Text"):Connect(function()
+        if KeyText.Text ~= "" and #KeyText.Text > 0 then
+            currentKey = KeyText.Text:upper():sub(1,1)
+            KeyText.Text = currentKey
+        end
+    end)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard and currentKey then
+            if input.KeyCode.Name:upper() == currentKey:upper() then
+                runCallback()
+            end
+        end
+    end)
+
+    return {
+        SetText = function(_, t) name = t end,
+        Fire = runCallback,
+    }
+end
+
+function Library:CreateSlider(opts)
+    opts = opts or {}
+    local name = opts.Name or "Slider"
+    local description = opts.Description or ""
+    local min = opts.Min or 0
+    local max = opts.Max or 100
+    local default = opts.Default or min
+    local step = opts.Step or 1
+    local callback = opts.Callback or function() end
+
+    local decimals = 0
+    do
+        local s = tostring(step)
+        local dot = s:find("%.")
+        if dot then decimals = #s - dot end
+    end
+    local function formatVal(v)
+        if decimals > 0 then
+            return string.format("%." .. decimals .. "f", v)
+        else
+            return tostring(math.floor(v + 0.5))
+        end
+    end
+    local function snapToStep(v)
+        if step <= 0 then return v end
+        local n = math.floor((v - min) / step + 0.5)
+        return min + n * step
+    end
+
+    local Container = New("Frame", {
+        Parent = self.Scroll,
+        Size = UDim2.new(0, 917, 0, 60),
+        BackgroundTransparency = 1, Name = "Slider",
+    })
+    local BG = New("Frame", {
+        Parent = Container,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 400, 0.494, 1),
+        Size = UDim2.new(0, 800, 0, 56),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+    })
+    New("UICorner", {Parent = BG})
+    local Track = New("Frame", {
+        Parent = Container, Name = "Slider",
+        Position = UDim2.new(0.0164, 0, 0.333, 0),
+        Size = UDim2.new(0, 259, 0, 22),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(24, 25, 30),
+    })
+    New("UIStroke", {Parent = Track, Color = Color3.fromRGB(85, 85, 85)})
+    New("UICorner", {Parent = Track})
+    local Fill = New("Frame", {
+        Parent = Track, Name = "Fill",
+        Position = UDim2.new(-0.004, 0, 0, 0),
+        Size = UDim2.new(0, 0, 0, 22),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(25, 134, 0),
+    })
+    New("UIStroke", {Parent = Fill, Color = Color3.fromRGB(66, 188, 0)})
+    New("UICorner", {Parent = Fill})
+    local ValueLabel = New("TextLabel", {
+        Parent = Fill, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = formatVal(default),
+        TextXAlignment = Enum.TextXAlignment.Right,
+        TextSize = 22, Name = "Value",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -8, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5),
+        Size = UDim2.new(0, 80, 0, 24), ZIndex = 2,
+    })
+    local ClickArea = New("ImageButton", {
+        Parent = Track,
+        Size = UDim2.new(1, 0, 1, 0), 
+        BackgroundTransparency = 1, ZIndex = 3,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.fromRGB(141, 141, 141),
+        Text = description,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 13, Name = "description",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.3119, 0, 0.633, -4),
+        Size = UDim2.new(0, 615, 0, 20), ZIndex = 2,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 26, Name = "name",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.3119, 0, 0.233, -2),
+        Size = UDim2.new(0, 615, 0, 24), ZIndex = 2,
+    })
+
+    local currentValue = default
+    local maxWidth = 259
+
+    local function setValue(val)
+        val = math.clamp(val, min, max)
+        val = snapToStep(val)
+        val = math.clamp(val, min, max)
+        currentValue = val
+        local percent = (max - min) > 0 and ((currentValue - min) / (max - min)) or 0
+        Fill.Size = UDim2.new(0, maxWidth * percent, 0, 22)
+        ValueLabel.Text = formatVal(currentValue)
+        local ok, err = pcall(callback, currentValue)
+        if not ok then print()("[SWAG SUS]:", err) end
+    end
+
+    setValue(default)
+
+    local dragging = false
+    ClickArea.MouseButton1Down:Connect(function() dragging = true end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local mouseX = input.Position.X
+            local trackX = Track.AbsolutePosition.X
+            local percent = math.clamp((mouseX - trackX) / Track.AbsoluteSize.X, 0, 1)
+            local newVal = min + (max - min) * percent
+            setValue(newVal)
+        end
+    end)
+
+    return {
+        Set = function(_, v) setValue(v) end,
+        Get = function() return currentValue end,
+    }
+end
+
+function Library:CreateToggle(opts)
+    opts = opts or {}
+    local name = opts.Name or "Toggle"
+    local description = opts.Description or ""
+    local default = opts.Default or false
+    local callback = opts.Callback or function() end
+    local key = opts.Key
+
+    local Container = New("Frame", {
+        Parent = self.Scroll,
+        Size = UDim2.new(0, 917, 0, 60),
+        BackgroundTransparency = 1, Name = "Toggle",
+    })
+    local BG = New("Frame", {
+        Parent = Container,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 400, 0.494, 1),
+        Size = UDim2.new(0, 800, 0, 56),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+    })
+    New("UICorner", {Parent = BG})
+    local ToggleBox = New("Frame", {
+        Parent = Container, Name = "Toggle",
+        Position = UDim2.new(0.0164, 0, 0.333, 0),
+        Size = UDim2.new(0, 68, 0, 22),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(24, 25, 30),
+    })
+    New("UICorner", {Parent = ToggleBox})
+    New("UIStroke", {Parent = ToggleBox, Color = Color3.fromRGB(85, 85, 85)})
+    local Knob = New("Frame", {
+        Parent = ToggleBox,
+        Position = UDim2.new(-0.004, 0, 0, 0),
+        Size = UDim2.new(0, 32, 0, 22),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(134, 0, 0),
+    })
+    New("UICorner", {Parent = Knob})
+    local KnobStroke = New("UIStroke", {Parent = Knob, Color = Color3.fromRGB(188, 0, 0)})
+    local ClickBtn = New("ImageButton", {
+        Parent = ToggleBox,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(-0.015, 0, -0.455, 0),
+        Size = UDim2.new(0, 69, 0, 42),
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.fromRGB(141, 141, 141),
+        Text = description,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 13, Name = "description",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.583, -4),
+        Size = UDim2.new(0, 615, 0, 20), ZIndex = 2,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 26, Name = "name",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.183, -2),
+        Size = UDim2.new(0, 615, 0, 24), ZIndex = 2,
+    })
+    local KeyBox = New("Frame", {
+        Parent = Container, Size = UDim2.new(0, 50, 0, 42),
+        Name = "Key",
+        Position = UDim2.new(0.7995, 0, 0.160, 0),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(28, 30, 35),
+        ZIndex = 6, Visible = key ~= nil,
+    })
+    local KeyText = New("TextBox", {
+        Parent = KeyBox, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = key or "",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1, TextSize = 18,
+        Size = UDim2.new(0, 47, 0, 42),
+        ZIndex = 6, ClearTextOnFocus = false,
+    })
+    New("UICorner", {Parent = KeyBox})
+    New("UIStroke", {Parent = KeyBox, Color = Color3.fromRGB(85, 85, 85)})
+
+    local state = default
+    local function updateVisual()
+        if state then
+            Tween(Knob, 0.15, {
+                Position = UDim2.new(0.526, 0, 0, 0),
+                BackgroundColor3 = Color3.fromRGB(0, 134, 0),
+            })
+            Tween(KnobStroke, 0.15, {Color = Color3.fromRGB(0, 188, 0)})
+        else
+            Tween(Knob, 0.15, {
+                Position = UDim2.new(-0.004, 0, 0, 0),
+                BackgroundColor3 = Color3.fromRGB(134, 0, 0),
+            })
+            Tween(KnobStroke, 0.15, {Color = Color3.fromRGB(188, 0, 0)})
+        end
+    end
+    local function setState(v)
+        state = v
+        updateVisual()
+        local ok, err = pcall(callback, state)
+        if not ok then Print("[SWAG Sus]:", err) end
+    end
+
+    updateVisual()
+    if default then
+        spawn(function() pcall(callback, true) end)
+    end
+
+    ClickBtn.MouseButton1Click:Connect(function() setState(not state) end)
+
+    local currentKey = key
+    KeyText.Focused:Connect(function() KeyText.Text = "..." end)
+    KeyText:GetPropertyChangedSignal("Text"):Connect(function()
+        if KeyText.Text ~= "..." and #KeyText.Text > 0 then
+            currentKey = KeyText.Text:upper():sub(1,1)
+            KeyText.Text = currentKey
+        end
+    end)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.UserInputType == Enum.UserInputType.Keyboard and currentKey then
+            if input.KeyCode.Name:upper() == currentKey:upper() then
+                setState(not state)
+            end
+        end
+    end)
+
+    return {
+        Set = function(_, v) setState(v) end,
+        Get = function() return state end,
+        Toggle = function() setState(not state) end,
+    }
+end
+
+function Library:CreateSubtitle(opts)
+    if type(opts) == "string" then opts = {Name = opts} end
+    opts = opts or {}
+    local name = opts.Name or "Subtitle"
+
+    local Container = New("Frame", {
+        Parent = self.Scroll, Name = "Subtitle",
+        Size = UDim2.new(0, 917, 0, 56),
+        BackgroundTransparency = 1,
+    })
+    local BG = New("Frame", {
+        Parent = Container,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 400, 0.494, 1),
+        Size = UDim2.new(0, 800, 0, 46),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+    })
+    New("UICorner", {Parent = BG})
+    local Label = New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 26, Name = "name",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.0153, 0, 0.327, -2),
+        Size = UDim2.new(0, 869, 0, 24), ZIndex = 2,
+    })
+
+    return {
+        SetText = function(_, t) name = t; Label.Text = t end,
+    }
+end
+
+function Library:CreateTextBox(opts)
+    opts = opts or {}
+    local name = opts.Name or "TextBox"
+    local description = opts.Description or ""
+    local placeholder = opts.Placeholder or opts.Default or ""
+    local callback = opts.Callback or function() end
+
+    local Container = New("Frame", {
+        Parent = self.Scroll, Name = "TextBox",
+        Size = UDim2.new(0, 917, 0, 60),
+        BackgroundTransparency = 1,
+    })
+    local BG = New("Frame", {
+        Parent = Container,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 400, 0.494, 1),
+        Size = UDim2.new(0, 800, 0, 56),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+    }) 
+    New("UICorner", {Parent = BG})
+    local Box = New("Frame", {
+        Parent = Container, Name = "TextBox",
+        Position = UDim2.new(0.0164, 0, 0.15, 0),
+        Size = UDim2.new(0, 68, 0, 42),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(24, 25, 30),
+    })
+    New("UICorner", {Parent = Box})
+    New("UIStroke", {Parent = Box, Color = Color3.fromRGB(85, 85, 85)})
+    local Input = New("TextBox", {
+        Parent = Box, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = placeholder,
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1, TextSize = 14,
+        Size = UDim2.new(0, 68, 0, 42),
+        ZIndex = 6, ClearTextOnFocus = false,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.new(1, 1, 1), Text = name,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 26, Name = "name",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.183, -2),
+        Size = UDim2.new(0, 615, 0, 24), ZIndex = 2,
+    })
+    New("TextLabel", {
+        Parent = Container, RichText = true,
+        TextColor3 = Color3.fromRGB(141, 141, 141),
+        Text = description,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextSize = 13, Name = "description",
+        Font = Enum.Font.SourceSansBold,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.1036, 0, 0.583, -4),
+        Size = UDim2.new(0, 615, 0, 20), ZIndex = 2,
+    })
+
+    local currentText = placeholder
+
+    Input.Focused:Connect(function()
+        if Input.Text == placeholder then Input.Text = "" end
+    end)
+    Input.FocusLost:Connect(function(enterPressed)
+        currentText = Input.Text
+        if currentText == "" then
+            Input.Text = placeholder
+        end
+        local ok, err = pcall(callback, currentText, enterPressed)
+        if not ok then end
+    end)
+
+    return {
+        SetText = function(_, t) currentText = t; Input.Text = t end,
+        GetText = function() return currentText end,
+    }
+end
+
+return Library 
+end)()
+
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+-- начало!!! начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!!  начало!!! 
+
+local Window = Library:Init("Setting")
+
+local LocalTab = Window:CreateMenu("Local", Color3.fromRGB(0, 150, 0))
+
+local UITab = Window:CreateMenu("UI Size", Color3.fromRGB(150, 150, 150))
+
+LocalTab:CreateToggle({
+    Name = "Буст скорости",
+    Description = "Включения буста",
+    Key = "F",
+    Default = false,
+    Callback = function(state)
+        if state then
+            _G.EvadeActive = true
+        else
+            _G.EvadeActive = false 
+        end
+    end
+})
+
+LocalTab:CreateSlider({
+    Name = "Максимальная скорость",
+    Description = "Слайдер для максимальной скорости",
+    Min = 1,
+    Max = 10,
+    Default = 5,
+    Step = 0.1,
+    Callback = function(value)
+            _G.EvadeMaxSpeed = value
+    end
+})
+
+LocalTab:CreateSlider({
+    Name = "Скорости разгона",
+    Description = "Слайдер для насколько быстро набирается скорость",
+    Min = 0.1,
+    Max = 5,
+    Default = 0.2,
+    Step = 0.1,
+    Callback = function(value)
+            _G.EvadeAccel = value
+    end
+})
+ 
+
+LocalTab:CreateSlider({
+    Name = "Высота прыжка",
+    Description = "Слайдер для насколько высоко можешь прыгать",
+    Min = 5,
+    Max = 100,
+    Default = 10,
+    Step = 0.1,
+    Callback = function(value)
+    _G.JumpPower = value
+    end
+})
+
+LocalTab:CreateSlider({
+    Name = "Fov",
+    Description = "Слайдер для поле зрения",
+    Min = 5,
+    Max = 120,
+    Default = 90,
+    Step = 0.1,
+    Callback = function(value)
+    _G.FOV = value
+    end
+})
+
+LocalTab:CreateButton({
+    Name = "Удалить невидимые стены",
+    Description = "Да да мне лень делать описание",
+    Key = "Z",
+    Callback = function()
+local LP = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+pcall(function()
+    local char = LP.Character
+    local allPlayers = Players:GetPlayers()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and v.Transparency == 1 then
+            local isPlayer = false
+            
+            if char and v:IsDescendantOf(char) then 
+                isPlayer = true 
+            end
+            
+            if not isPlayer then
+                for _, p in pairs(allPlayers) do
+                    if p.Character and v:IsDescendantOf(p.Character) then
+                        isPlayer = true
+                        break
+                    end
+                end
+            end
+            
+            if not isPlayer then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+    end 
+})
+
+LocalTab:CreateSubtitle("Есть идеи что добавить?")
+
+LocalTab:CreateTextBox({
+    Name = "Имя",
+    Description = "Что вписать",
+    Placeholder = "Text",
+    Callback = function(text, enterPressed) 
+        print(text)
+    end,
+})
+
+LocalTab:CreateButton({
+    Name = "Есть идеи что добавить? (https://discord.gg/5n8AjWAbJn)",
+    Description = "напишите нам в дискорд (КОПИРУЕТ СЫЛЛКУ НА ДИСКОРД)",
+    Callback = function()
+        setclipboard("https://discord.gg/5n8AjWAbJn")
+    end 
+})
+
+
+UITab:CreateSlider({
+    Name = "Размер меню",
+    Description = "Общий масштаб всего окна ",
+    Min = 0.5, Max = 2.0, Default = 0.8, Step = 0.1,
+    Callback = function(value)
+    wait(0.3)
+        Window.UserScaleMult = value
+        if Window._ApplyUserSize then Window._ApplyUserSize() end
+    end
+})
+UITab:CreateButton({
+    Name = "Сброс размера",
+    Description = "Вернуть стандартный размер и положение окна",
+    Callback = function()
+        Window.UserScaleMult = 1
+        Window.UserOffsetX = 0
+        Window.UserOffsetY = 0
+        if Window._ApplyUserSize then Window._ApplyUserSize() end
+    end 
+})
+Window:Close()
+
+local function start()
+    if not Window then
+        task.wait(0.2)
+    end
+
+    if Window and Window.Close then 
+        Window:Close() 
+    end
+    UI.Enabled = true
+    notificationContainer.Visible = true
+    toastsContainer.Visible = true
+    addCustomButton("Settings", {
+        image1 = 9753762469,
+        image2 = 9753762469,
+        color1 = Color3.fromRGB(211, 141, 55),
+        color2 = Color3.fromRGB(0, 170, 127),
+        script1 = function()
+            if Window and Window.Close then Window:Close() end
+        end,
+        script2 = function() 
+            if Window and Window.Open then Window:Open() end
+        end
+    })
+    openSmartBar() 
+    task.spawn(function()
+        while UI.Enabled do
+            if smartBar and smartBar:FindFirstChild("Time") then
+                smartBar.Time.Text = os.date("%H") .. ":" .. os.date("%M")
+            end
+            task.wait(1)
+        end
+    end)
+end
+
+start()
+
+_G.EvadeActive = false
+_G.EvadeStartSpeed = 1.0
+_G.EvadeMaxSpeed = 5.0
+_G.EvadeAccel = 0.2
+_G.EvadeDecel = 4.0
+local currentMult = _G.EvadeStartSpeed
+local p = game:GetService("Players").LocalPlayer
+game:GetService("RunService").RenderStepped:Connect(function(dt)
+    if not _G.EvadeActive then currentMult = _G.EvadeStartSpeed return end
+    local c = p.Character
+    local r = c and c:FindFirstChild("HumanoidRootPart")
+    local h = c and c:FindFirstChildOfClass("Humanoid")
+    if r and h and h.Health > 0 then
+        if h.MoveDirection.Magnitude > 0 then
+            currentMult = math.min(_G.EvadeMaxSpeed, currentMult + (_G.EvadeAccel * dt))
+            if currentMult > _G.EvadeStartSpeed then
+                r.CFrame = r.CFrame + (h.MoveDirection * ((currentMult - _G.EvadeStartSpeed) * 15) * dt)
+            end
+        else
+            currentMult = math.max(_G.EvadeStartSpeed, currentMult - (_G.EvadeDecel * dt))
+        end
+    end
+end)
+
+
+_G.JumpPower = 20
+_G.JumpEnabled = true
+
+local LP = game:GetService("Players").LocalPlayer
+local RS = game:GetService("RunService")
+
+RS.Heartbeat:Connect(function()
+    if not _G.JumpEnabled then return end
+    pcall(function()
+        local char = LP.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.UseJumpPower = true
+                if hum.JumpPower ~= _G.JumpPower then
+                    hum.JumpPower = _G.JumpPower
+                end
+            end
+        end
+    end)
+end)
+
+_G.FOV = 90
+_G.FOVEnabled = true
+local RS = game:GetService("RunService")
+pcall(function() RS:UnbindFromRenderStep("ForceFOV") end)
+RS:BindToRenderStep("ForceFOV", Enum.RenderPriority.Camera.Value + 1, function()
+    if not _G.FOVEnabled then return end
+    local C = workspace.CurrentCamera
+    if C then
+        C.FieldOfView = _G.FOV
+    end
+end)

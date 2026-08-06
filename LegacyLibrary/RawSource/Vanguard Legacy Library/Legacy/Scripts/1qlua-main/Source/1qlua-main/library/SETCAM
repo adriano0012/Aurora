@@ -1,0 +1,56 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Точная копия рабочего COPYCAMERA, но под именем COPYCAM
+getgenv().COPYCAM = function()
+    local cam = Workspace.CurrentCamera
+    if not cam then
+        warn("❌ Камера не найдена")
+        return nil
+    end
+    
+    local cf = cam.CFrame
+    -- Полностью идентичный оригиналу формат
+    local str = string.format(
+        "CFrame.new(Vector3.new(%f, %f, %f), Vector3.new(%f, %f, %f))",
+        cf.X, cf.Y, cf.Z,
+        cf.LookVector.X * 10 + cf.X,
+        cf.LookVector.Y * 10 + cf.Y,
+        cf.LookVector.Z * 10 + cf.Z
+    )
+    
+    setclipboard(str)
+    print("📋 Позиция камеры скопирована:\n"..str)
+    return str
+end
+
+-- Точная копия рабочего SETCAMERA, но под именем SETCAM
+getgenv().SETCAM = function(pos, lookAt)
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+    
+    -- Автоматическое преобразование строки в CFrame
+    if type(pos) == "string" then
+        local success, result = pcall(function()
+            return loadstring("return "..pos)()
+        end)
+        if success then
+            cam.CFrame = result
+            print("✅ Камера установлена из строки")
+            return
+        end
+    end
+    
+    -- Оригинальная логика
+    if typeof(pos) == "CFrame" then
+        cam.CFrame = pos
+    elseif typeof(pos) == "Vector3" and lookAt then
+        cam.CFrame = CFrame.new(pos, lookAt)
+    else
+        warn("❌ Используйте:")
+        warn("SETCAM(CFrame)")
+        warn("SETCAM(Vector3 позиция, Vector3 направление)")
+        warn('SETCAM("CFrame.new(...)")')
+    end
+end

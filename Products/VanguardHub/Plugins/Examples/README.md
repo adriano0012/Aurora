@@ -1,0 +1,1 @@
+# Plugin Examples`n`nExemplos futuros de plugins compatíveis com o VanguardHub.

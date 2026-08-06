@@ -1,0 +1,166 @@
+-- Настройки
+local TELEPORT_DISTANCE = 3 -- Дистанция за спиной игрока
+local TELEPORT_INTERVAL = 0.1 -- Интервал между телепортами
+local ACTIVATION_KEY = Enum.KeyCode.G -- Клавиша активации
+
+-- Состояние системы
+local isEnabled = false
+local isFollowing = false
+local targetPlayer = nil
+local followConnection = nil
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local mouse = Players.LocalPlayer:GetMouse()
+
+-- Функция для телепортации нашего персонажа за спину цели
+local function teleportToPlayerBack(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    if not Players.LocalPlayer.Character then return end
+    
+    local targetCharacter = targetPlayer.Character
+    local targetHRP = targetCharacter:FindFirstChild("HumanoidRootPart")
+    local myCharacter = Players.LocalPlayer.Character
+    local myHRP = myCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not targetHRP or not myHRP then return end
+    if targetCharacter.Humanoid.Health <= 0 then return end
+    
+    -- Получаем направление взгляда цели
+    local targetLookVector = targetHRP.CFrame.LookVector
+    local targetPosition = targetHRP.Position
+    
+    -- Вычисляем позицию за спиной цели
+    local behindPosition = targetPosition - (targetLookVector * TELEPORT_DISTANCE)
+    
+    -- Небольшое смещение вверх, чтобы не застрять в земле
+    behindPosition = behindPosition + Vector3.new(0, 1.5, 0)
+    
+    -- Телепортируем нашего персонажа
+    myHRP.CFrame = CFrame.new(behindPosition, targetPosition)
+end
+
+-- Функция для наведения камеры на цель
+local function lookAtTarget(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    
+    local targetCharacter = targetPlayer.Character
+    local targetHRP = targetCharacter:FindFirstChild("HumanoidRootPart")
+    
+    if not targetHRP then return end
+    
+    -- Получаем текущую камеру
+    local camera = workspace.CurrentCamera
+    
+    -- Направляем камеру на цель
+    camera.CFrame = CFrame.new(camera.CFrame.Position, targetHRP.Position)
+end
+
+-- Функция остановки следования
+local function stopFollowing()
+    isFollowing = false
+    targetPlayer = nil
+    
+    if followConnection then
+        followConnection:Disconnect()
+        followConnection = nil
+    end
+end
+
+-- Функция начала следования
+local function startFollowing(player)
+    if not isEnabled or isFollowing then return end
+    
+    targetPlayer = player
+    isFollowing = true
+    
+    followConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        if not isEnabled or not isFollowing or not targetPlayer then
+            stopFollowing()
+            return
+        end
+        
+        -- Проверяем, жив ли целевой игрок
+        if not targetPlayer.Character or targetPlayer.Character.Humanoid.Health <= 0 then
+            stopFollowing()
+            print("Целевой игрок умер или вышел")
+            return
+        end
+        
+        -- Проверяем, жив ли наш игрок
+        if not Players.LocalPlayer.Character or Players.LocalPlayer.Character.Humanoid.Health <= 0 then
+            stopFollowing()
+            return
+        end
+        
+        -- Телепортируемся за спину цели и наводим камеру
+        teleportToPlayerBack(targetPlayer)
+        lookAtTarget(targetPlayer)
+    end)
+end
+
+-- Обработчик клика мыши
+local function onMouseClick()
+    if not isEnabled then return end
+    
+    local target = mouse.Target
+    if target then
+        -- Ищем родительский объект игрока
+        local model = target:FindFirstAncestorOfClass("Model")
+        if model then
+            local humanoid = model:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- Находим игрока по модели
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player.Character == model then
+                        if player ~= Players.LocalPlayer then
+                            startFollowing(player)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Обработчик нажатия клавиши G
+local function onKeyPress(input)
+    if input.KeyCode == ACTIVATION_KEY then
+        isEnabled = not isEnabled
+        
+        if not isEnabled then
+            stopFollowing()
+            print("Режим следования отключен")
+        else
+            print("Режим следования включен. Кликните на игрока, чтобы начать следовать за ним")
+        end
+    end
+end
+
+-- Подключаем обработчики событий
+mouse.Button1Down:Connect(onMouseClick)
+UserInputService.InputBegan:Connect(onKeyPress)
+
+print("Скрипт следования за игроком загружен!")
+print("Нажмите G для включения/выключения режима")
+print("Когда режим включен, кликните на игрока, чтобы начать следовать за ним")
+
+-- Автоматическая очистка при событиях
+Players.LocalPlayer.CharacterRemoving:Connect(function()
+    stopFollowing()
+end)
+
+Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    stopFollowing()
+    -- Ждем появления HumanoidRootPart
+    character:WaitForChild("HumanoidRootPart", 5)
+end)
+
+-- Останавливаем слежение при выходе целевого игрока
+Players.PlayerRemoving:Connect(function(player)
+    if player == targetPlayer then
+        stopFollowing()
+    end
+end)

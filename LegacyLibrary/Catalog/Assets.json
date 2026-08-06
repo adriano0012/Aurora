@@ -1,0 +1,26 @@
+﻿[
+    {
+        "Name":  "Animations",
+        "Path":  "Assets\\Animations"
+    },
+    {
+        "Name":  "Fonts",
+        "Path":  "Assets\\Fonts"
+    },
+    {
+        "Name":  "Icons",
+        "Path":  "Assets\\Icons"
+    },
+    {
+        "Name":  "Images",
+        "Path":  "Assets\\Images"
+    },
+    {
+        "Name":  "Sounds",
+        "Path":  "Assets\\Sounds"
+    },
+    {
+        "Name":  "Themes",
+        "Path":  "Assets\\Themes"
+    }
+]

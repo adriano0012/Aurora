@@ -1,0 +1,14 @@
+local player = game:GetService("Players").LocalPlayer
+if getgenv().noclipConnection then
+    getgenv().noclipConnection:Disconnect()
+    getgenv().noclipConnection = nil
+end
+local originalCollision = getgenv().originalCollision
+if originalCollision then
+    for part, collide in pairs(originalCollision) do
+        if part and part.Parent then
+            part.CanCollide = collide
+        end
+    end
+    getgenv().originalCollision = nil
+end

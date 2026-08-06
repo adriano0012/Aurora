@@ -1,0 +1,1 @@
+# ADR-0003 Legacy Library`n`nDecisão: a LegacyLibrary é apenas uma base de pesquisa e nunca é carregada diretamente em produção.

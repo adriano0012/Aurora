@@ -1,0 +1,29 @@
+
+local player = game:GetService("Players").LocalPlayer
+local runService = game:GetService("RunService")
+local noclipConnection
+local originalCollision = {}
+local function applyNoclip(character)
+    if not character then return end
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if originalCollision[part] == nil then
+                originalCollision[part] = part.CanCollide
+            end
+            part.CanCollide = false
+        end
+    end
+end
+noclipConnection = runService.Stepped:Connect(function()
+    local character = player.Character
+    if character then
+        applyNoclip(character)
+    end
+end)
+player.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid")
+    applyNoclip(character)
+end)
+
+getgenv().noclipConnection = noclipConnection
+getgenv().originalCollision = originalCollision

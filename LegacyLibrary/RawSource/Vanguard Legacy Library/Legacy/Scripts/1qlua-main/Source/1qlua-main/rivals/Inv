@@ -1,0 +1,333 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local hiddenParent = (gethui and gethui()) or CoreGui:FindFirstChild("RobloxGui") or CoreGui
+local function ApplyAnimatedGradientStroke(parent)
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Color = Color3.new(1, 1, 1)
+    UIStroke.Thickness = 2
+    UIStroke.Parent = parent
+
+    local UIGradient = Instance.new("UIGradient")
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 162, 233)) 
+    })
+    UIGradient.Parent = UIStroke
+    local ROTATION_SPEED = 90
+    local currentRotation = 0
+    RunService.RenderStepped:Connect(function(deltaTime)
+        currentRotation = currentRotation + (ROTATION_SPEED * deltaTime)
+        if currentRotation > 180 then
+            currentRotation = -180
+        elseif currentRotation < -180 then
+            currentRotation = 180
+        end
+        UIGradient.Rotation = currentRotation
+    end)
+end
+
+local function GetPlayerWeapon(username)
+    local viewmodels = workspace:FindFirstChild("ViewModels")
+    if viewmodels then
+        for _, model in pairs(viewmodels:GetChildren()) do
+            local splitName = string.split(model.Name, " - ")
+            if splitName[1] == username and splitName[2] then
+                return splitName[2]
+            end
+        end
+    end
+    return "None"
+end
+local informationMenuGui = Instance.new("ScreenGui")
+informationMenuGui.Name = "1Qlua_informationMenuGui"
+informationMenuGui.Parent = hiddenParent
+informationMenuGui.ResetOnSpawn = false
+informationMenuGui.Enabled = false
+informationMenuGui.DisplayOrder = 2147483647
+informationMenuGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = informationMenuGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.139, -110, 0.174, -200)
+MainFrame.Size = UDim2.new(0, 225, 0, 400)
+MainFrame.Active = true
+Instance.new("UICorner", MainFrame)
+ApplyAnimatedGradientStroke(MainFrame)
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Font = Enum.Font.Code
+Title.Text = "1Qlua_information"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextSize = 16
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Name = "PlayerList"
+PlayerList.Parent = MainFrame
+PlayerList.BackgroundTransparency = 1
+PlayerList.Position = UDim2.new(0, 10, 0, 46)
+PlayerList.Size = UDim2.new(1, -20, 1, -56)
+PlayerList.ScrollBarThickness = 0
+local UIListLayout_Players = Instance.new("UIListLayout", PlayerList)
+UIListLayout_Players.Padding = UDim.new(0, 5)
+local scenery1 = Instance.new("Frame")
+scenery1.Name = "scenery"
+scenery1.Parent = MainFrame
+scenery1.AnchorPoint = Vector2.new(0.5, 0.5)
+scenery1.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+scenery1.BackgroundTransparency = 0.5
+scenery1.BorderSizePixel = 0
+scenery1.Position = UDim2.new(0.477, 6, 0, 36)
+scenery1.Size = UDim2.new(0.955, 0, 0, 2)
+local corner_s1 = Instance.new("UICorner", scenery1)
+corner_s1.CornerRadius = UDim.new(0.02, 5)
+local scenery_2 = Instance.new("ImageLabel")
+scenery_2.Name = "scenery"
+scenery_2.Parent = MainFrame
+scenery_2.BackgroundTransparency = 1
+scenery_2.Position = UDim2.new(0.032, 3, 0.01, -2)
+scenery_2.Size = UDim2.new(0, 30, 0, 30)
+scenery_2.Image = "rbxassetid://138895356591238"
+local scenery_3 = Instance.new("ImageLabel")
+scenery_3.Name = "scenery"
+scenery_3.Parent = MainFrame
+scenery_3.BackgroundTransparency = 1
+scenery_3.Position = UDim2.new(0.827, 3, 0.01, -2)
+scenery_3.Size = UDim2.new(0, 30, 0, 30)
+scenery_3.Image = "rbxassetid://138895356591238"
+local dragging
+local dragInput
+local dragStart
+local startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+local informationGui = Instance.new("ScreenGui")
+informationGui.Name = "1Qlua_informationGui"
+informationGui.Parent = hiddenParent
+informationGui.ResetOnSpawn = false
+informationGui.Enabled = true
+informationGui.DisplayOrder = 2147483647
+informationGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+local InfoContainerFrame = Instance.new("Frame")
+InfoContainerFrame.Name = "Container"
+InfoContainerFrame.Parent = informationGui
+InfoContainerFrame.BackgroundTransparency = 1
+InfoContainerFrame.Position = UDim2.new(0.011, 0, 0.008, 0)
+InfoContainerFrame.Size = UDim2.new(0, 351, 0, 951)
+local UIListLayout_Info = Instance.new("UIListLayout", InfoContainerFrame)
+UIListLayout_Info.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout_Info.Padding = UDim.new(0, 9)
+local activeInfoPanels = {}
+local function CreateInformationPanel(targetPlayer)
+    local information = Instance.new("Frame")
+    information.Name = targetPlayer.Name
+    information.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    information.BorderSizePixel = 0
+    information.Size = UDim2.new(0, 248, 0, 130)
+    Instance.new("UICorner", information)
+    
+    ApplyAnimatedGradientStroke(information)
+
+    local InfoTitle = Instance.new("TextLabel")
+    InfoTitle.Name = "Title"
+    InfoTitle.Parent = information
+    InfoTitle.BackgroundTransparency = 1
+    InfoTitle.Size = UDim2.new(1, 0, 0, 40)
+    InfoTitle.Font = Enum.Font.Code
+    InfoTitle.Text = "information"
+    InfoTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    InfoTitle.TextSize = 16
+
+    local i_scenery = Instance.new("Frame", information)
+    i_scenery.AnchorPoint = Vector2.new(0.5, 0.5)
+    i_scenery.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    i_scenery.BackgroundTransparency = 0.5
+    i_scenery.Position = UDim2.new(0.477, 6, 0, 36)
+    i_scenery.Size = UDim2.new(0.955, 0, 0, 2)
+    Instance.new("UICorner", i_scenery).CornerRadius = UDim.new(0.02, 5)
+
+    local i_scenery_2 = Instance.new("ImageLabel", information)
+    i_scenery_2.BackgroundTransparency = 1
+    i_scenery_2.Position = UDim2.new(0.032, 3, 0.01, -2)
+    i_scenery_2.Size = UDim2.new(0, 30, 0, 30)
+    i_scenery_2.Image = "rbxassetid://138895356591238"
+
+    local i_scenery_3 = Instance.new("ImageLabel", information)
+    i_scenery_3.BackgroundTransparency = 1
+    i_scenery_3.Position = UDim2.new(0.827, 3, 0.01, -2)
+    i_scenery_3.Size = UDim2.new(0, 30, 0, 30)
+    i_scenery_3.Image = "rbxassetid://138895356591238"
+    
+    local i_scenery_4 = Instance.new("Frame", information)
+    i_scenery_4.AnchorPoint = Vector2.new(0.5, 0.5)
+    i_scenery_4.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    i_scenery_4.BackgroundTransparency = 0.5
+    i_scenery_4.Position = UDim2.new(0.639, 6, 0.323, 36)
+    i_scenery_4.Size = UDim2.new(0.49, 0, 0, 2)
+    Instance.new("UICorner", i_scenery_4).CornerRadius = UDim.new(0.02, 5)
+
+    local Gun = Instance.new("TextLabel", information)
+    Gun.BackgroundTransparency = 1
+    Gun.Position = UDim2.new(0.418, 0, 0.831, 0)
+    Gun.Size = UDim2.new(0.445, 0, -0.45, 40)
+    Gun.Font = Enum.Font.Code
+    Gun.Text = "Loading..."
+    Gun.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Gun.TextSize = 16
+    Gun.TextXAlignment = Enum.TextXAlignment.Left
+
+    local InfoIcon = Instance.new("ImageLabel", information)
+    InfoIcon.BackgroundTransparency = 1
+    InfoIcon.Position = UDim2.new(0, 21, 0, 46)
+    InfoIcon.Size = UDim2.new(0, 68, 0, 68)
+    InfoIcon.Image = Players:GetUserThumbnailAsync(targetPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    Instance.new("UICorner", InfoIcon).CornerRadius = UDim.new(0, 5)
+
+    local InfoUsername = Instance.new("TextLabel", information)
+    InfoUsername.BackgroundTransparency = 1
+    InfoUsername.Position = UDim2.new(0.418, 0, 0.492, 0)
+    InfoUsername.Size = UDim2.new(0.445, 0, -0.45, 40)
+    InfoUsername.Font = Enum.Font.Code
+    InfoUsername.Text = targetPlayer.Name
+    InfoUsername.TextColor3 = Color3.fromRGB(200, 200, 200)
+    InfoUsername.TextSize = 16
+    InfoUsername.TextXAlignment = Enum.TextXAlignment.Left
+
+    local HP = Instance.new("TextLabel", information)
+    HP.BackgroundTransparency = 1
+    HP.Position = UDim2.new(0.116, 0, 1, -1)
+    HP.Size = UDim2.new(0.211, 0, -0.45, 40)
+    HP.Font = Enum.Font.Code
+    HP.Text = "100HP"
+    HP.TextColor3 = Color3.fromRGB(200, 200, 200)
+    HP.TextSize = 16
+    HP.TextXAlignment = Enum.TextXAlignment.Left
+
+    information.Parent = InfoContainerFrame
+
+    task.spawn(function()
+        while information.Parent do
+            if targetPlayer.Character and targetPlayer.Character:FindFirstChild("Humanoid") then
+                HP.Text = math.floor(targetPlayer.Character.Humanoid.Health) .. "HP"
+            else
+                HP.Text = "0HP"
+            end
+            Gun.Text = GetPlayerWeapon(targetPlayer.Name)
+            task.wait(0.5)
+        end
+    end)
+
+    return information
+end
+
+local function AddPlayerToList(player)
+    if player == LocalPlayer then return end
+
+    local SamplePlayer = Instance.new("TextButton")
+    SamplePlayer.Name = player.Name
+    SamplePlayer.Parent = PlayerList
+    SamplePlayer.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    SamplePlayer.Size = UDim2.new(1, 0, 0, 35)
+    SamplePlayer.Font = Enum.Font.SourceSans
+    SamplePlayer.Text = ""
+    Instance.new("UICorner", SamplePlayer).CornerRadius = UDim.new(0, 4)
+
+    local icon = Instance.new("ImageLabel", SamplePlayer)
+    icon.BackgroundTransparency = 1
+    icon.Position = UDim2.new(0, 5, 0, 5)
+    icon.Size = UDim2.new(0, 25, 0, 25)
+    icon.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    Instance.new("UICorner", icon).CornerRadius = UDim.new(0, 5)
+
+    local indicator = Instance.new("Frame", SamplePlayer)
+    indicator.BackgroundColor3 = Color3.fromRGB(206, 131, 188)
+    indicator.BorderSizePixel = 0
+    indicator.Position = UDim2.new(1, -12, 0.5, -10)
+    indicator.Size = UDim2.new(0, 7, 0, 20)
+    Instance.new("UICorner", indicator).CornerRadius = UDim.new(0, 5)
+
+    local DisplayName = Instance.new("TextLabel", SamplePlayer)
+    DisplayName.BackgroundTransparency = 1
+    DisplayName.Position = UDim2.new(0, 40, 0, 2)
+    DisplayName.Size = UDim2.new(0.6, 0, 0.5, 0)
+    DisplayName.Font = Enum.Font.Code
+    DisplayName.Text = player.DisplayName
+    DisplayName.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DisplayName.TextSize = 15
+    DisplayName.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Username = Instance.new("TextLabel", SamplePlayer)
+    Username.BackgroundTransparency = 1
+    Username.Position = UDim2.new(0, 40, 0.5, 0)
+    Username.Size = UDim2.new(0.6, 0, 0.5, 0)
+    Username.Font = Enum.Font.Code
+    Username.Text = "@" .. player.Name
+    Username.TextColor3 = Color3.fromRGB(127, 127, 127)
+    Username.TextSize = 12
+    Username.TextXAlignment = Enum.TextXAlignment.Left
+
+    local isActive = false
+    SamplePlayer.MouseButton1Click:Connect(function()
+        isActive = not isActive
+        if isActive then
+            indicator.BackgroundColor3 = Color3.fromRGB(0, 134, 9)
+            activeInfoPanels[player.Name] = CreateInformationPanel(player)
+        else
+            indicator.BackgroundColor3 = Color3.fromRGB(206, 131, 188)
+            if activeInfoPanels[player.Name] then
+                activeInfoPanels[player.Name]:Destroy()
+                activeInfoPanels[player.Name] = nil
+            end
+        end
+    end)
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    AddPlayerToList(player)
+end
+
+Players.PlayerAdded:Connect(AddPlayerToList)
+Players.PlayerRemoving:Connect(function(player)
+    if PlayerList:FindFirstChild(player.Name) then
+        PlayerList[player.Name]:Destroy()
+    end
+    if activeInfoPanels[player.Name] then
+        activeInfoPanels[player.Name]:Destroy()
+        activeInfoPanels[player.Name] = nil
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, isProcessed)
+    if isProcessed then return end
+    if input.KeyCode == Enum.KeyCode.P then
+        informationMenuGui.Enabled = not informationMenuGui.Enabled
+    end
+end)

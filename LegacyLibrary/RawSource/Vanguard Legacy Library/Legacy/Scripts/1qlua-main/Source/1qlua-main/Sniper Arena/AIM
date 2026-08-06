@@ -1,0 +1,347 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Config = {
+    AimActive = false,
+    MenuOpen = false,  
+    Smoothness = 1,
+    FOVRadius = 300,
+    AimKey = Enum.KeyCode.K,
+    MenuKey = Enum.KeyCode.P,
+    Mode = "Clamp",
+    FileName = "1Qlua_Ultimate_Config.json"
+}
+
+local Blacklist = {}
+local BindingTarget = nil 
+
+local function Save()
+    if writefile then
+        local success, err = pcall(function()
+            writefile(Config.FileName, HttpService:JSONEncode({
+                Blacklist = Blacklist, 
+                Mode = Config.Mode,
+                AimKey = Config.AimKey.Name,
+                MenuKey = Config.MenuKey.Name
+            }))
+        end)
+    end
+end
+
+local function Load()
+    if isfile and isfile(Config.FileName) then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile(Config.FileName))
+        end)
+        if success and result then
+            Blacklist = result.Blacklist or {}
+            Config.Mode = result.Mode or Config.Mode
+            if result.AimKey then Config.AimKey = Enum.KeyCode[result.AimKey] end
+            if result.MenuKey then Config.MenuKey = Enum.KeyCode[result.MenuKey] end
+        end
+    end
+end
+
+Load()
+
+local AimbotMenuGui = Instance.new("ScreenGui")
+AimbotMenuGui.Name = "AimbotMenuGui"
+AimbotMenuGui.ResetOnSpawn = false
+if gethui then AimbotMenuGui.Parent = gethui() else AimbotMenuGui.Parent = game:GetService("CoreGui") end
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = AimbotMenuGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Position = UDim2.new(1, -600, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 220, 0, 400)
+MainFrame.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+RunService.RenderStepped:Connect(function()
+    if dragging and dragInput then
+        local delta = dragInput.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(255, 255, 255)
+Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local Gradient = Instance.new("UIGradient", Stroke)
+Gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 162, 233))
+}
+
+task.spawn(function()
+    local rot = 0
+    RunService.RenderStepped:Connect(function(dt)
+        rot = rot + (300 * dt)
+        Gradient.Rotation = rot % 360
+    end)
+end)
+
+local function AddImg(pos, id)
+    local img = Instance.new("ImageLabel", MainFrame)
+    img.BackgroundTransparency = 1
+    img.Position = pos
+    img.Size = UDim2.new(0, 30, 0, 30)
+    img.Image = "rbxassetid://"..id
+    return img
+end
+AddImg(UDim2.new(0.032, 3, 0.01, -2), "138895356591238")
+AddImg(UDim2.new(0.827, 3, 0.01, -2), "138895356591238")
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.Text = "1Qlua_Aim"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextSize = 16
+
+local Divider = Instance.new("Frame", MainFrame)
+Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Divider.BackgroundTransparency = 0.5
+Divider.Position = UDim2.new(0.023, 6, 0, 36)
+Divider.Size = UDim2.new(0.955, 0, 0, 2)
+Divider.BorderSizePixel = 0
+
+local function CreateBtn(text, pos, size)
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Position = pos
+    btn.Size = size
+    btn.Font = Enum.Font.GothamBold
+    btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    btn.TextSize = 13
+    btn.Text = text
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    return btn
+end
+
+local AimBtn = CreateBtn("Aim Key: " .. Config.AimKey.Name, UDim2.new(0, 10, 0, 45), UDim2.new(0.527, -20, 0, 30))
+local MenuBtn = CreateBtn("Menu Key: " .. Config.MenuKey.Name, UDim2.new(0, 116, 0, 45), UDim2.new(0.518, -20, 0, 30))
+local ModeBtn = CreateBtn("Mode: " .. Config.Mode, UDim2.new(0, 10, 0, 83), UDim2.new(1, -20, 0, 30))
+
+local PlayerList = Instance.new("ScrollingFrame", MainFrame)
+PlayerList.BackgroundTransparency = 1
+PlayerList.Position = UDim2.new(0, 10, 0, 120)
+PlayerList.Size = UDim2.new(1, -20, 1, -130)
+PlayerList.ScrollBarThickness = 0
+Instance.new("UIListLayout", PlayerList).Padding = UDim.new(0, 5)
+
+local function UpdateList()
+    for _, v in pairs(PlayerList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == LocalPlayer then continue end
+        local pId = tostring(p.UserId)
+        
+        local Card = Instance.new("TextButton", PlayerList)
+        Card.Size = UDim2.new(1, 0, 0, 35)
+        Card.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Card.Text = ""
+        Instance.new("UICorner", Card)
+
+        local Icon = Instance.new("ImageLabel", Card)
+        Icon.Size = UDim2.new(0, 25, 0, 25)
+        Icon.Position = UDim2.new(0, 5, 0, 5)
+        task.spawn(function()
+            Icon.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        end)
+        Instance.new("UICorner", Icon).CornerRadius = UDim.new(0, 5)
+
+        local DName = Instance.new("TextLabel", Card)
+        DName.Text = p.DisplayName
+        DName.Position = UDim2.new(0.16, 0, 0.13, 0)
+        DName.Size = UDim2.new(0.6, 0, 0, 20)
+        DName.TextColor3 = Color3.fromRGB(200, 200, 200)
+        DName.Font = Enum.Font.GothamBold
+        DName.TextXAlignment = "Left"
+        DName.BackgroundTransparency = 1
+        DName.TextSize = 14
+
+        local UName = Instance.new("TextLabel", Card)
+        UName.Text = "@"..p.Name
+        UName.Position = UDim2.new(0.16, 0, 0.65, 0)
+        UName.Size = UDim2.new(0.6, 0, 0, 10)
+        UName.TextColor3 = Color3.fromRGB(127, 127, 127)
+        UName.Font = Enum.Font.GothamBold
+        UName.TextSize = 10
+        UName.TextXAlignment = "Left"
+        UName.BackgroundTransparency = 1
+
+        local Indicator = Instance.new("Frame", Card)
+        Indicator.Size = UDim2.new(0, 7, 0, 20)
+        Indicator.Position = UDim2.new(0.92, 0, 0.2, 0)
+        
+        local isOff = Blacklist[pId] == true
+        Indicator.BackgroundColor3 = isOff and Color3.fromRGB(206, 131, 188) or Color3.fromRGB(0, 134, 9)
+        Instance.new("UICorner", Indicator).CornerRadius = UDim.new(0, 5)
+
+        Card.MouseButton1Click:Connect(function()
+            Blacklist[pId] = not Blacklist[pId]
+            Indicator.BackgroundColor3 = Blacklist[pId] and Color3.fromRGB(206, 131, 188) or Color3.fromRGB(0, 134, 9)
+            Save()
+        end)
+    end
+end
+
+AimBtn.MouseButton1Click:Connect(function() BindingTarget = "Aim" AimBtn.Text = "Aim Key: ..." end)
+MenuBtn.MouseButton1Click:Connect(function() BindingTarget = "Menu" MenuBtn.Text = "Menu Key: ..." end)
+ModeBtn.MouseButton1Click:Connect(function()
+    Config.Mode = (Config.Mode == "Clamp") and "sticking" or "Clamp"
+    ModeBtn.Text = "Mode: " .. Config.Mode
+    Save()
+end)
+
+UserInputService.InputBegan:Connect(function(input, proc)
+    if BindingTarget and input.UserInputType == Enum.UserInputType.Keyboard then
+        if BindingTarget == "Aim" then
+            Config.AimKey = input.KeyCode
+            AimBtn.Text = "Aim Key: " .. input.KeyCode.Name
+        else
+            Config.MenuKey = input.KeyCode
+            MenuBtn.Text = "Menu Key: " .. input.KeyCode.Name
+        end
+        BindingTarget = nil
+        Save()
+        return
+    end
+    if proc then return end
+    if input.KeyCode == Config.MenuKey then
+        Config.MenuOpen = not Config.MenuOpen
+        MainFrame.Visible = Config.MenuOpen
+        if Config.MenuOpen then UpdateList() end
+    elseif input.KeyCode == Config.AimKey and Config.Mode == "sticking" then
+        Config.AimActive = not Config.AimActive
+    end
+end)
+
+local CurrentTarget = nil
+
+RunService.RenderStepped:Connect(function()
+    local isAiming = (Config.Mode == "Clamp" and UserInputService:IsKeyDown(Config.AimKey)) or (Config.Mode == "sticking" and Config.AimActive)
+    
+    if isAiming then
+        -- Проверка валидности текущей цели
+        if CurrentTarget then
+            if type(CurrentTarget) == "userdata" and CurrentTarget:IsA("Player") then
+                -- Игрок: проверяем персонажа, голову, нахождение в Players и чёрный список
+                if not CurrentTarget.Character or not CurrentTarget.Character:FindFirstChild("Head") or CurrentTarget.Parent ~= Players or Blacklist[tostring(CurrentTarget.UserId)] then
+                    CurrentTarget = nil
+                end
+            else
+                -- NPC (модель): проверяем, существует ли модель, есть ли голова, и находится ли она всё ещё в Workspace
+                if not CurrentTarget:IsDescendantOf(workspace) or not CurrentTarget:FindFirstChild("Head") then
+                    CurrentTarget = nil
+                end
+            end
+        end
+
+        -- Поиск новой цели, если старая невалидна
+        if not CurrentTarget then
+            local dist = Config.FOVRadius
+            local mousePos = UserInputService:GetMouseLocation()
+            
+            -- Собираем всех возможных противников: игроки + NPC
+            local allTargets = {}
+            
+            -- Игроки (кроме себя)
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    table.insert(allTargets, p)
+                end
+            end
+            
+            -- NPC: модели с Humanoid и Head, не принадлежащие игрокам
+            for _, model in pairs(workspace:GetDescendants()) do
+                if model:IsA("Model") and model ~= LocalPlayer.Character then
+                    local humanoid = model:FindFirstChildOfClass("Humanoid")
+                    local head = model:FindFirstChild("Head")
+                    if humanoid and head and humanoid.Health > 0 then
+                        -- Проверяем, что это не персонаж какого-то игрока (чтобы не дублировать)
+                        if not Players:GetPlayerFromCharacter(model) then
+                            table.insert(allTargets, model)
+                        end
+                    end
+                end
+            end
+            
+            for _, target in pairs(allTargets) do
+                local headPos
+                local skip = false
+                
+                if type(target) == "userdata" and target:IsA("Player") then
+                    -- Цель-игрок: голова из Character
+                    if target.Character and target.Character:FindFirstChild("Head") then
+                        headPos = target.Character.Head.Position
+                        if Blacklist[tostring(target.UserId)] then skip = true end
+                    end
+                else
+                    -- Цель-NPC: голова прямо из модели
+                    local head = target:FindFirstChild("Head")
+                    if head then
+                        headPos = head.Position
+                    end
+                end
+                
+                if headPos and not skip then
+                    local pos, vis = Camera:WorldToViewportPoint(headPos)
+                    if vis then
+                        local mag = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
+                        if mag < dist then 
+                            dist = mag 
+                            CurrentTarget = target
+                        end
+                    end
+                end
+            end
+        end
+
+        -- Наведение на цель
+        if CurrentTarget then
+            local targetHeadPos
+            if type(CurrentTarget) == "userdata" and CurrentTarget:IsA("Player") then
+                if CurrentTarget.Character and CurrentTarget.Character:FindFirstChild("Head") then
+                    targetHeadPos = CurrentTarget.Character.Head.Position
+                end
+            else
+                local head = CurrentTarget:FindFirstChild("Head")
+                if head then
+                    targetHeadPos = head.Position
+                end
+            end
+            
+            if targetHeadPos then
+                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetHeadPos), Config.Smoothness)
+            end
+        end
+    else
+        CurrentTarget = nil
+    end
+end)
+
+MainFrame.Visible = false
+UpdateList()

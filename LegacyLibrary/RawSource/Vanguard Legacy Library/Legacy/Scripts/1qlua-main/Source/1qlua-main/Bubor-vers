@@ -1,0 +1,117 @@
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/Pro666Pro/DraggableOrionLib/main/main.lua'))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "1Qlua Script Launcher",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "ScriptLauncher"
+})
+
+
+local ScriptDatabase = {
+    ["v1"] = {
+        ["English"] = {
+            ["free"] = "https://pastebin.com/raw/hK1DBiqM",
+            ["key"] = "https://pastebin.com/raw/vzr1EPs9"
+        },
+        ["Русский"] = {
+            ["free"] = "https://pastebin.com/raw/hn665Cb6",
+            ["key"] = "https://pastebin.com/raw/Xvn82Jvk"
+        }
+    }
+}
+
+
+local settings = {
+    language = "English",
+    version = "v1",
+    access = "key"
+}
+
+
+local translations = {
+    ["English"] = {
+        ["selectLanguage"] = "Select Language",
+        ["selectVersion"] = "Select Version",
+        ["selectAccess"] = "Access Type",
+        ["launchButton"] = "Launch Script",
+        ["error"] = "Error",
+        ["urlNotFound"] = "Script URL not found"
+    },
+    ["Русский"] = {
+        ["selectLanguage"] = "Выберите язык",
+        ["selectVersion"] = "Выберите версию",
+        ["selectAccess"] = "Тип доступа",
+        ["launchButton"] = "Запустить скрипт",
+        ["error"] = "Ошибка",
+        ["urlNotFound"] = "URL скрипта не найден"
+    }
+}
+
+local Tab = Window:MakeTab({
+    Name = "Launcher",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+Tab:AddParagraph("Select the language in which the script will be)"," only 2 languages")
+
+
+Tab:AddDropdown({
+    Name = translations[settings.language]["selectLanguage"],
+    Default = settings.language,
+    Options = {"English", "Русский"},
+    Callback = function(Value)
+        settings.language = Value
+    end    
+})
+
+Tab:AddParagraph("choose your version, the newer the better💕"," Thank you for using my script🩷")
+
+Tab:AddDropdown({
+    Name = translations[settings.language]["selectVersion"],
+    Default = settings.version,
+    Options = {"v1"},
+    Callback = function(Value)
+        settings.version = Value
+    end    
+})
+
+Tab:AddParagraph("The key version has many more functions:>"," Thank you for using my script🩷")
+
+
+Tab:AddDropdown({
+    Name = translations[settings.language]["selectAccess"],
+    Default = settings.access,
+    Options = {"free", "key"},
+    Callback = function(Value)
+        settings.access = Value
+    end    
+})
+
+Tab:AddParagraph("run script"," you made a good choice)")
+
+
+Tab:AddButton({
+    Name = translations[settings.language]["launchButton"],
+    Callback = function()
+        local versionData = ScriptDatabase[settings.version]
+        if versionData then
+            local langData = versionData[settings.language]
+            if langData then
+                local scriptUrl = langData[settings.access]
+                if scriptUrl then
+                    loadstring(game:HttpGet(scriptUrl))()
+                else
+                    OrionLib:MakeNotification({
+                        Name = translations[settings.language]["error"],
+                        Content = translations[settings.language]["urlNotFound"],
+                        Time = 5
+                    })
+                end
+            end
+        end
+    end
+})
+
+OrionLib:Init()

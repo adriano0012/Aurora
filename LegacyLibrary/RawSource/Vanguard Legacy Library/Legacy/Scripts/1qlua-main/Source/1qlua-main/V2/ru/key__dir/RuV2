@@ -1,0 +1,491 @@
+
+ local LibraryUrl = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/labar"
+local Success, Library = pcall(function()
+    return loadstring(game:HttpGet(LibraryUrl))()
+end)
+if not Success or not Library then 
+    return warn("Error loading UI library!") 
+end
+
+
+-- Функция для создания папки без ключа
+local function createNoKeyFolder()
+    -- Проверяем доступные методы записи файлов
+    local canWrite = false
+    local writeMethods = {
+        writefile,
+        makefolder,
+        saveinstance
+    }
+    
+    for _, method in pairs(writeMethods) do
+        if type(method) == "function" then
+            canWrite = true
+            break
+        end
+    end
+    
+    if not canWrite then
+        Compkiller.newNotify().new({
+            Title = "Ошибка",
+            Content = "Ваш эксплойт не поддерживает запись файлов",
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        })
+        return
+    end
+    
+    -- Пытаемся создать папку
+    local success, err = pcall(function()
+        -- Проверяем разные возможные пути
+        local paths = {
+            "1qluaNoRuKey",
+            "workspace/1qluaNoRuKey",
+            "exploit/1qluaNoRuKey",
+            "bin/1qluaNoRuKey"
+        }
+        
+        local created = false
+        for _, path in ipairs(paths) do
+            if not created then
+                pcall(function()
+                    makefolder(path)
+                    created = true
+                    writefile(path.."/README.txt", "Эта папка создана для входа без ключа")
+                end)
+            end
+        end
+        
+        if not created then
+            error("Не удалось создать папку ни в одной из возможных директорий")
+        end
+    end)
+    
+    if success then
+
+    else
+        Compkiller.newNotify().new({
+            Title = "Ошибка",
+            Content = "Не удалось создать папку: "..tostring(err),
+            Duration = 5,
+            Icon = "rbxassetid://120245531583106"
+        })
+    end
+end
+
+createNoKeyFolder()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+Library:Watermark("| >ᴗ< | ♡1Qlua♡ (Хаб) | >ᴗ< |  v12 | >ᴗ< ")
+local Window = Library:Window("| 1Qlua ♡ Хаб |")
+
+Window:Section("Основное")
+local MainTab = Window:Tab("Основное", "eye") 
+local GeneralPage = MainTab:SubTab("Основное")
+local ScriptPage = MainTab:SubTab("Скрипты")
+
+local FarmGroup = GeneralPage:Groupbox("Основное", "Left", "7733774602", "true")
+local PlayerGroup = ScriptPage:Groupbox("скрипты", "Left", "7733774602", "true")
+local ScriptsGroup = ScriptPage:Groupbox("скрипты", "Right", "7733774602", "true")
+
+FarmGroup:AddParagraph({
+    Title = "Редактировать \nлокал плеера!",
+    Content = "поле зрения + скорость + прыжок",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "Loop Menu",
+    Description = "Редактировать поле зрения + скорость + прыжок",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/Speed'),true))()
+    end
+})
+
+
+FarmGroup:AddParagraph({
+    Title = "Айм на игрока!",
+    Content = "ставит камеру на игрока",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "Aim Menu",
+    Description = "ставит игрока на ближайшего игрока на правою кнопку",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIM'),true))()
+    end
+})
+
+
+
+
+FarmGroup:AddParagraph({
+    Title = "Esp ",
+    Content = "Подсветка игрока ",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "ESP Menu",
+    Description = "Подсвечивает всех игроков",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/ESP'),true))()
+    end
+})
+
+FarmGroup:AddParagraph({
+    Title = "Fling игроков",
+    Content = "Выкидывать игроков за карту!",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "Fling Menu",
+    Description = "Выкидывать игроков за карту!",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/Fling'),true))()
+    end
+})
+
+
+FarmGroup:AddParagraph({
+    Title = "Тп к игроков",
+    Content = "Телепортация к игрокам + избраные игроки",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "TpPlayer Menu",
+    Description = "Телепортироваться к игроку!",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/TpPlayer'),true))()
+    end
+})
+
+
+FarmGroup:AddParagraph({
+    Title = "Безконечное Тп к игроков ",
+    Content = "авто телепорт к игроку которого выбераешь",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "LoopTPplayer Menu",
+    Description = "Телепортироваться к игроку!",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/TPLOOPPLAYER'),true))()
+    end
+})
+
+FarmGroup:AddParagraph({
+    Title = "Бот который идет к ближйшему игроку",
+    Content = "авто бот к игроку которого выбераешь",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "AutoWalk Menu",
+    Description = "авто бот к игроку которого выбераешь",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/AutoWalk'),true))()
+    end
+})
+
+FarmGroup:AddParagraph({
+    Title = "Ты сможешь телепортироваться по обьектом по названию",
+    Content = "делать фармилки",
+    TextWrapped = true
+})
+
+FarmGroup:AddButton({
+    Title = "TPpart Menu",
+    Description = "Ты сможешь телепортироваться по обьектом по названию",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/TPpart'),true))()
+    end
+})
+
+local FarmGroup2 = GeneralPage:Groupbox("Основное", "Right", "7733774602", "true")
+
+
+FarmGroup2:AddParagraph({
+    Title = "Полет и полет на машине!",
+    Content = "Полет + полет на машине с сохранением настройках! ",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "Fly Menu",
+    Description = "Полет + полет на машине!",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/Fly'),true))()
+    end
+})
+
+FarmGroup2:AddParagraph({
+    Title = "Тп ко всем игрокам!",
+    Content = "Можно сделать авто фарми или алл килл",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "AutoFarm Menu",
+    Description = "Можно сделать авто фарми или алл килл",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/TpAutofarm'),true))()
+    end
+})
+ 
+FarmGroup2:AddParagraph({
+    Title = "Чек поинты ",
+    Content = "Можно выбрать куда ты телепортируешься ",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "Чекпоинт Menu",
+    Description = "Ой иди нахуй",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Checkpoint'),true))()
+    end
+})
+
+FarmGroup2:AddParagraph({
+    Title = "Замена текстур",
+    Content = "Можно сделать скин ченджер на любую игру",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "Texture Menu",
+    Description = "Замена текстур",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/Texture'),true))()
+    end
+})
+
+
+FarmGroup2:AddParagraph({
+    Title = "Телепортировать обьекты",
+    Content = "Можно сделать что бы подвижные обьекты реально телепортировались",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "ObjTp Menu",
+    Description = "Телепортировать обьекты",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/TPOBJECK'),true))()
+    end
+})
+
+
+FarmGroup2:AddParagraph({
+    Title = "Запустить любую анимацию в игре ",
+    Content = "И их видно будет реально",
+    TextWrapped = true
+})
+
+FarmGroup2:AddButton({
+    Title = "Animation Menu",
+    Description = "анимацию",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/animation'),true))()
+    end
+})
+
+
+
+PlayerGroup:AddButton({
+    Title = "Полёт (V)",
+    Description = "Включение режима полёта по нажатию V ",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/9bNj1EcR'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Невидимость (E)",
+    Description = "Делает вашего персонажа невидимым",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/VtWhnEnm'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "ТП к игрокам",
+    Description = "Телепортироваться к другим игрокам",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/z4HARAHs'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Падение на месте (R)",
+    Description = "Персонаж падает на месте без движения",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/CTUaCKN1'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Свободная камера (Shift+P)",
+    Description = "Отключает привязку камеры к персонажу",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/ct8Kq5F0'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Полет на машине (V)",
+    Description = "Позволяет транспорту летать",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/9bNj1EcR'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Чекпойнты",
+    Description = "Создает точки для быстрой телепортации",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Checkpoint'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Шейдеры",
+    Description = "Улучшает визуальные эффекты игры",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/1XA5qM3D'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Запустить прыжок",
+    Description = "Можно запустить прыжок даже где его нет",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/F/JampAP'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Ожидания убийства (G)",
+    Description = "Он будет телепортировать назад в игрока которого ты нажмешь пока он не умрет",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/F/waitkill'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Анти скорость (P)",
+    Description = "Будет телепортировать обратно когда вас выкидывают",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Menu/F/AntiSpeed'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Infinite Yield",
+    Description = "Мощные админ-команды для управления игрой",
+    Callback = function()
+       loadstring(game:HttpGet(('https://raw.githubusercontent.com/Infinite-Store/Infinite-Store/main/main.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "f3x",
+    Description = "Прикольный кубик",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/infyiff/backup/refs/heads/main/f3x.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "DEX Explorer",
+    Description = "Инструмент для исследования игровых объектов",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/infyiff/backup/main/dex.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "DEX++",
+    Description = "Инструмент для исследования игровых объектов",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/refs/heads/main/DexPlusBackup.luau'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Играть с писюном",
+    Description = "Добавляет анимацию для развлечения",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/73RsNXY2'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Удалить стены",
+    Description = "Удаляет препятствия в игре",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/FBKJTUyw'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Добавить всех в друзья",
+    Description = "Автоматически отправляет заявки в друзья",
+    Callback = function()
+        local plrs = game:GetService('Players')
+        for i,v in pairs(plrs:GetChildren()) do
+            task.wait(1)
+            plrs.LocalPlayer:RequestFriendship(v)
+        end
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Обход голосового чата",
+    Description = "Позволяет обойти ограничения голосового чата",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/CorpseCMD/MyScripts/main/VoicechatBypass.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Sigma Spy",
+    Description = "Мониторинг игровых событий",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/depthso/Sigma-Spy/main/Main.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Админ Команды от 1qlua",
+    Description = "Набор административных команд",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/t3chuwNu'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Тест инжектора",
+    Description = "Проверить ваш инжектор",
+    Callback = function()
+        loadstring(game:HttpGet(('https://rawscripts.net/raw/Universal-Script-UNChecker-GUI-Version-27355'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Поменять сервер",
+    Description = "Быстро поменять сервер",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/Syr0nix/RedFoxServerBowser/main/Mainlua'),true))()
+    end
+})

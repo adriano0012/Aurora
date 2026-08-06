@@ -1,0 +1,217 @@
+
+local scripts = {
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/DEL",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/JP_SPEED_GRAV",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/ESP",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/FLYTO",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/SCRIPT",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/TP",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/SPAM",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/COPYPOS",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/SHOP",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/ADDPART",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/TPPART",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/BUILD",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/CLICK",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/TPPLAYER",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/SETCAM",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/CAMTO",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/TPTO",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/library/TPCOME"
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+        
+        if not success then
+            warn("Ошибка в скрипте "..i.." ("..url.."): "..err)
+        else
+            print("Скрипт "..i.." успешно запущен: "..url)
+        end
+    end)()
+end
+
+wait(3)
+
+print([[
+
+=== Список доступных скриптов и их описание ===
+
+1. ADDPART - Создает часть перед игроком с настраиваемыми параметрами:
+   - ADDPART() - создать часть с настройками по умолчанию
+   - PART_SETTINGS({...}) - изменить параметры части:
+     * Size (Vector3) - размер
+     * Color (Color3) - цвет
+     * Material - материал
+     * Anchored - закрепление
+     * CanCollide - коллизия
+     * ForwardOffset - смещение вперед
+     * UpOffset - смещение вверх
+     * RightOffset - смещение вправо
+
+2. COPYPOS - Копирует текущую позицию игрока в буфер обмена:
+   - COPYPOS() - возвращает Vector3 позиции и копирует в формате "X, Y, Z"
+
+3. DEL - Удаляет объекты в игре:
+   - DEL("путь.к.объекту") - удалить по пути
+   - DEL(game.Workspace.Part) - удалить объект напрямую
+
+4. ESP - Визуальное выделение объектов:
+   - ESP("путь.к.объекту") - включить подсветку
+   - UNESP("путь.к.объекту") - отключить подсветку
+   - ESP_SETTINGS({...}) - настройки:
+     * Color - цвет
+     * Transparency - прозрачность
+     * SizeOffset - смещение размера
+
+5. FLYTO - Полет к указанной цели:
+   - FLYTO("X,Y,Z") - лететь к координатам
+   - FLYTO("путь.к.объекту") - лететь к объекту
+   - STOPFLY() - остановить полет
+
+6. Движение персонажа:
+   - SPEED(число) - изменить скорость ходьбы
+   - JP(число) - изменить силу прыжка
+   - GRAV(число) - изменить гравитацию
+
+7. Загрузка популярных скриптов:
+   - RSPY() - RemoteSpy
+   - DEX() - Dex Explorer
+   - QLUA() - 1QLua
+   - IY() - Infinite Yield
+
+8. SHOP - Смена сервера:
+   - SHOP() или SERVERHOP() - перейти на случайный сервер
+   - REJOIN() - перезайти в текущий сервер
+
+9. SPAM - Спам выполнение скрипта:
+   - SPAM("код", интервал, количество) - запустить спам
+   - UNSPAM(id) - остановить конкретный спам
+   - UNSPAM() - остановить все спамы
+
+10. TP - Телепортация:
+    - TP("X,Y,Z") - к координатам
+    - TP(X,Y,Z) - три числа
+    - TP("путь.к.объекту") - к объекту
+
+11. TPCOME - Телепортация объектов к себе:
+    - TPCOME("путь.к.объекту") - телепортировать объект
+    - TP_SETTINGS({...}) - настройки позиции:
+      * ForwardOffset - смещение по Z
+      * RightOffset - смещение по X
+      * UpOffset - смещение по Y
+      * Yaw - поворот по Y (градусы)
+      * Pitch - поворот по X (градусы)
+      * Roll - поворот по Z (градусы)
+
+=== TPPART - Инструкция по использованию ===
+
+1. Базовое использование:
+   - TPPART("путь.к.объекту") - телепортировать объект с настройками по умолчанию
+   - TPPART("путь.к.объекту", "1,2,3") - телепортировать в указанные координаты
+   - TPPART("путь.к.объекту", "1,2,3", "0,90,0") - с координатами и поворотом
+   - TPPART("путь.к.объекту", "1,2,3", "0,90,0", "0,1,0") - с дополнительным смещением
+
+2. Настройки по умолчанию (TPPART_SETTINGS):
+   - TPPART_SETTINGS({
+       Position = Vector3.new(0,0,0) или "0,0,0",  -- Координаты
+       Rotation = Vector3.new(0,0,0) или "0,0,0",  -- Поворот в градусах
+       Offset = Vector3.new(0,0,0) или "0,0,0"     -- Смещение
+     })
+
+3. Примеры:
+   - TPPART_SETTINGS({Position = "10,5,0"})
+   - TPPART("workspace.Part", "20,3,10", "45,0,0")
+   - TPPART("game.Workspace.Model", nil, "0,180,0") - только изменить поворот
+
+=== BUILD  ===
+1. BUILD("F") - нажать клавишу F
+2. BUILD("G", {Spam=true}) - спамить G
+3. UNBUILD("F") - остановить F
+4. BUILD_SETTINGS({Retention=2}) - настройки
+
+     BUILD_SETTINGS({
+       Spam = false,  -- вклучения выклучения спама
+       Retention = 8  -- на сколько удерживаеться кнопка
+     })
+
+=== COPYCLICK() + CLICK() ===
+
+1. COPYCLICK() - копирует текущую позицию мыши
+2. CLICK() - клик в текущей позиции
+3. CLICK({Position = "100,200"}) - клик в указанные координаты
+4. CLICK({Spam = true}) - спам кликами
+5. CLICK_SETTINGS({...}) - настройки:
+   - Position (Vector2 или "x,y")
+   - Spam (true/false)
+   - Retention (секунды удержания)
+   - Delay (задержка между кликами)
+   - Button (1 - левая, 2 - правая)
+6. UNCLICK() - остановить все клики
+7. UNCLICK("100,200") - остановить клики в позиции
+
+Примеры:
+COPYCLICK() -- скопировать позицию
+CLICK({Position = "500,300", Retention = 0.5}) -- клик с удержанием
+CLICK({Spam = true, Delay = 0.1}) -- спам с задержкой 0.1 сек
+
+
+     CLICK_SETTINGS({
+    Position = nil,       -- Vector2 (если nil - текущая позиция мыши)
+    Spam = false,        -- Спам кликами
+    Retention = 0.1,     -- Время удержания (сек)
+    Delay = 0.05,        -- Задержка между кликами (при спаме)
+    Button = 1         -- 1 - левая кнопка, 2 - правая
+     })
+
+
+
+                                     TPPLAYER 
+
+
+TPPLAYER(\"ник\") - телепорт к игроку
+TPPLAYER(\"ник1\", \"ник2\") - телепорт с задержкой
+TPPLAYER(\"ALL\") - телепорт по очереди ко всем
+UNTPPLAYER() - остановить телепортацию
+
+TPPLAYER_SETTINGS({
+    Position = {
+        ForwardOffset = 3,  -- Дистанция спереди/сзади
+        RightOffset = 0,     -- Смещение вправо/влево
+        UpOffset = 0         -- Высота
+    },
+
+    Delay = 0.5,              -- Задержка между телепортациями
+    LookAtPlayer = true,     -- Смотреть на игрока
+    AutoStop = true,         -- Автостоп при ошибке
+    TeleportToDead = false   -- Телепорт к мертвым игрокам
+})
+
+
+             SETCAM
+
+пишем COPYCAM() 
+
+потом пишем SETCAM(Суда вставляем что скопировалось)
+
+и у нас ставиться туда камера, где было сохранения
+
+
+
+       CAMTO
+
+CAMTO("путь")  направить камеру на объект
+CAMTO("Дерево")  найдет ближайший и будет на него смотреть
+
+
+             TPTO
+
+
+TPTO("название обьекта") и он сам найдет ближайший обьект в workspace и телепортируеться к нему
+
+
+]])

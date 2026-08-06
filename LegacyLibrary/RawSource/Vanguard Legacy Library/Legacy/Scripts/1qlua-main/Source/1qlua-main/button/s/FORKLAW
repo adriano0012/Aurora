@@ -1,0 +1,90 @@
+#NoEnv
+SendMode Input
+SetWorkingDir %A_ScriptDir%
+
+; Глобальные переменные
+zPressed := false
+speedInput := ""
+
+; Обработка зажатия клавиши Z
+$z::
+    zPressed := true
+    KeyWait, z
+    zPressed := false
+    speedInput := "" ; Сбрасываем ввод при отпускании Z
+return
+
+; Комбинация Z + S
+$s::
+    if (zPressed) {
+        ; Активируем режим ввода скорости
+        speedInput := ""
+        ToolTip, Введите скорость цифрами (0-999)
+        
+        ; Ждем ввода цифр
+        Input, userInput, L3 T5, {Enter}{Escape}{Backspace}
+        
+        if (ErrorLevel = "Max") {
+            ; Введено максимальное количество символов
+            speedInput := userInput
+        } else if (ErrorLevel = "Timeout") {
+            ; Таймаут
+            speedInput := ""
+            ToolTip, Время вышло!
+            Sleep, 500
+        } else if (ErrorLevel = "EndKey:Enter") {
+            ; Нажат Enter
+            speedInput := userInput
+        } else if (ErrorLevel = "EndKey:Escape") {
+            ; Нажат Escape
+            speedInput := ""
+            ToolTip, Ввод отменен
+            Sleep, 500
+        } else {
+            ; Другие случаи
+            speedInput := userInput
+        }
+        
+        ToolTip ; Убираем подсказку
+        
+        ; Если введены цифры, сохраняем в файл
+        if (speedInput != "" && speedInput is number) {
+            FileDelete, C:\Users\QLUA\AppData\Local\Xeno\workspace\Qlua\SPEED.txt
+            FileAppend, %speedInput%, C:\Users\QLUA\AppData\Local\Xeno\workspace\Qlua\SPEED.txt
+            ToolTip, Скорость установлена: %speedInput%
+            Sleep, 1000
+            ToolTip
+        }
+        
+        return
+    }
+    
+    ; Если Z не зажата, отправляем обычный S
+    Send, {s down}
+    KeyWait, s
+    Send, {s up}
+return
+
+; Функция для проверки существования папки и создания если нет
+CheckAndCreateFolder() {
+    folderPath := "C:\Users\QLUA\AppData\Local\Xeno\workspace\Qlua"
+    
+    ; Проверяем существует ли папка
+    IfNotExist, %folderPath%
+    {
+        FileCreateDir, %folderPath%
+        if ErrorLevel {
+            MsgBox, Не удалось создать папку: %folderPath%
+            return false
+        }
+    }
+    return true
+}
+
+; Создаем папку при запуске скрипта
+CheckAndCreateFolder()
+
+; Информация о скрипте
+ToolTip, AHK Speed Control loaded! Use Z + S then enter digits
+Sleep, 2000
+ToolTip

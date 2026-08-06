@@ -1,0 +1,5 @@
+AddBP('Wall2Tall',origin*Cea(-0,0,-0)+Vec(-10,0.20000076293945312,-3.5),'Generic')
+AddBP('Wall2Tall',origin*Cea(-0,0,-0)+Vec(-14,0.20000076293945312,-3.5),'Generic')
+AddBP('Wall2Tall',origin*Cea(-3.1415927410125732,0,-3.1415927410125732)+Vec(-10,8.200000762939453,-4.5),'Generic')
+AddBP('Wall2Tall',origin*Cea(1.5707963705062866,0,-0)+Vec(-10,11.600000381469727,-12.9000244140625),'Generic')
+AddBP('Wall2Tall',origin*Cea(1.5707963705062866,0,-0)+Vec(-11,8.600000381469727,-2.9000244140625),'Generic')

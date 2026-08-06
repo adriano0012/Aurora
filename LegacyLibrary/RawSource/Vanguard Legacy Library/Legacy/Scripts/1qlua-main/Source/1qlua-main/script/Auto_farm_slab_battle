@@ -1,0 +1,28 @@
+wait(10)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/LIBRARY_1QLUA"))()
+
+TPCOME("workspace.Lobby.Teleport1")
+wait(1)
+TP("workspace.Arena.island5.Slapples.GoldenSlapple")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples.Slapple")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[5]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[2]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[8]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[7]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[6]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[9]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[4]")
+wait(0.1)
+TP("workspace.Arena.island5.Slapples:GetChildren()[3]")
+
+while task.wait(1) do
+    SHOP()
+end

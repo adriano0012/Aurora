@@ -1,0 +1,36 @@
+-- ПРОСТОЙ И ЭФФЕКТИВНЫЙ СКРИПТ
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+wait(2) -- Ждем загрузки
+
+local player = Players.LocalPlayer
+if player then
+    -- Удаляем все что не является игровым элементом
+    for _, gui in pairs(player.PlayerGui:GetDescendants()) do
+        local name = gui.Name:lower()
+        
+        -- Удаляем лидерборды, настройки, чат
+        if name:find("leader") or name:find("stat") or 
+           name:find("chat") or name:find("message") or
+           name:find("setting") or name:find("menu") or
+           name:find("shop") or name:find("button") then
+            
+            pcall(function()
+                gui.Visible = false
+                gui:Destroy()
+            end)
+        end
+    end
+end
+
+-- Удаляем системные элементы Roblox
+local systemElements = {"SettingsShield", "Chat", "PlayerList", "PurchasePrompt"}
+for _, element in pairs(systemElements) do
+    local elem = CoreGui:FindFirstChild(element)
+    if elem then
+        elem:Destroy()
+    end
+end
+
+print("🗑️ Удалены все ненужные элементы!")

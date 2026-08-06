@@ -1,0 +1,163 @@
+-- Сохраняем скрипт в глобальной области видимости
+_G.TeleportScript = _G.TeleportScript or {}
+local TeleportScript = _G.TeleportScript
+
+-- Сервисы
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки
+TeleportScript.Enabled = true
+TeleportScript.BackwardOffset = 2 -- Отступ от игрока
+TeleportScript.TargetSwitchTime = 10 -- Время до принудительной смены цели (если цель не умерла)
+TeleportScript.RandomSwitchInterval = 2 -- Новый параметр: интервал случайной смены цели (секунды)
+TeleportScript.CurrentTarget = nil
+TeleportScript.LastTargetChange = 0
+TeleportScript.LastRandomSwitch = 0
+TeleportScript.Connection = nil
+TeleportScript.CharacterConnection = nil
+
+-- Проверка состояния вашего персонажа
+function TeleportScript:CheckLocalPlayerAlive()
+    if not LocalPlayer.Character then return false end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+
+-- Поиск случайного живого игрока (вместо ближайшего)
+function TeleportScript:GetRandomPlayer()
+    if not self:CheckLocalPlayerAlive() then return nil end
+    
+    local alivePlayers = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                table.insert(alivePlayers, player)
+            end
+        end
+    end
+    
+    if #alivePlayers > 0 then
+        return alivePlayers[math.random(1, #alivePlayers)]
+    end
+    return nil
+end
+
+-- Телепортация с отступом назад
+function TeleportScript:TeleportToPlayer(player)
+    if not player or not player.Character or not self:CheckLocalPlayerAlive() then return false end
+    
+    local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return false end
+    
+    local targetCFrame = humanoidRootPart.CFrame
+    local lookVector = targetCFrame.LookVector
+    local offsetPosition = targetCFrame.Position - (lookVector * self.BackwardOffset)
+    
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(offsetPosition, targetCFrame.Position)
+        return true
+    end
+    return false
+end
+
+-- Проверка необходимости смены цели
+function TeleportScript:ShouldSwitchTarget()
+    local currentTime = os.time()
+    
+    -- Принудительная смена каждые RandomSwitchInterval секунд
+    if currentTime - self.LastRandomSwitch >= self.RandomSwitchInterval then
+        self.LastRandomSwitch = currentTime
+        return true
+    end
+    
+    -- Стандартные проверки
+    if not self:CheckLocalPlayerAlive() then return true end
+    if not self.CurrentTarget then return true end
+    
+    local character = self.CurrentTarget.Character
+    if not character then return true end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return true end
+    if currentTime - self.LastTargetChange >= self.TargetSwitchTime then return true end
+    
+    return false
+end
+
+-- Основной цикл телепортации
+function TeleportScript:Update()
+    if not self.Enabled then return end
+    
+    if not self:CheckLocalPlayerAlive() then
+        if self.CurrentTarget then
+            self.CurrentTarget = nil
+        end
+        return
+    end
+    
+    if self:ShouldSwitchTarget() then
+        self.CurrentTarget = self:GetRandomPlayer() -- Теперь используем случайного игрока
+        self.LastTargetChange = os.time()
+    end
+    
+    if self.CurrentTarget then
+        self:TeleportToPlayer(self.CurrentTarget)
+    end
+end
+
+-- Отслеживание смерти вашего персонажа
+function TeleportScript:TrackCharacter()
+    if self.CharacterConnection then
+        self.CharacterConnection:Disconnect()
+    end
+    
+    self.CharacterConnection = LocalPlayer.CharacterAdded:Connect(function(character)
+        self.CurrentTarget = nil
+        self.LastTargetChange = 0
+        self.LastRandomSwitch = 0
+    end)
+end
+
+-- Запуск скрипта
+function TeleportScript:Start()
+    if self.Connection then
+        self.Connection:Disconnect()
+    end
+    
+    self:TrackCharacter()
+    self.Connection = RunService.Heartbeat:Connect(function()
+        self:Update()
+    end)
+    self.Enabled = true
+    print("✅ Телепортация активирована!")
+    print("🔁 Автосмена цели каждые " .. self.RandomSwitchInterval .. " секунд")
+end
+
+-- Остановка скрипта
+function TeleportScript:Stop()
+    if self.Connection then
+        self.Connection:Disconnect()
+        self.Connection = nil
+    end
+    if self.CharacterConnection then
+        self.CharacterConnection:Disconnect()
+        self.CharacterConnection = nil
+    end
+    self.Enabled = false
+    print("⛔ Телепортация отключена!")
+end
+
+-- Настройка интервала смены цели (можно менять вручную)
+function TeleportScript:SetSwitchInterval(seconds)
+    self.RandomSwitchInterval = seconds
+    print("🕒 Интервал смены цели установлен: " .. seconds .. " сек")
+end
+
+-- Автозапуск при вставке
+TeleportScript:Start()
+
+-- Пример: изменить интервал смены цели на 15 секунд
+-- TeleportScript:SetSwitchInterval(15)

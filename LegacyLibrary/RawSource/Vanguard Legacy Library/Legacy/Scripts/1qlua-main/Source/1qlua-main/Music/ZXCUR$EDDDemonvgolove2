@@ -1,0 +1,92 @@
+local player = game.Players.LocalPlayer
+
+--=== НАСТРОЙКИ ===--
+local settings = {
+    SoundFile = "ZXCUR$EDDDemonvgolove2.mp3",  -- Имя файла для сохранения
+    SoundUrl = "https://cdn.discordapp.com/attachments/1390426824345125036/1395901831841845349/ZXCUREDD_-_2.mp3?ex=687c2263&is=687ad0e3&hm=115bf2e4c92c0b431934fc44ec4f34b89950239b86e4d8dce6bc72c5f8e1365c&",  -- Ссылка на аудио
+    DefaultVolume = 2,           -- Громкость (0.1 - 1)
+    LoopEnabled = false,            -- Повторять трек
+    AutoPlay = true,               -- Автовоспроизведение
+    ChatCommands = {               -- Команды в чате
+        Play = "/play",            -- Включить
+        Stop = "/stop",            -- Остановить
+        VolumeUp = "/vol+",        -- Громкость +
+        VolumeDown = "/vol-",      -- Громкость -
+        ToggleLoop = "/loop"       -- Вкл/Выкл повтор
+    }
+}
+--=================--
+
+-- Загружаем аудиофайл (если его нет)
+if not isfile(settings.SoundFile) then
+    writefile(settings.SoundFile, game:HttpGet(settings.SoundUrl))
+end
+
+-- Ожидаем загрузку персонажа
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Создаем звуковой объект
+local sound = Instance.new("Sound")
+sound.SoundId = getcustomasset(settings.SoundFile)
+sound.Volume = settings.DefaultVolume
+sound.Looped = settings.LoopEnabled
+sound.Parent = rootPart
+
+-- Функции управления
+local function playSound()
+    if not sound.IsPlaying then
+        sound:Play()
+        return "🔊 Музыка включена!"
+    end
+    return "⚠️ Музыка уже играет"
+end
+
+local function stopSound()
+    if sound.IsPlaying then
+        sound:Stop()
+        return "⏹️ Музыка остановлена"
+    end
+    return "⚠️ Музыка уже остановлена"
+end
+
+local function setVolume(change)
+    local newVolume = math.clamp(sound.Volume + change, 0.1, 1)
+    sound.Volume = newVolume
+    return "🔉 Громкость: " .. string.format("%.1f", newVolume)
+end
+
+local function toggleLoop()
+    sound.Looped = not sound.Looped
+    return "🔄 Повтор: " .. (sound.Looped and "ВКЛ" or "ВЫКЛ")
+end
+
+-- Обработчик чат-команд
+player.Chatted:Connect(function(msg)
+    local response
+    if msg == settings.ChatCommands.Play then
+        response = playSound()
+    elseif msg == settings.ChatCommands.Stop then
+        response = stopSound()
+    elseif msg == settings.ChatCommands.VolumeUp then
+        response = setVolume(0.1)
+    elseif msg == settings.ChatCommands.VolumeDown then
+        response = setVolume(-0.1)
+    elseif msg == settings.ChatCommands.ToggleLoop then
+        response = toggleLoop()
+    end
+    
+    if response then
+        print(response)
+    end
+end)
+
+-- Автозапуск
+if settings.AutoPlay then
+    playSound()
+end
+
+-- Очистка при выходе
+game:GetService("Players").PlayerRemoving:Connect(function(p)
+    if p == player then stopSound() end
+end)

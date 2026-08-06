@@ -1,0 +1,48 @@
+local player = game:GetService("Players").LocalPlayer
+
+local SETTINGS = {
+    Distance = 8,
+    Cooldown = 0.8,
+    VerticalCheck = 0.5,
+    RayLength = 3.5
+}
+
+if not player:FindFirstChild("AutoJumpConfig") then
+    local controller = Instance.new("BoolValue")
+    controller.Name = "AutoJumpConfig"
+    controller.Value = true
+    controller.Parent = player
+end
+
+local function jumpSystem()
+    while player:FindFirstChild("AutoJumpConfig") and player:FindFirstChild("AutoJumpConfig").Value do
+        task.wait(0.1)
+        
+        if not player.Character then continue end
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not rootPart then continue end
+        
+        local rayParams = RaycastParams.new()
+        rayParams.FilterDescendantsInstances = {player.Character}
+        
+        if not workspace:Raycast(
+            rootPart.Position + Vector3.new(0, SETTINGS.VerticalCheck, 0),
+            Vector3.new(0, -SETTINGS.RayLength, 0),
+            rayParams
+        ) then continue end
+        
+        for _, other in ipairs(game:GetService("Players"):GetPlayers()) do
+            if other ~= player and other.Character then
+                local otherRoot = other.Character:FindFirstChild("HumanoidRootPart")
+                if otherRoot and (otherRoot.Position - rootPart.Position).Magnitude <= SETTINGS.Distance then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    task.wait(SETTINGS.Cooldown)
+                    break
+                end
+            end
+        end
+    end
+end
+
+coroutine.wrap(jumpSystem)()

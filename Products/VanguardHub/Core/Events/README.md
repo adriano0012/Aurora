@@ -1,0 +1,1 @@
+# Events`n`nÁrea reservada para barramento de eventos e sinais reutilizáveis fora da UI.

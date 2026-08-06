@@ -1,0 +1,91 @@
+
+local SpeedKey = Enum.KeyCode.LeftControl  
+
+_G.FlightSpeed = 100
+_G.SpeedKeyMultiplier = 3
+_G.FlightAcceleration = 4
+_G.TurnSpeed = 16
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local User = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local UserCharacter = nil
+local UserRootPart = nil
+local Connection = nil
+local CurrentVelocity = Vector3.new(0,0,0)
+workspace.Changed:Connect(function()
+    Camera = workspace.CurrentCamera
+end)
+local Flight = function(delta)
+    local flightSpeed = _G.FlightSpeed
+    local speedMultiplier = _G.SpeedKeyMultiplier
+    local flightAccel = _G.FlightAcceleration
+    local turnSpeed = _G.TurnSpeed
+
+    local BaseVelocity = Vector3.new(0,0,0)
+    if not UserInputService:GetFocusedTextBox() then
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.LookVector * flightSpeed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.RightVector * flightSpeed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.LookVector * flightSpeed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.RightVector * flightSpeed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.UpVector * flightSpeed)
+        end
+        if UserInputService:IsKeyDown(SpeedKey) then
+            BaseVelocity = BaseVelocity * speedMultiplier
+        end
+    end
+    if UserRootPart then
+        local car = UserRootPart:GetRootPart()
+        if car.Anchored then return end
+        if not isnetworkowner(car) then return end
+        CurrentVelocity = CurrentVelocity:Lerp(
+            BaseVelocity,
+            math.clamp(delta * flightAccel, 0, 1)
+        )
+        car.Velocity = CurrentVelocity + Vector3.new(0,2,0)
+        if car ~= UserRootPart then
+            car.RotVelocity = Vector3.new(0,0,0)
+            car.CFrame = car.CFrame:Lerp(CFrame.lookAt(
+                car.Position,
+                car.Position + CurrentVelocity + Camera.CFrame.LookVector
+            ), math.clamp(delta * turnSpeed, 0, 1))
+        end
+    end
+end
+
+_G.EnableFly = function()
+    if not Connection and UserRootPart then
+        CurrentVelocity = UserRootPart.Velocity
+        Connection = RunService.Heartbeat:Connect(Flight)
+    end
+end
+
+_G.DisableFly = function()
+    if Connection then
+        Connection:Disconnect()
+        Connection = nil
+    end
+end
+
+local function setCharacter(c)
+    UserCharacter = c
+    UserRootPart = c:WaitForChild("HumanoidRootPart")
+    _G.EnableFly()
+end
+
+User.CharacterAdded:Connect(setCharacter)
+if User.Character then
+    setCharacter(User.Character)
+end
+

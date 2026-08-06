@@ -1,0 +1,1193 @@
+-- Создание кастомного GUI для Texture Changer
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Основной экран
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LoopMenuGUI"
+ScreenGui.DisplayOrder = 999
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 450, 0, 600) -- Увеличил размер окна
+MainFrame.Position = UDim2.new(0.146, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+
+-- Закругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Тень
+local DropShadow = Instance.new("ImageLabel")
+DropShadow.Name = "DropShadow"
+DropShadow.Size = UDim2.new(1, 0, 1, 0)
+DropShadow.Position = UDim2.new(0, 0, 0, 0)
+DropShadow.BackgroundTransparency = 1
+DropShadow.Image = "rbxassetid://6015897843"
+DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+DropShadow.ImageTransparency = 0.5
+DropShadow.ScaleType = Enum.ScaleType.Slice
+DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+DropShadow.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 10, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopBar
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 5, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 37, 0.5, -8)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+DecorativeLine.Parent = TopBar
+
+local LineCorner = Instance.new("UICorner")
+LineCorner.CornerRadius = UDim.new(0, 2)
+LineCorner.Parent = DecorativeLine
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0.6, 0, 1, 0)
+Title.Position = UDim2.new(0.2, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Texture Menu"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.Unknown
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+-- Кнопка свернуть
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Parent = TopBar
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.TextSize = 20
+MinimizeText.Font = Enum.Font.SourceSansBold
+MinimizeText.Parent = MinimizeButton
+
+local MinimizeButtonBtn = Instance.new("ImageButton")
+MinimizeButtonBtn.Name = "MinimizeButtonBtn"
+MinimizeButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButtonBtn.BackgroundTransparency = 1
+MinimizeButtonBtn.Parent = MinimizeButton
+
+-- Кнопка закрыть
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.Parent = TopBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.TextSize = 20
+CloseText.Font = Enum.Font.SourceSansBold
+CloseText.Parent = CloseButton
+
+local CloseButtonBtn = Instance.new("ImageButton")
+CloseButtonBtn.Name = "CloseButtonBtn"
+CloseButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+CloseButtonBtn.BackgroundTransparency = 1
+CloseButtonBtn.Parent = CloseButton
+
+-- Контейнер для контента
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, 0, 1, -50)
+ContentContainer.Position = UDim2.new(0, 0, 0, 50)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.ClipsDescendants = true
+ContentContainer.Parent = MainFrame
+
+-- Вкладки
+local TabsContainer = Instance.new("Frame")
+TabsContainer.Name = "TabsContainer"
+TabsContainer.Size = UDim2.new(1, 0, 0, 40)
+TabsContainer.Position = UDim2.new(0, 0, 0, 0)
+TabsContainer.BackgroundTransparency = 1
+TabsContainer.Parent = ContentContainer
+
+-- Контейнер для содержимого вкладок
+local TabContentContainer = Instance.new("Frame")
+TabContentContainer.Name = "TabContentContainer"
+TabContentContainer.Size = UDim2.new(1, 0, 1, -40)
+TabContentContainer.Position = UDim2.new(0, 0, 0, 40)
+TabContentContainer.BackgroundTransparency = 1
+TabContentContainer.ClipsDescendants = true
+TabContentContainer.Parent = ContentContainer
+
+-- Вкладка Texture Changer
+local TextureTabButton = Instance.new("TextButton")
+TextureTabButton.Name = "TextureTabButton"
+TextureTabButton.Size = UDim2.new(0, 140, 0, 40)
+TextureTabButton.Position = UDim2.new(0, 10, 0, 0)
+TextureTabButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+TextureTabButton.Text = "Texture Changer"
+TextureTabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextureTabButton.TextSize = 14
+TextureTabButton.Font = Enum.Font.Gotham
+TextureTabButton.Parent = TabsContainer
+
+local TextureTabCorner = Instance.new("UICorner")
+TextureTabCorner.CornerRadius = UDim.new(0, 8)
+TextureTabCorner.Parent = TextureTabButton
+
+-- Вкладка Settings
+local SettingsTabButton = Instance.new("TextButton")
+SettingsTabButton.Name = "SettingsTabButton"
+SettingsTabButton.Size = UDim2.new(0, 140, 0, 40)
+SettingsTabButton.Position = UDim2.new(0, 160, 0, 0)
+SettingsTabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SettingsTabButton.Text = "Settings"
+SettingsTabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+SettingsTabButton.TextSize = 14
+SettingsTabButton.Font = Enum.Font.Gotham
+SettingsTabButton.Parent = TabsContainer
+
+local SettingsTabCorner = Instance.new("UICorner")
+SettingsTabCorner.CornerRadius = UDim.new(0, 8)
+SettingsTabCorner.Parent = SettingsTabButton
+
+-- Контент для Texture Changer
+local TextureContent = Instance.new("ScrollingFrame")
+TextureContent.Name = "TextureContent"
+TextureContent.Size = UDim2.new(1, 0, 1, 0)
+TextureContent.Position = UDim2.new(0, 0, 0, 0)
+TextureContent.BackgroundTransparency = 1
+TextureContent.ScrollBarThickness = 6
+TextureContent.ScrollingEnabled = true
+TextureContent.Visible = true
+TextureContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TextureContent.Parent = TabContentContainer
+
+-- Контент для Settings
+local SettingsContent = Instance.new("ScrollingFrame")
+SettingsContent.Name = "SettingsContent"
+SettingsContent.Size = UDim2.new(1, 0, 1, 0)
+SettingsContent.Position = UDim2.new(0, 0, 0, 0)
+SettingsContent.BackgroundTransparency = 1
+SettingsContent.ScrollBarThickness = 6
+SettingsContent.ScrollingEnabled = true
+SettingsContent.Visible = false
+SettingsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SettingsContent.Parent = TabContentContainer
+
+-- UIListLayout для контента
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 12)
+UIListLayout.Parent = TextureContent
+
+-- UIListLayout для настроек
+local SettingsUIListLayout = Instance.new("UIListLayout")
+SettingsUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SettingsUIListLayout.Padding = UDim.new(0, 12)
+SettingsUIListLayout.Parent = SettingsContent
+
+-- Создание элементов интерфейса для Texture Changer
+
+-- Функция создания группы
+local function createGroup(title, height, layoutOrder)
+    local GroupFrame = Instance.new("Frame")
+    GroupFrame.Name = title .. "Group"
+    GroupFrame.Size = UDim2.new(1, -20, 0, height)
+    GroupFrame.Position = UDim2.new(0, 0, 0, 0)
+    GroupFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    GroupFrame.LayoutOrder = layoutOrder
+    GroupFrame.Parent = TextureContent
+    
+    local GroupCorner = Instance.new("UICorner")
+    GroupCorner.CornerRadius = UDim.new(0, 8)
+    GroupCorner.Parent = GroupFrame
+    
+    local GroupTitle = Instance.new("TextLabel")
+    GroupTitle.Name = "GroupTitle"
+    GroupTitle.Size = UDim2.new(1, -10, 0, 35)
+    GroupTitle.Position = UDim2.new(0, 10, 0, 5)
+    GroupTitle.BackgroundTransparency = 1
+    GroupTitle.Text = "  " .. title
+    GroupTitle.TextColor3 = Color3.fromRGB(253, 104, 159)
+    GroupTitle.TextSize = 18
+    GroupTitle.TextXAlignment = Enum.TextXAlignment.Left
+    GroupTitle.Font = Enum.Font.GothamBold
+    GroupTitle.Parent = GroupFrame
+    
+    local ContentFrame = Instance.new("Frame")
+    ContentFrame.Name = "ContentFrame"
+    ContentFrame.Size = UDim2.new(1, -20, 1, -45)
+    ContentFrame.Position = UDim2.new(0, 10, 0, 40)
+    ContentFrame.BackgroundTransparency = 1
+    ContentFrame.Parent = GroupFrame
+    
+    local ContentListLayout = Instance.new("UIListLayout")
+    ContentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ContentListLayout.Padding = UDim.new(0, 8)
+    ContentListLayout.Parent = ContentFrame
+    
+    return ContentFrame
+end
+
+-- Функция создания текстового поля
+local function createTextBox(parent, title, placeholder, layoutOrder)
+    local TextBoxFrame = Instance.new("Frame")
+    TextBoxFrame.Name = title .. "TextBoxFrame"
+    TextBoxFrame.Size = UDim2.new(1, 0, 0, 45)
+    TextBoxFrame.BackgroundTransparency = 1
+    TextBoxFrame.LayoutOrder = layoutOrder
+    TextBoxFrame.Parent = parent
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(0.4, 0, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextSize = 14
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Font = Enum.Font.Gotham
+    TitleLabel.Parent = TextBoxFrame
+    
+    local TextBox = Instance.new("TextBox")
+    TextBox.Name = title .. "TextBox"
+    TextBox.Size = UDim2.new(0.6, 0, 0.8, 0)
+    TextBox.Position = UDim2.new(0.4, 0, 0.1, 0)
+    TextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TextBox.BorderSizePixel = 0
+    TextBox.Text = ""
+    TextBox.PlaceholderText = placeholder
+    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextBox.TextSize = 14
+    TextBox.Font = Enum.Font.Gotham
+    TextBox.ClearTextOnFocus = false
+    TextBox.Parent = TextBoxFrame
+    
+    local TextBoxCorner = Instance.new("UICorner")
+    TextBoxCorner.CornerRadius = UDim.new(0, 6)
+    TextBoxCorner.Parent = TextBox
+    
+    return TextBox
+end
+
+-- Функция создания кнопки
+local function createButton(parent, title, layoutOrder)
+    local Button = Instance.new("TextButton")
+    Button.Name = title .. "Button"
+    Button.Size = UDim2.new(1, 0, 0, 38)
+    Button.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    Button.Text = title
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+    Button.Font = Enum.Font.GothamBold
+    Button.LayoutOrder = layoutOrder
+    Button.Parent = parent
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 8)
+    ButtonCorner.Parent = Button
+    
+    return Button
+end
+
+-- Функция создания слайдера
+local function createSlider(parent, title, min, max, default, layoutOrder)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = title .. "SliderFrame"
+    SliderFrame.Size = UDim2.new(1, 0, 0, 55)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.LayoutOrder = layoutOrder
+    SliderFrame.Parent = parent
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Name = "TitleLabel"
+    TitleLabel.Size = UDim2.new(1, 0, 0, 25)
+    TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = title .. ": " .. default
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextSize = 14
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Font = Enum.Font.Gotham
+    TitleLabel.Parent = SliderFrame
+    
+    local SliderTrack = Instance.new("Frame")
+    SliderTrack.Name = "SliderTrack"
+    SliderTrack.Size = UDim2.new(1, 0, 0, 8)
+    SliderTrack.Position = UDim2.new(0, 0, 0, 30)
+    SliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    SliderTrack.BorderSizePixel = 0
+    SliderTrack.Parent = SliderFrame
+    
+    local TrackCorner = Instance.new("UICorner")
+    TrackCorner.CornerRadius = UDim.new(0, 4)
+    TrackCorner.Parent = SliderTrack
+    
+    local SliderFill = Instance.new("Frame")
+    SliderFill.Name = "SliderFill"
+    SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    SliderFill.Position = UDim2.new(0, 0, 0, 0)
+    SliderFill.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    SliderFill.BorderSizePixel = 0
+    SliderFill.Parent = SliderTrack
+    
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(0, 4)
+    FillCorner.Parent = SliderFill
+    
+    local SliderButton = Instance.new("TextButton")
+    SliderButton.Name = "SliderButton"
+    SliderButton.Size = UDim2.new(0, 22, 0, 22)
+    SliderButton.Position = UDim2.new((default - min) / (max - min), -11, 0.5, -11)
+    SliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SliderButton.Text = ""
+    SliderButton.Parent = SliderTrack
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0.5, 0)
+    ButtonCorner.Parent = SliderButton
+    
+    -- Создаем таблицу для хранения данных слайдера
+    local sliderData = {
+        Frame = SliderFrame,
+        Track = SliderTrack,
+        Fill = SliderFill,
+        Button = SliderButton,
+        Label = TitleLabel,
+        Min = min,
+        Max = max,
+        Value = default
+    }
+    
+    -- Функция для обновления значения слайдера
+    local function updateSlider(value)
+        value = math.clamp(value, min, max)
+        sliderData.Value = value
+        
+        local percentage = (value - min) / (max - min)
+        SliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+        SliderButton.Position = UDim2.new(percentage, -11, 0.5, -11)
+        TitleLabel.Text = title .. ": " .. value
+    end
+    
+    -- Обработчик для перетаскивания слайдера
+    local isDragging = false
+    
+    SliderButton.MouseButton1Down:Connect(function()
+        isDragging = true
+    end)
+    
+    local function updateSliderFromMouse()
+        if not isDragging then return end
+        
+        local mousePos = UserInputService:GetMouseLocation()
+        local trackAbsPos = SliderTrack.AbsolutePosition
+        local trackAbsSize = SliderTrack.AbsoluteSize
+        
+        if trackAbsPos and trackAbsSize then
+            local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackAbsSize.X)
+            local percentage = relativeX / trackAbsSize.X
+            local value = math.floor(min + percentage * (max - min))
+            
+            updateSlider(value)
+        end
+    end
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            updateSliderFromMouse()
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+    
+    -- Добавляем обработчик клика на трек
+    SliderTrack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = input.Position
+            local trackAbsPos = SliderTrack.AbsolutePosition
+            local trackAbsSize = SliderTrack.AbsoluteSize
+            
+            if trackAbsPos and trackAbsSize then
+                local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackAbsSize.X)
+                local percentage = relativeX / trackAbsSize.X
+                local value = math.floor(min + percentage * (max - min))
+                
+                updateSlider(value)
+            end
+        end
+    end)
+    
+    return SliderFrame, TitleLabel, SliderFill, SliderButton, sliderData
+end
+
+-- Создание групп и элементов
+
+-- Группа Object Texture (увеличенная)
+local ObjectGroup = createGroup("Object Texture", 220, 1)
+local ObjectPathTextBox = createTextBox(ObjectGroup, "Object Path", "workspace.Model.Part", 1)
+local ObjectTextureTextBox = createTextBox(ObjectGroup, "Texture ID", "120939521656424", 2)
+local SelectObjectButton = createButton(ObjectGroup, "Select Object (Click)", 3)
+local ChangeObjectTextureButton = createButton(ObjectGroup, "Change Texture", 4)
+
+-- Группа Camera Texture (значительно увеличена)
+local CameraGroup = createGroup("Camera Texture", 280, 2)
+local CameraTextureTextBox = createTextBox(CameraGroup, "Texture ID", "120939521656424", 1)
+local CameraSlider, CameraSliderLabel, CameraSliderFill, CameraSliderButton, CameraSliderData = createSlider(CameraGroup, "Radius", 1, 100, 20, 2)
+local ChangeRadiusButton = createButton(CameraGroup, "Change in Radius", 3)
+local ChangeViewButton = createButton(CameraGroup, "Change in View", 4)
+local ChangeSmallRadiusButton = createButton(CameraGroup, "Change Small Radius (5)", 5)
+
+-- Группа Inventory Texture
+local InventoryGroup = createGroup("Inventory Texture", 160, 3)
+local InventoryTextureTextBox = createTextBox(InventoryGroup, "Texture ID", "120939521656424", 1)
+local ChangeInventoryButton = createButton(InventoryGroup, "Change Inventory", 2)
+
+-- Группа Utilities (увеличенная)
+local UtilitiesGroup = createGroup("Utilities", 220, 4)
+local CopyIDButton = createButton(UtilitiesGroup, "Copy ID", 1)
+local QuickReplaceTextBox = createTextBox(UtilitiesGroup, "Quick Replace", "oldID,newID", 2)
+local TestIDButton = createButton(UtilitiesGroup, "Test ID", 3)
+local ResetPathsButton = createButton(UtilitiesGroup, "Reset Paths", 4)
+
+-- Добавляем элементы в Settings
+local SettingsGroup = Instance.new("Frame")
+SettingsGroup.Name = "SettingsGroup"
+SettingsGroup.Size = UDim2.new(1, -20, 0, 200)
+SettingsGroup.Position = UDim2.new(0, 0, 0, 0)
+SettingsGroup.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SettingsGroup.LayoutOrder = 1
+SettingsGroup.Parent = SettingsContent
+
+local SettingsCorner = Instance.new("UICorner")
+SettingsCorner.CornerRadius = UDim.new(0, 8)
+SettingsCorner.Parent = SettingsGroup
+
+local SettingsTitle = Instance.new("TextLabel")
+SettingsTitle.Name = "SettingsTitle"
+SettingsTitle.Size = UDim2.new(1, -10, 0, 35)
+SettingsTitle.Position = UDim2.new(0, 10, 0, 5)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "  Configuration"
+SettingsTitle.TextColor3 = Color3.fromRGB(253, 104, 159)
+SettingsTitle.TextSize = 18
+SettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+SettingsTitle.Font = Enum.Font.GothamBold
+SettingsTitle.Parent = SettingsGroup
+
+local SettingsContentFrame = Instance.new("Frame")
+SettingsContentFrame.Name = "SettingsContentFrame"
+SettingsContentFrame.Size = UDim2.new(1, -20, 1, -45)
+SettingsContentFrame.Position = UDim2.new(0, 10, 0, 40)
+SettingsContentFrame.BackgroundTransparency = 1
+SettingsContentFrame.Parent = SettingsGroup
+
+local SettingsListLayout = Instance.new("UIListLayout")
+SettingsListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SettingsListLayout.Padding = UDim.new(0, 12)
+SettingsListLayout.Parent = SettingsContentFrame
+
+-- Тумблер для рекурсивного поиска
+local RecursiveToggleFrame = Instance.new("Frame")
+RecursiveToggleFrame.Name = "RecursiveToggleFrame"
+RecursiveToggleFrame.Size = UDim2.new(1, 0, 0, 35)
+RecursiveToggleFrame.BackgroundTransparency = 1
+RecursiveToggleFrame.LayoutOrder = 1
+RecursiveToggleFrame.Parent = SettingsContentFrame
+
+local RecursiveLabel = Instance.new("TextLabel")
+RecursiveLabel.Name = "RecursiveLabel"
+RecursiveLabel.Size = UDim2.new(0.8, 0, 1, 0)
+RecursiveLabel.Position = UDim2.new(0, 0, 0, 0)
+RecursiveLabel.BackgroundTransparency = 1
+RecursiveLabel.Text = "Recursive Search"
+RecursiveLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RecursiveLabel.TextSize = 14
+RecursiveLabel.TextXAlignment = Enum.TextXAlignment.Left
+RecursiveLabel.Font = Enum.Font.Gotham
+RecursiveLabel.Parent = RecursiveToggleFrame
+
+local RecursiveToggle = Instance.new("TextButton")
+RecursiveToggle.Name = "RecursiveToggle"
+RecursiveToggle.Size = UDim2.new(0, 60, 0, 28)
+RecursiveToggle.Position = UDim2.new(1, -60, 0.5, -14)
+RecursiveToggle.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+RecursiveToggle.Text = "ON"
+RecursiveToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+RecursiveToggle.TextSize = 13
+RecursiveToggle.Font = Enum.Font.GothamBold
+RecursiveToggle.Parent = RecursiveToggleFrame
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 14)
+ToggleCorner.Parent = RecursiveToggle
+
+-- Кнопка выключения скрипта в Settings
+local DisableScriptButton = Instance.new("TextButton")
+DisableScriptButton.Name = "DisableScriptButton"
+DisableScriptButton.Size = UDim2.new(1, 0, 0, 45)
+DisableScriptButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+DisableScriptButton.Text = "DISABLE SCRIPT"
+DisableScriptButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DisableScriptButton.TextSize = 16
+DisableScriptButton.Font = Enum.Font.GothamBold
+DisableScriptButton.LayoutOrder = 2
+DisableScriptButton.Parent = SettingsContentFrame
+
+local DisableButtonCorner = Instance.new("UICorner")
+DisableButtonCorner.CornerRadius = UDim.new(0, 8)
+DisableButtonCorner.Parent = DisableScriptButton
+
+-- Добавляем все в CoreGui
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = CoreGui
+
+-- Переменные для функционала
+local isMinimized = false
+local isDragging = false
+local dragStartPos = Vector2.new(0, 0)
+local guiStartPos = Vector2.new(0, 0)
+local activeTab = "Texture"
+
+-- Функции для функционала из оригинального скрипта
+local function formatTextureId(id)
+    id = tostring(id):gsub("%s+", "")
+    
+    if id:match("^%d+$") then
+        return "rbxassetid://" .. id
+    elseif id:match("^rbxassetid://") or id:match("^http") then
+        return id
+    else
+        return "rbxassetid://" .. id
+    end
+end
+
+local function changeTextureRecursive(object, textureId, changed)
+    changed = changed or {}
+    
+    if changed[object] then
+        return changed
+    end
+    changed[object] = true
+    
+    local formattedId = formatTextureId(textureId)
+    
+    if object:IsA("BasePart") then
+        if object:IsA("MeshPart") then
+            pcall(function()
+                object.TextureID = formattedId
+            end)
+        end
+        
+        for _, child in ipairs(object:GetChildren()) do
+            if child:IsA("Decal") then
+                pcall(function()
+                    child.Texture = formattedId
+                end)
+            elseif child:IsA("Texture") then
+                pcall(function()
+                    child.Texture = formattedId
+                end)
+            end
+        end
+        
+        if object:FindFirstChildOfClass("SurfaceAppearance") then
+            local surfaceAppearance = object:FindFirstChildOfClass("SurfaceAppearance")
+            pcall(function()
+                surfaceAppearance.ColorMap = formattedId
+            end)
+        end
+    end
+    
+    if object:IsA("Decal") then
+        pcall(function()
+            object.Texture = formattedId
+        end)
+    end
+    
+    if object:IsA("Texture") then
+        pcall(function()
+            object.Texture = formattedId
+        end)
+    end
+    
+    if object:IsA("SurfaceAppearance") then
+        pcall(function()
+            object.ColorMap = formattedId
+        end)
+    end
+    
+    for _, child in ipairs(object:GetChildren()) do
+        changeTextureRecursive(child, textureId, changed)
+    end
+    
+    return changed
+end
+
+local function changeInventoryTextures(textureId)
+    local player = LocalPlayer
+    local changed = {}
+    local formattedId = formatTextureId(textureId)
+    
+    if player.Backpack then
+        for _, tool in ipairs(player.Backpack:GetChildren()) do
+            if tool:IsA("Tool") or tool:IsA("HopperBin") then
+                changeTextureRecursive(tool, formattedId, changed)
+            end
+        end
+    end
+    
+    if player.Character then
+        for _, item in ipairs(player.Character:GetChildren()) do
+            if item:IsA("Tool") or item:IsA("HopperBin") then
+                changeTextureRecursive(item, formattedId, changed)
+            end
+        end
+    end
+    
+    return changed
+end
+
+local function changeTexturesInCameraRadius(textureId, radius)
+    local changed = {}
+    local formattedId = formatTextureId(textureId)
+    local camera = game.Workspace.CurrentCamera
+    local cameraPos = camera.CFrame.Position
+    
+    local function processModel(model)
+        for _, obj in ipairs(model:GetDescendants()) do
+            if obj:IsA("BasePart") or obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
+                if obj:IsA("BasePart") then
+                    local distance = (obj.Position - cameraPos).Magnitude
+                    if distance <= radius then
+                        changeTextureRecursive(obj, formattedId, changed)
+                    end
+                else
+                    local parent = obj.Parent
+                    if parent and parent:IsA("BasePart") then
+                        local distance = (parent.Position - cameraPos).Magnitude
+                        if distance <= radius then
+                            changeTextureRecursive(obj, formattedId, changed)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    for _, obj in ipairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Model") then
+            processModel(obj)
+        elseif obj:IsA("BasePart") then
+            local distance = (obj.Position - cameraPos).Magnitude
+            if distance <= radius then
+                changeTextureRecursive(obj, formattedId, changed)
+            end
+        end
+    end
+    
+    return changed
+end
+
+-- Переменные для выбора объекта
+local selectingObject = false
+local mouse = LocalPlayer:GetMouse()
+
+local function startObjectSelection()
+    if selectingObject then
+        selectingObject = false
+        mouse.Icon = "rbxasset://SystemCursors/Arrow"
+        return
+    end
+    
+    selectingObject = true
+    mouse.Icon = "rbxasset://SystemCursors/Cross"
+    
+    local connection
+    connection = mouse.Button1Down:Connect(function()
+        if selectingObject and mouse.Target then
+            selectingObject = false
+            local target = mouse.Target
+            local path = ""
+            local current = target
+            
+            while current and current ~= game do
+                if path == "" then
+                    path = current.Name
+                else
+                    path = current.Name .. "." .. path
+                end
+                current = current.Parent
+            end
+            
+            if path ~= "" then
+                local fullPath = "workspace." .. path
+                ObjectPathTextBox.Text = fullPath
+            end
+            
+            if connection then
+                connection:Disconnect()
+            end
+            mouse.Icon = "rbxasset://SystemCursors/Arrow"
+        end
+    end)
+    
+    task.delay(30, function()
+        if selectingObject then
+            selectingObject = false
+            if connection then
+                connection:Disconnect()
+            end
+            mouse.Icon = "rbxasset://SystemCursors/Arrow"
+        end
+    end)
+end
+
+-- Функция для показа уведомления (исправленная)
+local notificationQueue = {}
+local isShowingNotification = false
+
+local function showNotification(title, message, duration)
+    duration = duration or 3
+    
+    -- Добавляем уведомление в очередь
+    table.insert(notificationQueue, {
+        Title = title,
+        Message = message,
+        Duration = duration
+    })
+    
+    -- Если уже не показываем уведомление, запускаем показ
+    if not isShowingNotification then
+        local function showNextNotification()
+            if #notificationQueue == 0 then
+                isShowingNotification = false
+                return
+            end
+            
+            isShowingNotification = true
+            local notifData = table.remove(notificationQueue, 1)
+            
+            -- Создаем уведомление
+            local Notification = Instance.new("Frame")
+            Notification.Name = "Notification"
+            Notification.Size = UDim2.new(0, 350, 0, 100)
+            Notification.Position = UDim2.new(1, 20, 0.8, 0)
+            Notification.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+            Notification.BackgroundTransparency = 0.1
+            Notification.BorderSizePixel = 0
+            Notification.ZIndex = 10000
+            Notification.Parent = ScreenGui
+            
+            local NotificationCorner = Instance.new("UICorner")
+            NotificationCorner.CornerRadius = UDim.new(0, 12)
+            NotificationCorner.Parent = Notification
+            
+            -- Тень для уведомления
+            local NotificationShadow = Instance.new("ImageLabel")
+            NotificationShadow.Name = "NotificationShadow"
+            NotificationShadow.Size = UDim2.new(1, 10, 1, 10)
+            NotificationShadow.Position = UDim2.new(0, -5, 0, -5)
+            NotificationShadow.BackgroundTransparency = 1
+            NotificationShadow.Image = "rbxassetid://6015897843"
+            NotificationShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+            NotificationShadow.ImageTransparency = 0.5
+            NotificationShadow.ScaleType = Enum.ScaleType.Slice
+            NotificationShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+            NotificationShadow.ZIndex = 9999
+            NotificationShadow.Parent = Notification
+            
+            local TitleLabel = Instance.new("TextLabel")
+            TitleLabel.Name = "TitleLabel"
+            TitleLabel.Size = UDim2.new(1, -20, 0, 35)
+            TitleLabel.Position = UDim2.new(0, 10, 0, 10)
+            TitleLabel.BackgroundTransparency = 1
+            TitleLabel.Text = notifData.Title
+            TitleLabel.TextColor3 = Color3.fromRGB(253, 104, 159)
+            TitleLabel.TextSize = 18
+            TitleLabel.Font = Enum.Font.GothamBold
+            TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            TitleLabel.ZIndex = 10001
+            TitleLabel.Parent = Notification
+            
+            local MessageLabel = Instance.new("TextLabel")
+            MessageLabel.Name = "MessageLabel"
+            MessageLabel.Size = UDim2.new(1, -20, 1, -50)
+            MessageLabel.Position = UDim2.new(0, 10, 0, 45)
+            MessageLabel.BackgroundTransparency = 1
+            MessageLabel.Text = notifData.Message
+            MessageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+            MessageLabel.TextSize = 14
+            MessageLabel.Font = Enum.Font.Gotham
+            MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
+            MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
+            MessageLabel.TextWrapped = true
+            MessageLabel.ZIndex = 10001
+            MessageLabel.Parent = Notification
+            
+            -- Анимация появления
+            local TweenIn = TweenService:Create(
+                Notification,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+                {Position = UDim2.new(1, -370, 0.8, 0)}
+            )
+            
+            TweenIn:Play()
+            
+            TweenIn.Completed:Wait()
+            
+            -- Ждем указанное время
+            task.wait(notifData.Duration)
+            
+            -- Анимация исчезновения
+            local TweenOut = TweenService:Create(
+                Notification,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+                {Position = UDim2.new(1, 20, 0.8, 0)}
+            )
+            
+            TweenOut:Play()
+            
+            TweenOut.Completed:Connect(function()
+                Notification:Destroy()
+                -- Показываем следующее уведомление
+                showNextNotification()
+            end)
+        end
+        
+        -- Запускаем показ первого уведомления в очереди
+        showNextNotification()
+    end
+end
+
+-- Функционал перетаскивания GUI
+local function updateDrag(input)
+    if isDragging then
+        local delta = input.Position - dragStartPos
+        MainFrame.Position = UDim2.new(0, guiStartPos.X + delta.X, 0, guiStartPos.Y + delta.Y)
+    end
+end
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStartPos = input.Position
+        guiStartPos = Vector2.new(MainFrame.Position.X.Offset, MainFrame.Position.Y.Offset)
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                isDragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDrag(input)
+    end
+end)
+
+-- Функционал кнопок
+MinimizeButtonBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    
+    if isMinimized then
+        MainFrame:TweenSize(
+            UDim2.new(0, 450, 0, 50),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.3,
+            true
+        )
+        MinimizeText.Text = "+"
+    else
+        MainFrame:TweenSize(
+            UDim2.new(0, 450, 0, 600),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.3,
+            true
+        )
+        MinimizeText.Text = "-"
+    end
+end)
+
+CloseButtonBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+DisableScriptButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Функционал вкладок
+TextureTabButton.MouseButton1Click:Connect(function()
+    if activeTab ~= "Texture" then
+        activeTab = "Texture"
+        TextureTabButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+        SettingsTabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        TextureContent.Visible = true
+        SettingsContent.Visible = false
+    end
+end)
+
+SettingsTabButton.MouseButton1Click:Connect(function()
+    if activeTab ~= "Settings" then
+        activeTab = "Settings"
+        SettingsTabButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+        TextureTabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        SettingsContent.Visible = true
+        TextureContent.Visible = false
+    end
+end)
+
+-- Функционал тумблера
+RecursiveToggle.MouseButton1Click:Connect(function()
+    if RecursiveToggle.Text == "ON" then
+        RecursiveToggle.Text = "OFF"
+        RecursiveToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    else
+        RecursiveToggle.Text = "ON"
+        RecursiveToggle.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end
+end)
+
+-- Функционал кнопок
+SelectObjectButton.MouseButton1Click:Connect(function()
+    startObjectSelection()
+    showNotification("Object Selection", "Click on an object in the game", 3)
+end)
+
+ChangeObjectTextureButton.MouseButton1Click:Connect(function()
+    local path = ObjectPathTextBox.Text
+    local textureId = ObjectTextureTextBox.Text
+    
+    if not path or path == "" then
+        showNotification("Error", "Enter object path", 3)
+        return
+    end
+    
+    if not textureId or textureId == "" then
+        showNotification("Error", "Enter Texture ID", 3)
+        return
+    end
+    
+    local success, object = pcall(function()
+        local func = "return " .. path
+        return loadstring(func)()
+    end)
+    
+    if success and object then
+        local changed = changeTextureRecursive(object, textureId)
+        local count = 0
+        for _ in pairs(changed) do
+            count = count + 1
+        end
+        showNotification("Success", "Textures changed: " .. count, 3)
+    else
+        showNotification("Error", "Cannot find object: " .. path, 3)
+    end
+end)
+
+ChangeRadiusButton.MouseButton1Click:Connect(function()
+    local textureId = CameraTextureTextBox.Text
+    local radius = CameraSliderData.Value
+    
+    if not textureId or textureId == "" then
+        showNotification("Error", "Enter Texture ID", 3)
+        return
+    end
+    
+    showNotification("Processing", "Changing textures...", 2)
+    
+    local changed = changeTexturesInCameraRadius(textureId, radius)
+    local count = 0
+    for _ in pairs(changed) do
+        count = count + 1
+    end
+    
+    task.wait(1)
+    showNotification("Success", "Changed in radius " .. radius .. ": " .. count, 3)
+end)
+
+ChangeViewButton.MouseButton1Click:Connect(function()
+    local textureId = CameraTextureTextBox.Text
+    
+    if not textureId or textureId == "" then
+        showNotification("Error", "Enter Texture ID", 3)
+        return
+    end
+    
+    showNotification("Processing", "Changing textures in view...", 2)
+    
+    local changed = changeTexturesInCameraRadius(textureId, 30)
+    local count = 0
+    for _ in pairs(changed) do
+        count = count + 1
+    end
+    
+    task.wait(1)
+    showNotification("Success", "Changed in view: " .. count, 3)
+end)
+
+ChangeSmallRadiusButton.MouseButton1Click:Connect(function()
+    local textureId = CameraTextureTextBox.Text
+    
+    if not textureId or textureId == "" then
+        showNotification("Error", "Enter Texture ID", 3)
+        return
+    end
+    
+    showNotification("Processing", "Changing textures in small radius...", 2)
+    
+    local changed = changeTexturesInCameraRadius(textureId, 5)
+    local count = 0
+    for _ in pairs(changed) do
+        count = count + 1
+    end
+    
+    task.wait(1)
+    showNotification("Success", "Changed in small radius: " .. count, 3)
+end)
+
+ChangeInventoryButton.MouseButton1Click:Connect(function()
+    local textureId = InventoryTextureTextBox.Text
+    
+    if not textureId or textureId == "" then
+        showNotification("Error", "Enter Texture ID", 3)
+        return
+    end
+    
+    local changed = changeInventoryTextures(textureId)
+    local count = 0
+    for _ in pairs(changed) do
+        count = count + 1
+    end
+    
+    showNotification("Success", "Changed in inventory: " .. count, 3)
+end)
+
+CopyIDButton.MouseButton1Click:Connect(function()
+    local textureId = ObjectTextureTextBox.Text
+    
+    if textureId and textureId ~= "" then
+        CameraTextureTextBox.Text = textureId
+        InventoryTextureTextBox.Text = textureId
+        showNotification("Info", "Texture ID copied to all fields", 2)
+    else
+        showNotification("Warning", "No Texture ID to copy", 2)
+    end
+end)
+
+TestIDButton.MouseButton1Click:Connect(function()
+    local testId = "120939521656424"
+    ObjectTextureTextBox.Text = testId
+    CameraTextureTextBox.Text = testId
+    InventoryTextureTextBox.Text = testId
+    showNotification("Test", "Test ID set in all fields", 2)
+end)
+
+ResetPathsButton.MouseButton1Click:Connect(function()
+    ObjectPathTextBox.Text = ""
+    showNotification("Reset", "Object path has been reset", 2)
+end)
+
+QuickReplaceTextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local value = QuickReplaceTextBox.Text
+        if value and value:find(",") then
+            local ids = value:split(",")
+            if #ids == 2 then
+                local newId = ids[2]:gsub("%s+", "")
+                ObjectTextureTextBox.Text = newId
+                CameraTextureTextBox.Text = newId
+                InventoryTextureTextBox.Text = newId
+                showNotification("Info", "Texture ID set: " .. newId, 2)
+            end
+        end
+    end
+end)
+
+-- Хоткей для открытия/закрытия GUI
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        MainFrame.Visible = not MainFrame.Visible
+        if MainFrame.Visible then
+            showNotification("GUI", "GUI is now visible", 1.5)
+        else
+            showNotification("GUI", "GUI is now hidden", 1.5)
+        end 
+    end
+end)
+
+-- Показываем уведомление при запуске
+task.wait(1)
+showNotification("Texture Changer", "GUI loaded successfully!\nUse RightControl to toggle GUI", 4)
+
+-- Тестируем уведомления через несколько секунд
+task.wait(5)
+showNotification("Test Notification", "This is a test notification to verify that notifications are working properly.", 3)

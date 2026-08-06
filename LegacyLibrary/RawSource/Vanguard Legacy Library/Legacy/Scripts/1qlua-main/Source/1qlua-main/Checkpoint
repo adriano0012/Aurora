@@ -1,0 +1,1185 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+
+-- Проверяем доступность функций сохранения
+local saveSupported = false
+local loadSupported = false
+
+if writefile and readfile then
+    saveSupported = true
+    loadSupported = true
+end
+
+if isfolder and makefolder and listfiles then
+    saveSupported = true
+    loadSupported = true
+    
+    if not isfolder("SavedWaypoints") then
+        makefolder("SavedWaypoints")
+    end
+end
+
+-- Цветовая палитра
+local colors = {
+    background = Color3.fromRGB(30, 30, 46),
+    header = Color3.fromRGB(49, 50, 68),
+    button = Color3.fromRGB(69, 71, 90),
+    buttonHover = Color3.fromRGB(88, 91, 112),
+    accent = Color3.fromRGB(137, 180, 250),
+    text = Color3.fromRGB(240, 240, 255),
+    close = Color3.fromRGB(243, 139, 168),
+    waypoint = Color3.fromRGB(166, 227, 161),
+    delete = Color3.fromRGB(235, 69, 95),
+    search = Color3.fromRGB(80, 82, 100),
+    cancel = Color3.fromRGB(203, 166, 247)
+}
+
+-- Таблица для хранения точек
+local waypoints = {}
+local isDeleteMode = false
+local selectedForDelete = {}
+local searchTerm = ""
+
+-- Создаем GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "EnhancedMiniMap"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+gui.DisplayOrder = 999999
+gui.IgnoreGuiInset = true
+gui.Parent = CoreGui
+
+-- Основной фрейм карты
+local mapFrame = Instance.new("Frame")
+mapFrame.Name = "MiniMap"
+mapFrame.Size = UDim2.new(0.25, 0, 0.35, 0)
+mapFrame.Position = UDim2.new(0.02, -50, 0.6, 0)
+mapFrame.BackgroundColor3 = colors.background
+mapFrame.BackgroundTransparency = 1
+mapFrame.ClipsDescendants = true
+mapFrame.ZIndex = 999999
+mapFrame.Parent = gui
+
+-- Скругление углов
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 0)
+corner.Parent = mapFrame
+
+-- Тень
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageColor3 = Color3.new(0, 0, 0)
+shadow.ImageTransparency = 1
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+shadow.Size = UDim2.new(1, 20, 1, 20)
+shadow.Position = UDim2.new(0, -10, 0, -10)
+shadow.BackgroundTransparency = 1
+shadow.ZIndex = 999998
+shadow.Parent = mapFrame
+
+-- Заголовок
+local header = Instance.new("TextButton")
+header.Name = "Header"
+header.Size = UDim2.new(1, 0, 0.12, 0)
+header.Position = UDim2.new(0, 0, 0, -50)
+header.BackgroundColor3 = colors.header
+header.BackgroundTransparency = 1
+header.Text = ""
+header.AutoButtonColor = false
+header.ZIndex = 999999
+header.Parent = mapFrame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 0)
+headerCorner.Parent = header
+
+-- Текст заголовка
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(0.4, 0, 1, 0)
+title.Position = UDim2.new(0.05, 0, 0, 0)
+title.Text = "МИНИ-КАРТА"
+title.TextColor3 = colors.text
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.TextTransparency = 1
+title.BackgroundTransparency = 1
+title.ZIndex = 1000000
+title.Parent = header
+
+-- Кнопка поиска
+local searchButton = Instance.new("ImageButton")
+searchButton.Name = "SearchButton"
+searchButton.Size = UDim2.new(0.08, 0, 0.8, 0)
+searchButton.Position = UDim2.new(0.46, 0, 0.1, 0)
+searchButton.Image = "rbxassetid://3926305904"
+searchButton.ImageRectOffset = Vector2.new(964, 324)
+searchButton.ImageRectSize = Vector2.new(36, 36)
+searchButton.ImageColor3 = colors.text
+searchButton.ImageTransparency = 1
+searchButton.BackgroundTransparency = 1
+searchButton.ZIndex = 1000000
+searchButton.Parent = header
+
+-- Поле поиска
+local searchBox = Instance.new("TextBox")
+searchBox.Name = "SearchBox"
+searchBox.Size = UDim2.new(0.35, 0, 0.7, 0)
+searchBox.Position = UDim2.new(0.55, 0, 0.15, 0)
+searchBox.BackgroundColor3 = colors.search
+searchBox.BackgroundTransparency = 1
+searchBox.Text = ""
+searchBox.PlaceholderText = "Поиск..."
+searchBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 170)
+searchBox.TextColor3 = colors.text
+searchBox.TextSize = 14
+searchBox.Font = Enum.Font.GothamMedium
+searchBox.ClearTextOnFocus = false
+searchBox.Visible = false
+searchBox.ZIndex = 1000000
+searchBox.Parent = header
+
+local searchBoxCorner = Instance.new("UICorner")
+searchBoxCorner.CornerRadius = UDim.new(0, 6)
+searchBoxCorner.Parent = searchBox
+
+local searchPadding = Instance.new("UIPadding")
+searchPadding.PaddingLeft = UDim.new(0, 10)
+searchPadding.PaddingRight = UDim.new(0, 10)
+searchPadding.Parent = searchBox
+
+-- Кнопка закрытия
+local closeButton = Instance.new("ImageButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0.08, 0, 0.8, 0)
+closeButton.Position = UDim2.new(0.91, 0, 0.1, 0)
+closeButton.Image = "rbxassetid://3926305904"
+closeButton.ImageRectOffset = Vector2.new(284, 4)
+closeButton.ImageRectSize = Vector2.new(24, 24)
+closeButton.ImageColor3 = colors.close
+closeButton.ImageTransparency = 1
+closeButton.BackgroundTransparency = 1
+closeButton.ZIndex = 1000000
+closeButton.Parent = header
+
+-- Контейнер для точек
+local pointsContainer = Instance.new("ScrollingFrame")
+pointsContainer.Name = "PointsContainer"
+pointsContainer.Size = UDim2.new(1, -10, 0.65, 0)
+pointsContainer.Position = UDim2.new(0, 5, 0.15, 0)
+pointsContainer.BackgroundTransparency = 1
+pointsContainer.ScrollBarThickness = 4
+pointsContainer.ScrollBarImageColor3 = colors.accent
+pointsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+pointsContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+pointsContainer.ZIndex = 999999
+pointsContainer.Parent = mapFrame
+pointsContainer.ScrollBarImageTransparency = 1
+
+local pointsLayout = Instance.new("UIListLayout")
+pointsLayout.Padding = UDim.new(0, 8)
+pointsLayout.Parent = pointsContainer
+
+-- Функции сохранения и загрузки
+local function saveWaypoints()
+    if not saveSupported then
+        print("Сохранение не поддерживается в этом инжекторе")
+        return false
+    end
+    
+    local saveData = {}
+    
+    for _, wp in ipairs(waypoints) do
+        if wp.name and wp.position then
+            table.insert(saveData, {
+                name = wp.name,
+                position = {
+                    X = wp.position.X,
+                    Y = wp.position.Y,
+                    Z = wp.position.Z
+                },
+                color = {
+                    R = wp.color.R,
+                    G = wp.color.G,
+                    B = wp.color.B
+                }
+            })
+        end
+    end
+    
+    local success, jsonData = pcall(function()
+        return HttpService:JSONEncode(saveData)
+    end)
+    
+    if not success or not jsonData then
+        print("Ошибка кодирования данных")
+        return false
+    end
+    
+    local success2, errorMsg = pcall(function()
+        if writefile then
+            writefile("SavedWaypoints/waypoints.json", jsonData)
+            return true
+        end
+        return false
+    end)
+    
+    if success2 then
+        print("Чекпоинты сохранены: " .. #waypoints .. " точек")
+        return true
+    else
+        print("Ошибка сохранения: " .. tostring(errorMsg))
+        return false
+    end
+end
+
+local function loadWaypoints()
+    if not loadSupported then
+        print("Загрузка не поддерживается")
+        return false
+    end
+    
+    local success, fileContent = pcall(function()
+        if readfile then
+            return readfile("SavedWaypoints/waypoints.json")
+        end
+        return nil
+    end)
+    
+    if not success or not fileContent then
+        print("Нет сохраненных чекпоинтов")
+        return false
+    end
+    
+    local success2, loadedData = pcall(function()
+        return HttpService:JSONDecode(fileContent)
+    end)
+    
+    if not success2 or not loadedData or type(loadedData) ~= "table" then
+        print("Ошибка чтения сохранений")
+        return false
+    end
+    
+    -- Очищаем текущие точки
+    for _, wp in ipairs(waypoints) do
+        if wp.button and wp.button.Parent then
+            wp.button:Destroy()
+        end
+    end
+    waypoints = {}
+    selectedForDelete = {}
+    
+    -- Загружаем новые точки
+    for _, wpData in ipairs(loadedData) do
+        if wpData.name and wpData.position then
+            local position = Vector3.new(
+                wpData.position.X or 0,
+                wpData.position.Y or 5,
+                wpData.position.Z or 0
+            )
+            
+            local color
+            if wpData.color then
+                color = Color3.new(
+                    wpData.color.R or 0.65,
+                    wpData.color.G or 0.89,
+                    wpData.color.B or 0.63
+                )
+            else
+                color = colors.waypoint
+            end
+            
+            addWaypoint(wpData.name, position, color)
+        end
+    end
+    
+    print("Чекпоинты загружены: " .. #waypoints .. " точек")
+    updateContainerSize()
+    filterWaypoints()
+    return true
+end
+
+-- Функция обновления размера контейнера
+local function updateContainerSize()
+    if pointsContainer and pointsLayout then
+        pointsContainer.CanvasSize = UDim2.new(0, 0, 0, pointsLayout.AbsoluteContentSize.Y)
+    end
+end
+
+if pointsLayout then
+    pointsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateContainerSize)
+end
+
+-- Функция фильтрации точек по поиску
+local function filterWaypoints()
+    if not waypoints or #waypoints == 0 then return end
+    
+    local visibleCount = 0
+    for _, wp in ipairs(waypoints) do
+        if wp.button and wp.buttonBg then
+            local shouldShow = true
+            
+            if searchTerm ~= "" and searchTerm then
+                shouldShow = string.find(string.lower(wp.name or ""), string.lower(searchTerm)) ~= nil
+            end
+            
+            wp.button.Visible = shouldShow
+            wp.buttonBg.Visible = shouldShow
+            
+            if shouldShow then
+                visibleCount = visibleCount + 1
+            end
+        end
+    end
+    
+    updateContainerSize()
+end
+
+-- Функция создания анимированной кнопки
+local function createAnimatedButton(name, parent, color)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = UDim2.new(1, 0, 0, 45)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.AutoButtonColor = false
+    button.ZIndex = 999999
+    button.Parent = parent
+    
+    local buttonBg = Instance.new("Frame")
+    buttonBg.Name = "Background"
+    buttonBg.Size = UDim2.new(1, 0, 1, 0)
+    buttonBg.Position = UDim2.new(0, 0, 0, 0)
+    buttonBg.BackgroundColor3 = color or colors.button
+    buttonBg.BackgroundTransparency = 1
+    buttonBg.ZIndex = 999999
+    buttonBg.Parent = button
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 8)
+    buttonCorner.Parent = buttonBg
+    
+    local buttonStroke = Instance.new("UIStroke")
+    buttonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    buttonStroke.Color = colors.accent
+    buttonStroke.Transparency = 1
+    buttonStroke.Thickness = 1
+    buttonStroke.Parent = buttonBg
+    
+    local buttonTitle = Instance.new("TextLabel")
+    buttonTitle.Name = "Title"
+    buttonTitle.Size = UDim2.new(0.7, 0, 0.8, 0)
+    buttonTitle.Position = UDim2.new(0.1, 0, 0.1, 0)
+    buttonTitle.Text = name
+    buttonTitle.TextColor3 = colors.text
+    buttonTitle.TextSize = 14
+    buttonTitle.Font = Enum.Font.GothamMedium
+    buttonTitle.TextXAlignment = Enum.TextXAlignment.Left
+    buttonTitle.BackgroundTransparency = 1
+    buttonTitle.TextTransparency = 1
+    buttonTitle.ZIndex = 1000000
+    buttonTitle.Parent = buttonBg
+    
+    local buttonIcon = Instance.new("ImageLabel")
+    buttonIcon.Name = "Icon"
+    buttonIcon.Size = UDim2.new(0, 20, 0, 20)
+    buttonIcon.Position = UDim2.new(0.85, 0, 0.5, -10)
+    buttonIcon.Image = "rbxassetid://3926305904"
+    buttonIcon.ImageRectOffset = Vector2.new(324, 364)
+    buttonIcon.ImageRectSize = Vector2.new(16, 16)
+    buttonIcon.ImageColor3 = colors.text
+    buttonIcon.ImageTransparency = 1
+    buttonIcon.BackgroundTransparency = 1
+    buttonIcon.ZIndex = 1000000
+    buttonIcon.Parent = buttonBg
+    
+    -- Чекбокс для режима удаления
+    local deleteCheckbox = Instance.new("ImageLabel")
+    deleteCheckbox.Name = "DeleteCheckbox"
+    deleteCheckbox.Size = UDim2.new(0, 20, 0, 20)
+    deleteCheckbox.Position = UDim2.new(0.02, 0, 0.5, -10)
+    deleteCheckbox.Image = "rbxassetid://3926305904"
+    deleteCheckbox.ImageRectOffset = Vector2.new(100, 404)
+    deleteCheckbox.ImageRectSize = Vector2.new(20, 20)
+    deleteCheckbox.ImageColor3 = colors.delete
+    deleteCheckbox.ImageTransparency = 1
+    deleteCheckbox.BackgroundTransparency = 1
+    deleteCheckbox.Visible = false
+    deleteCheckbox.ZIndex = 1000000
+    deleteCheckbox.Parent = buttonBg
+    
+    -- Анимация появления
+    local bgTween = TweenService:Create(buttonBg, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {BackgroundTransparency = 0})
+    local textTween = TweenService:Create(buttonTitle, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {TextTransparency = 0})
+    local iconTween = TweenService:Create(buttonIcon, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {ImageTransparency = 0.5})
+    local strokeTween = TweenService:Create(buttonStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Transparency = 0.7})
+    
+    task.spawn(function()
+        bgTween:Play()
+        task.wait(0.1)
+        textTween:Play()
+        strokeTween:Play()
+        task.wait(0.1)
+        iconTween:Play()
+    end)
+    
+    button.MouseEnter:Connect(function()
+        if not isDeleteMode then
+            TweenService:Create(buttonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = colors.buttonHover,
+                Size = UDim2.new(1, 5, 1, 5),
+                Position = UDim2.new(0, -2.5, 0, -2.5)
+            }):Play()
+            
+            TweenService:Create(buttonIcon, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+                ImageTransparency = 0,
+                Rotation = 360
+            }):Play()
+        end
+    end)
+    
+    button.MouseLeave:Connect(function()
+        if not isDeleteMode then
+            TweenService:Create(buttonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = color or colors.button,
+                Size = UDim2.new(1, 0, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0)
+            }):Play()
+            
+            TweenService:Create(buttonIcon, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+                ImageTransparency = 0.5,
+                Rotation = 0
+            }):Play()
+        end
+    end)
+    
+    local clickEffect = Instance.new("Frame")
+    clickEffect.Name = "ClickEffect"
+    clickEffect.Size = UDim2.new(0, 0, 0, 0)
+    clickEffect.Position = UDim2.new(0.5, 0, 0.5, 0)
+    clickEffect.BackgroundColor3 = Color3.new(1, 1, 1)
+    clickEffect.BackgroundTransparency = 0.8
+    clickEffect.BorderSizePixel = 0
+    clickEffect.ZIndex = 1000001
+    clickEffect.Parent = buttonBg
+    
+    local effectCorner = Instance.new("UICorner")
+    effectCorner.CornerRadius = UDim.new(1, 0)
+    effectCorner.Parent = clickEffect
+    
+    button.MouseButton1Down:Connect(function()
+        clickEffect.Size = UDim2.new(0, 0, 0, 0)
+        clickEffect.Position = UDim2.new(0.5, 0, 0.5, 0)
+        clickEffect.BackgroundTransparency = 0.8
+        
+        TweenService:Create(clickEffect, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            Size = UDim2.new(2, 0, 2, 0),
+            Position = UDim2.new(-0.5, 0, -0.5, 0),
+            BackgroundTransparency = 1
+        }):Play()
+    end)
+    
+    return button, buttonBg, deleteCheckbox
+end
+
+-- Функция добавления точки телепортации
+function addWaypoint(name, position, color)
+    if not name or not position then return end
+    
+    local button, buttonBg, deleteCheckbox = createAnimatedButton(name, pointsContainer, color or colors.waypoint)
+    
+    button.MouseButton1Click:Connect(function()
+        if isDeleteMode then
+            -- Переключение чекбокса в режиме удаления
+            local isSelected = selectedForDelete[name]
+            selectedForDelete[name] = not isSelected
+            
+            if selectedForDelete[name] then
+                TweenService:Create(deleteCheckbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    ImageTransparency = 0,
+                    ImageRectOffset = Vector2.new(120, 404)
+                }):Play()
+                TweenService:Create(buttonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = colors.delete
+                }):Play()
+            else
+                TweenService:Create(deleteCheckbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    ImageTransparency = 0.5,
+                    ImageRectOffset = Vector2.new(100, 404)
+                }):Play()
+                TweenService:Create(buttonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = color or colors.waypoint
+                }):Play()
+            end
+        else
+            -- Обычная телепортация
+            TweenService:Create(buttonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = colors.accent
+            }):Play()
+            
+            task.delay(0.3, function()
+                local character = player.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    character.HumanoidRootPart.CFrame = CFrame.new(position)
+                    
+                    local teleportEffect = Instance.new("Frame")
+                    teleportEffect.Size = UDim2.new(1, 10, 0, 3)
+                    teleportEffect.Position = UDim2.new(0, -5, 1, 0)
+                    teleportEffect.BackgroundColor3 = colors.accent
+                    teleportEffect.BorderSizePixel = 0
+                    teleportEffect.Parent = buttonBg
+                    
+                    local teleportCorner = Instance.new("UICorner")
+                    teleportCorner.CornerRadius = UDim.new(0, 2)
+                    teleportCorner.Parent = teleportEffect
+                    
+                    TweenService:Create(teleportEffect, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+                        BackgroundTransparency = 1
+                    }):Play()
+                    
+                    game.Debris:AddItem(teleportEffect, 0.5)
+                end
+            end)
+            
+            task.delay(0.5, function()
+                TweenService:Create(buttonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = color or colors.waypoint
+                }):Play()
+            end)
+        end
+    end)
+    
+    table.insert(waypoints, {
+        name = name,
+        position = position,
+        color = color or colors.waypoint,
+        button = button,
+        buttonBg = buttonBg,
+        deleteCheckbox = deleteCheckbox
+    })
+    
+    updateContainerSize()
+    filterWaypoints()
+    return name
+end
+
+-- Функция удаления точки
+local function removeWaypoint(name)
+    for i, wp in ipairs(waypoints) do
+        if wp.name == name then
+            TweenService:Create(wp.button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 0, 0, 0)
+            }):Play()
+            
+            task.delay(0.3, function()
+                if wp.button and wp.button.Parent then
+                    wp.button:Destroy()
+                end
+                table.remove(waypoints, i)
+                selectedForDelete[name] = nil
+                updateContainerSize()
+                saveWaypoints()
+                filterWaypoints()
+            end)
+            break
+        end
+    end
+end
+
+-- Функция выхода из режима удаления (отмена выбора)
+local function cancelDeleteMode()
+    isDeleteMode = false
+    
+    for _, wp in ipairs(waypoints) do
+        if wp and wp.deleteCheckbox and wp.buttonBg then
+            wp.deleteCheckbox.Visible = false
+            TweenService:Create(wp.deleteCheckbox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                ImageTransparency = 1
+            }):Play()
+            
+            TweenService:Create(wp.buttonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = wp.color
+            }):Play()
+        end
+    end
+    
+    -- Обновляем текст кнопок
+    if deleteButtonBg and deleteButtonBg.Title then
+        deleteButtonBg.Title.Text = "Удалить"
+    end
+    if addButton then
+        addButton.Visible = true
+    end
+    if cancelDeleteButton then
+        cancelDeleteButton.Visible = false
+    end
+    selectedForDelete = {}
+end
+
+-- Функция удаления выбранных точек
+local function removeSelectedWaypoints()
+    local toRemove = {}
+    
+    -- Собираем имена для удаления
+    for name, isSelected in pairs(selectedForDelete) do
+        if isSelected then
+            table.insert(toRemove, name)
+        end
+    end
+    
+    -- Удаляем точки
+    for _, name in ipairs(toRemove) do
+        removeWaypoint(name)
+    end
+    
+    -- Очищаем выбранные
+    selectedForDelete = {}
+    
+    -- Выход из режима удаления
+    cancelDeleteMode()
+    
+    if #toRemove > 0 then
+        print("Удалено " .. #toRemove .. " чекпоинтов")
+    end
+end
+
+-- Функция переключения режима удаления
+local function toggleDeleteMode()
+    isDeleteMode = not isDeleteMode
+    
+    for _, wp in ipairs(waypoints) do
+        if wp and wp.deleteCheckbox and wp.buttonBg then
+            wp.deleteCheckbox.Visible = isDeleteMode
+            
+            if isDeleteMode then
+                TweenService:Create(wp.deleteCheckbox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    ImageTransparency = 0.5
+                }):Play()
+                
+                -- Сброс цвета кнопки
+                TweenService:Create(wp.buttonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = wp.color
+                }):Play()
+            else
+                TweenService:Create(wp.deleteCheckbox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                    ImageTransparency = 1
+                }):Play()
+            end
+        end
+    end
+    
+    -- Обновляем текст кнопок
+    if isDeleteMode then
+        if deleteButtonBg and deleteButtonBg.Title then
+            deleteButtonBg.Title.Text = "Удалить выбранные"
+        end
+        if addButton then
+            addButton.Visible = false
+        end
+        if cancelDeleteButton then
+            cancelDeleteButton.Visible = true
+        end
+    else
+        cancelDeleteMode()
+    end
+end
+
+-- Панель управления
+local controlPanel = Instance.new("Frame")
+controlPanel.Name = "ControlPanel"
+controlPanel.Size = UDim2.new(1, -10, 0.15, 0)
+controlPanel.Position = UDim2.new(0, 5, 0.8, 0)
+controlPanel.BackgroundTransparency = 1
+controlPanel.ZIndex = 999999
+controlPanel.Parent = mapFrame
+
+-- Контейнер для кнопок
+local buttonsContainer = Instance.new("Frame")
+buttonsContainer.Name = "ButtonsContainer"
+buttonsContainer.Size = UDim2.new(1, 0, 0.6, 0)
+buttonsContainer.Position = UDim2.new(0, 0, 0.4, 0)
+buttonsContainer.BackgroundTransparency = 1
+buttonsContainer.ZIndex = 999999
+buttonsContainer.Parent = controlPanel
+
+-- Кнопка добавления
+local addButton, addButtonBg = createAnimatedButton("Добавить точку", buttonsContainer, colors.accent)
+addButton.Name = "AddButton"
+addButton.Size = UDim2.new(0.48, 0, 1, 0)
+addButton.Position = UDim2.new(0, 0, 0, 0)
+addButtonBg.Title.Text = "Добавить"
+
+addButton.MouseButton1Click:Connect(function()
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        print("Персонаж не найден!")
+        return
+    end
+    
+    -- Создаем окно ввода
+    local inputFrame = Instance.new("Frame")
+    inputFrame.Name = "InputFrame"
+    inputFrame.Size = UDim2.new(0.8, 0, 0.6, 0)
+    inputFrame.Position = UDim2.new(0.1, 0, -0.7, 0)
+    inputFrame.BackgroundColor3 = colors.header
+    inputFrame.BackgroundTransparency = 0.1
+    inputFrame.ZIndex = 1000000
+    inputFrame.Parent = controlPanel
+    
+    local inputCorner = Instance.new("UICorner")
+    inputCorner.CornerRadius = UDim.new(0, 8)
+    inputCorner.Parent = inputFrame
+    
+    local inputBox = Instance.new("TextBox")
+    inputBox.Name = "InputBox"
+    inputBox.Size = UDim2.new(0.8, 0, 0.4, 0)
+    inputBox.Position = UDim2.new(0.1, 0, 0.1, 0)
+    inputBox.BackgroundColor3 = colors.search
+    inputBox.Text = ""
+    inputBox.PlaceholderText = "Название чекпоинта"
+    inputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 170)
+    inputBox.TextColor3 = colors.text
+    inputBox.TextSize = 14
+    inputBox.Font = Enum.Font.GothamMedium
+    inputBox.ClearTextOnFocus = false
+    inputBox.ZIndex = 1000001
+    inputBox.Parent = inputFrame
+    
+    local inputCorner2 = Instance.new("UICorner")
+    inputCorner2.CornerRadius = UDim.new(0, 6)
+    inputCorner2.Parent = inputBox
+    
+    local confirmButton, confirmButtonBg = createAnimatedButton("Создать", inputFrame, colors.waypoint)
+    confirmButton.Size = UDim2.new(0.35, 0, 0.3, 0)
+    confirmButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    confirmButtonBg.Title.Text = "Создать"
+    
+    local cancelButton, cancelButtonBg = createAnimatedButton("Отмена", inputFrame, colors.close)
+    cancelButton.Size = UDim2.new(0.35, 0, 0.3, 0)
+    cancelButton.Position = UDim2.new(0.55, 0, 0.6, 0)
+    cancelButtonBg.Title.Text = "Отмена"
+    
+    local function closeInputFrame()
+        TweenService:Create(inputFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0)
+        }):Play()
+        task.delay(0.3, function() 
+            if inputFrame and inputFrame.Parent then
+                inputFrame:Destroy()
+            end
+        end)
+    end
+    
+    confirmButton.MouseButton1Click:Connect(function()
+        local pointName = inputBox.Text
+        if pointName == "" or pointName == " " then
+            pointName = "Точка " .. (#waypoints + 1)
+        end
+        
+        addWaypoint(pointName, character.HumanoidRootPart.Position)
+        saveWaypoints()
+        closeInputFrame()
+        
+        TweenService:Create(addButtonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = colors.waypoint
+        }):Play()
+        
+        task.delay(0.5, function()
+            TweenService:Create(addButtonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = colors.accent
+            }):Play()
+        end)
+    end)
+    
+    cancelButton.MouseButton1Click:Connect(closeInputFrame)
+    
+    -- Фокус на поле ввода
+    task.wait(0.1)
+    inputBox:CaptureFocus()
+    
+    -- Закрытие по ESC
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.KeyCode == Enum.KeyCode.Escape then
+            if connection then
+                connection:Disconnect()
+            end
+            closeInputFrame()
+        end
+    end)
+end)
+
+-- Кнопка удаления
+local deleteButton, deleteButtonBg = createAnimatedButton("Удалить точку", buttonsContainer, colors.close)
+deleteButton.Name = "DeleteButton"
+deleteButton.Size = UDim2.new(0.48, 0, 1, 0)
+deleteButton.Position = UDim2.new(0.52, 0, 0, 0)
+deleteButtonBg.Title.Text = "Удалить"
+
+deleteButton.MouseButton1Click:Connect(function()
+    if #waypoints == 0 then 
+        print("Нет чекпоинтов для удаления")
+        return 
+    end
+    
+    if isDeleteMode then
+        removeSelectedWaypoints()
+    else
+        toggleDeleteMode()
+    end
+end)
+
+-- Кнопка отмены выбора (новая кнопка)
+local cancelDeleteButton, cancelDeleteButtonBg = createAnimatedButton("Отмена выбора", buttonsContainer, colors.cancel)
+cancelDeleteButton.Name = "CancelDeleteButton"
+cancelDeleteButton.Size = UDim2.new(0.48, 0, 1, 0)
+cancelDeleteButton.Position = UDim2.new(0, 0, 0, 0) -- Та же позиция что и addButton
+cancelDeleteButtonBg.Title.Text = "Отмена"
+cancelDeleteButton.Visible = false
+
+cancelDeleteButton.MouseButton1Click:Connect(function()
+    cancelDeleteMode()
+end)
+
+-- Кнопки сохранения/загрузки
+local saveLoadContainer = Instance.new("Frame")
+saveLoadContainer.Name = "SaveLoadContainer"
+saveLoadContainer.Size = UDim2.new(1, 0, 0.4, 0)
+saveLoadContainer.Position = UDim2.new(0, 0, 0, 0)
+saveLoadContainer.BackgroundTransparency = 1
+saveLoadContainer.ZIndex = 999999
+saveLoadContainer.Parent = controlPanel
+
+local saveButton, saveButtonBg = createAnimatedButton("Сохранить", saveLoadContainer, Color3.fromRGB(94, 129, 172))
+saveButton.Size = UDim2.new(0.48, 0, 1, 0)
+saveButton.Position = UDim2.new(0, 0, 0, 0)
+saveButtonBg.Title.Text = "Сохранить"
+saveButtonBg.Title.TextSize = 12
+
+saveButton.MouseButton1Click:Connect(function()
+    if saveWaypoints() then
+        TweenService:Create(saveButtonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = colors.waypoint
+        }):Play()
+        
+        task.delay(0.5, function()
+            TweenService:Create(saveButtonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(94, 129, 172)
+            }):Play()
+        end)
+    end
+end)
+
+local loadButton, loadButtonBg = createAnimatedButton("Загрузить", saveLoadContainer, Color3.fromRGB(172, 129, 94))
+loadButton.Size = UDim2.new(0.48, 0, 1, 0)
+loadButton.Position = UDim2.new(0.52, 0, 0, 0)
+loadButtonBg.Title.Text = "Загрузить"
+loadButtonBg.Title.TextSize = 12
+
+loadButton.MouseButton1Click:Connect(function()
+    if loadWaypoints() then
+        TweenService:Create(loadButtonBg, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            BackgroundColor3 = colors.waypoint
+        }):Play()
+        
+        task.delay(0.5, function()
+            TweenService:Create(loadButtonBg, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundColor3 = Color3.fromRGB(172, 129, 94)
+            }):Play()
+        end)
+    end
+end)
+
+-- Поиск
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    searchTerm = searchBox.Text
+    filterWaypoints()
+end)
+
+-- Функция для отображения поля поиска
+local function showSearchBox(show)
+    if show then
+        searchBox.Visible = true
+        TweenService:Create(searchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            BackgroundTransparency = 0.2
+        }):Play()
+        searchBox:CaptureFocus()
+    else
+        TweenService:Create(searchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            BackgroundTransparency = 1
+        }):Play()
+        task.delay(0.3, function()
+            searchBox.Visible = false
+            searchBox.Text = ""
+            searchTerm = ""
+            filterWaypoints()
+        end)
+    end
+end
+
+-- Кнопка поиска
+searchButton.MouseButton1Click:Connect(function()
+    showSearchBox(not searchBox.Visible)
+end)
+
+-- Обработка горячих клавиш
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.F then
+        showSearchBox(not searchBox.Visible)
+    elseif input.KeyCode == Enum.KeyCode.Insert then
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            addWaypoint("Быстрая точка " .. (#waypoints + 1), character.HumanoidRootPart.Position)
+            saveWaypoints()
+        end
+    elseif input.KeyCode == Enum.KeyCode.Delete then
+        if #waypoints > 0 then
+            if isDeleteMode then
+                removeSelectedWaypoints()
+            else
+                toggleDeleteMode()
+            end
+        end
+    elseif input.KeyCode == Enum.KeyCode.Escape then
+        if isDeleteMode then
+            cancelDeleteMode()
+        end
+    end
+end)
+
+-- Анимации появления интерфейса
+local showTween = TweenService:Create(mapFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+    Position = UDim2.new(0.02, 0, 0.6, 0),
+    BackgroundTransparency = 0.15
+})
+
+local cornerTween = TweenService:Create(corner, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {
+    CornerRadius = UDim.new(0, 12)
+})
+
+local shadowTween = TweenService:Create(shadow, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {
+    ImageTransparency = 0.8,
+    Size = UDim2.new(1, 10, 1, 10),
+    Position = UDim2.new(0, -5, 0, -5)
+})
+
+local headerTween = TweenService:Create(header, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 0
+})
+
+local titleTween = TweenService:Create(title, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {
+    TextTransparency = 0
+})
+
+local closeTween = TweenService:Create(closeButton, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {
+    ImageTransparency = 0
+})
+
+local searchButtonTween = TweenService:Create(searchButton, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {
+    ImageTransparency = 0
+})
+
+local scrollTween = TweenService:Create(pointsContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+    ScrollBarImageTransparency = 0.3
+})
+
+-- Запуск анимаций
+task.delay(0.1, function()
+    showTween:Play()
+    cornerTween:Play()
+    
+    task.delay(0.2, function()
+        shadowTween:Play()
+        headerTween:Play()
+        
+        task.delay(0.2, function()
+            titleTween:Play()
+            closeTween:Play()
+            searchButtonTween:Play()
+            
+            task.delay(0.5, function()
+                scrollTween:Play()
+                searchButton.Visible = true
+                
+                -- Загружаем сохраненные точки
+                task.delay(0.5, function()
+                    local success = pcall(loadWaypoints)
+                    
+                    -- НЕ добавляем дефолтные точки! Только загружаем сохраненные
+                    if not success then
+                        print("Не удалось загрузить сохраненные чекпоинты")
+                    end
+                end)
+            end)
+        end)
+    end)
+end)
+
+-- Перемещение GUI
+local dragging, dragInput, dragStart, startPos
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mapFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mapFrame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Сворачивание/разворачивание
+local isVisible = true
+
+closeButton.MouseButton1Click:Connect(function()
+    isVisible = not isVisible
+    
+    if isVisible then
+        mapFrame.Visible = true
+        closeButton.Image = "rbxassetid://3926305904"
+        closeButton.ImageRectOffset = Vector2.new(284, 4)
+        
+        showTween:Play()
+        cornerTween:Play()
+        task.delay(0.2, function()
+            shadowTween:Play()
+            headerTween:Play()
+            task.delay(0.2, function()
+                titleTween:Play()
+                closeTween:Play()
+                searchButtonTween:Play()
+            end)
+        end)
+    else
+        local hideTween = TweenService:Create(mapFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            Position = UDim2.new(0.02, -50, 0.6, 0),
+            BackgroundTransparency = 1
+        })
+        
+        local cornerHide = TweenService:Create(corner, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            CornerRadius = UDim.new(0, 0)
+        })
+        
+        local shadowHide = TweenService:Create(shadow, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            ImageTransparency = 1,
+            Size = UDim2.new(1, 20, 1, 20),
+            Position = UDim2.new(0, -10, 0, -10)
+        })
+        
+        local headerHide = TweenService:Create(header, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            Position = UDim2.new(0, 0, 0, -50),
+            BackgroundTransparency = 1
+        })
+        
+        local titleHide = TweenService:Create(title, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            TextTransparency = 1
+        })
+        
+        local closeHide = TweenService:Create(closeButton, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            ImageTransparency = 1
+        })
+        
+        local searchButtonHide = TweenService:Create(searchButton, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {
+            ImageTransparency = 1
+        })
+        
+        closeHide:Play()
+        titleHide:Play()
+        searchButtonHide:Play()
+        headerHide:Play()
+        shadowHide:Play()
+        cornerHide:Play()
+        hideTween:Play()
+        
+        task.delay(0.5, function()
+            mapFrame.Visible = false
+            
+            local reopenButton = Instance.new("ImageButton")
+            reopenButton.Name = "ReopenButton"
+            reopenButton.Size = UDim2.new(0, 40, 0, 40)
+            reopenButton.Position = UDim2.new(0.02, 0, 0.6, 0)
+            reopenButton.Image = "rbxassetid://3926305904"
+            reopenButton.ImageRectOffset = Vector2.new(84, 44)
+            reopenButton.ImageRectSize = Vector2.new(36, 36)
+            reopenButton.ImageColor3 = colors.accent
+            reopenButton.BackgroundTransparency = 1
+            reopenButton.ZIndex = 1000000
+            reopenButton.Parent = gui
+            
+            local reopenCorner = Instance.new("UICorner")
+            reopenCorner.CornerRadius = UDim.new(0, 8)
+            reopenCorner.Parent = reopenButton
+            
+            reopenButton.MouseButton1Click:Connect(function()
+                isVisible = true
+                if reopenButton and reopenButton.Parent then
+                    reopenButton:Destroy()
+                end
+                closeButton.Image = "rbxassetid://3926305904"
+                closeButton.ImageRectOffset = Vector2.new(284, 4)
+                mapFrame.Visible = true
+                
+                showTween:Play()
+                cornerTween:Play()
+                task.delay(0.2, function()
+                    shadowTween:Play()
+                    headerTween:Play()
+                    task.delay(0.2, function()
+                        titleTween:Play()
+                        closeTween:Play()
+                        searchButtonTween:Play()
+                    end)
+                end)
+            end)
+        end)
+    end
+end)
+
+-- Защита от ошибок
+local function safeCall(func, ...)
+    local success, err = pcall(func, ...)
+    if not success then
+        warn("Ошибка в мини-карте: " .. tostring(err))
+    end
+end
+
+-- Периодическое автосохранение
+while true do
+    task.wait(60)
+    safeCall(saveWaypoints)
+end

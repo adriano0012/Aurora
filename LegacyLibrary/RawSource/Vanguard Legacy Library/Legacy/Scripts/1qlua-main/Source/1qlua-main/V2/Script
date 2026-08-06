@@ -1,0 +1,875 @@
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MobileCheckUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Создаем контейнер для плавной анимации
+local Container = Instance.new("Frame")
+Container.Name = "Container"
+Container.Size = UDim2.new(1, 0, 1, 0)
+Container.BackgroundTransparency = 1
+Container.Parent = ScreenGui
+
+local function CreateButton()
+    -- Основная кнопка
+    local MainButton = Instance.new("TextButton")
+    MainButton.Name = "MobileCheckBtn"
+    MainButton.Text = "Are you on the phone?"
+    MainButton.Size = UDim2.new(0.3, 0, 0.08, 0)
+    MainButton.Position = UDim2.new(0.5, 0, 0.92, 0)
+    MainButton.AnchorPoint = Vector2.new(0.5, 1)
+    MainButton.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    MainButton.TextColor3 = Color3.fromRGB(220, 220, 255)
+    MainButton.TextSize = 18
+    MainButton.Font = Enum.Font.GothamBold
+    MainButton.AutoButtonColor = false
+    MainButton.Parent = Container
+    
+    -- Стилизация кнопки
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0.3, 0)
+    Corner.Parent = MainButton
+    
+    local Stroke = Instance.new("UIStroke")
+    Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Stroke.Color = Color3.fromRGB(100, 180, 255)
+    Stroke.Thickness = 3
+    Stroke.Transparency = 0.3
+    Stroke.Parent = MainButton
+    
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 80, 140)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 130, 220))
+    }
+    Gradient.Rotation = 90
+    Gradient.Parent = MainButton
+    
+    -- Эффект свечения
+    local Glow = Instance.new("ImageLabel")
+    Glow.Name = "GlowEffect"
+    Glow.Size = UDim2.new(1.2, 0, 1.5, 0)
+    Glow.Position = UDim2.new(0, 0, 0.5, 0)
+    Glow.AnchorPoint = Vector2.new(0, 0.5)
+    Glow.BackgroundTransparency = 1
+    Glow.Image = "rbxassetid://8992231221"
+    Glow.ImageColor3 = Color3.fromRGB(80, 150, 255)
+    Glow.ScaleType = Enum.ScaleType.Slice
+    Glow.SliceCenter = Rect.new(100, 100, 900, 900)
+    Glow.Parent = MainButton
+    Glow.ZIndex = -1
+    Glow.Visible = false
+    
+    -- Кнопка выключения
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseBtn"
+    CloseButton.Text = "X"
+    CloseButton.Size = UDim2.new(0.18, 0, 0.6, 0)
+    CloseButton.Position = UDim2.new(1.05, 0, 0.2, 0)
+    CloseButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 18
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.ZIndex = 2
+    CloseButton.Parent = MainButton
+    
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0.4, 0)
+    CloseCorner.Parent = CloseButton
+    
+    -- Анимация при наведении
+    MainButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(
+            MainButton,
+            TweenInfo.new(0.3),
+            {Size = UDim2.new(0.32, 0, 0.085, 0)}
+        ):Play()
+        game:GetService("TweenService"):Create(
+            Stroke,
+            TweenInfo.new(0.3),
+            {Thickness = 4, Transparency = 0}
+        ):Play()
+    end)
+    
+    MainButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(
+            MainButton,
+            TweenInfo.new(0.3),
+            {Size = UDim2.new(0.3, 0, 0.08, 0)}
+        ):Play()
+        game:GetService("TweenService"):Create(
+            Stroke,
+            TweenInfo.new(0.3),
+            {Thickness = 3, Transparency = 0.3}
+        ):Play()
+    end)
+    
+    -- Обработчики событий
+    local function RunScript()
+        loadstring(game:HttpGet('https://pastebin.com/raw/Kw1tndff'))()
+    end
+
+    MainButton.MouseButton1Click:Connect(function()
+        -- Анимация нажатия
+        local ClickTween = game:GetService("TweenService"):Create(
+            MainButton,
+            TweenInfo.new(0.2),
+            {Size = UDim2.new(0.28, 0, 0.075, 0)}
+        )
+        
+        ClickTween:Play()
+        ClickTween.Completed:Wait()
+        
+        game:GetService("TweenService"):Create(
+            MainButton,
+            TweenInfo.new(0.3),
+            {Size = UDim2.new(0.3, 0, 0.08, 0)}
+        ):Play()
+        
+        -- Запуск скрипта
+        RunScript()
+        
+        -- Эффект успешного запуска
+        Glow.Visible = true
+        for i = 1, 3 do
+            game:GetService("TweenService"):Create(
+                Glow,
+                TweenInfo.new(0.4),
+                {ImageTransparency = 0.3}
+            ):Play()
+            game:GetService("TweenService"):Create(
+                Stroke,
+                TweenInfo.new(0.4),
+                {Color = Color3.fromRGB(50, 255, 100)}
+            ):Play()
+            task.wait(0.4)
+            game:GetService("TweenService"):Create(
+                Glow,
+                TweenInfo.new(0.4),
+                {ImageTransparency = 0.8}
+            ):Play()
+            game:GetService("TweenService"):Create(
+                Stroke,
+                TweenInfo.new(0.4),
+                {Color = Color3.fromRGB(100, 180, 255)}
+            ):Play()
+            task.wait(0.4)
+        end
+        Glow.Visible = false
+    end)
+    
+    -- Улучшенная анимация закрытия
+    CloseButton.MouseButton1Click:Connect(function()
+        -- Отключаем взаимодействие
+        MainButton.Active = false
+        CloseButton.Active = false
+        
+        -- Анимация исчезновения
+        local tweenOut = game:GetService("TweenService"):Create(
+            MainButton,
+            TweenInfo.new(0.7, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+            {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.92, 0),
+                BackgroundTransparency = 1,
+                TextTransparency = 1
+            }
+        )
+        
+        local glowTween = game:GetService("TweenService"):Create(
+            Glow,
+            TweenInfo.new(0.5),
+            {ImageTransparency = 1}
+        )
+        
+        local strokeTween = game:GetService("TweenService"):Create(
+            Stroke,
+            TweenInfo.new(0.5),
+            {Transparency = 1}
+        )
+        
+        local closeTween = game:GetService("TweenService"):Create(
+            CloseButton,
+            TweenInfo.new(0.3),
+            {BackgroundTransparency = 1, TextTransparency = 1}
+        )
+        
+        tweenOut:Play()
+        glowTween:Play()
+        strokeTween:Play()
+        closeTween:Play()
+        
+        tweenOut.Completed:Wait()
+        ScreenGui:Destroy() -- Полное удаление GUI
+    end)
+    
+    -- Адаптация под экран
+    local function UpdateSize()
+        local viewport = workspace.CurrentCamera.ViewportSize
+        if viewport.Y < 700 then -- Mobile
+            MainButton.Size = UDim2.new(0.4, 0, 0.1, 0)
+            MainButton.TextSize = 16
+            CloseButton.TextSize = 16
+        else -- PC
+            MainButton.Size = UDim2.new(0.3, 0, 0.08, 0)
+            MainButton.TextSize = 18
+            CloseButton.TextSize = 18
+        end
+    end
+
+    UpdateSize()
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateSize)
+end
+
+CreateButton()
+
+
+-- Создаем основной GUI в CoreGui
+local CoreGui = game:GetService("CoreGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ScriptLauncher"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.DisplayOrder = 100  -- Гарантированно поверх других интерфейсов
+ScreenGui.Parent = CoreGui
+
+-- Основной контейнер
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 450, 0, 550)
+MainFrame.Position = UDim2.new(0.5, -450, 0.5, 0)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 10  -- Высокий приоритет отображения
+MainFrame.Parent = ScreenGui
+
+-- Закругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
+
+-- Тень
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(60, 60, 80)
+UIStroke.Parent = MainFrame
+
+-- Верхняя панель для перемещения
+local DragFrame = Instance.new("Frame")
+DragFrame.Name = "DragFrame"
+DragFrame.Size = UDim2.new(1, 0, 0, 40)
+DragFrame.Position = UDim2.new(0, 0, 0, 0)
+DragFrame.BackgroundTransparency = 1
+DragFrame.ZIndex = 11
+DragFrame.Parent = MainFrame
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Text = "1Qlua Script Launcher"
+Title.Size = UDim2.new(0.7, 0, 1, 0)
+Title.Position = UDim2.new(0.15, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(220, 220, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 11
+Title.Parent = DragFrame
+
+-- Кнопка закрытия
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Text = "X"
+CloseButton.Size = UDim2.new(0, 40, 0, 40)
+CloseButton.Position = UDim2.new(1, -40, 0, 0)
+CloseButton.BackgroundTransparency = 1
+CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 22
+CloseButton.ZIndex = 11
+CloseButton.Parent = DragFrame
+
+-- Кнопка сворачивания
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Text = "-"
+MinimizeButton.Size = UDim2.new(0, 40, 0, 40)
+MinimizeButton.Position = UDim2.new(1, -80, 0, 0)
+MinimizeButton.BackgroundTransparency = 1
+MinimizeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 22
+MinimizeButton.ZIndex = 11
+MinimizeButton.Parent = DragFrame
+
+-- Разделитель
+local Divider = Instance.new("Frame")
+Divider.Name = "Divider"
+Divider.Size = UDim2.new(1, -40, 0, 1)
+Divider.Position = UDim2.new(0, 20, 0, 40)
+Divider.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+Divider.BorderSizePixel = 0
+Divider.ZIndex = 11
+Divider.Parent = MainFrame
+
+-- Контейнер для настроек
+local SettingsFrame = Instance.new("Frame")
+SettingsFrame.Name = "SettingsFrame"
+SettingsFrame.Size = UDim2.new(1, -40, 0, 420)
+SettingsFrame.Position = UDim2.new(0, 20, 0, 50)
+SettingsFrame.BackgroundTransparency = 1
+SettingsFrame.ZIndex = 11
+SettingsFrame.Parent = MainFrame
+
+-- Карточки для каждого раздела
+local function createCard(name, yPosition)
+    local card = Instance.new("Frame")
+    card.Name = name.."Card"
+    card.Size = UDim2.new(1, 0, 0, 120)
+    card.Position = UDim2.new(0, 0, 0, yPosition)
+    card.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    card.ZIndex = 11
+    card.Parent = SettingsFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = card
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(70, 70, 90)
+    stroke.Parent = card
+    
+    return card
+end
+
+-- Карточка выбора языка
+local LanguageCard = createCard("Language", 0)
+local LanguageLabel = Instance.new("TextLabel")
+LanguageLabel.Name = "LanguageLabel"
+LanguageLabel.Text = "Script language:"
+LanguageLabel.Size = UDim2.new(1, -20, 0, 30)
+LanguageLabel.Position = UDim2.new(0, 10, 0, 10)
+LanguageLabel.BackgroundTransparency = 1
+LanguageLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
+LanguageLabel.Font = Enum.Font.Gotham
+LanguageLabel.TextSize = 16
+LanguageLabel.TextXAlignment = Enum.TextXAlignment.Left
+LanguageLabel.ZIndex = 12
+LanguageLabel.Parent = LanguageCard
+
+local LanguageDropdown = Instance.new("TextButton")
+LanguageDropdown.Name = "LanguageDropdown"
+LanguageDropdown.Text = "English ▼"
+LanguageDropdown.Size = UDim2.new(1, -20, 0, 40)
+LanguageDropdown.Position = UDim2.new(0, 10, 0, 40)
+LanguageDropdown.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+LanguageDropdown.TextColor3 = Color3.fromRGB(220, 220, 255)
+LanguageDropdown.Font = Enum.Font.GothamMedium
+LanguageDropdown.TextSize = 16
+LanguageDropdown.ZIndex = 12
+LanguageDropdown.Parent = LanguageCard
+
+-- Карточка выбора версии
+local VersionCard = createCard("Version", 130)
+local VersionLabel = Instance.new("TextLabel")
+VersionLabel.Name = "VersionLabel"
+VersionLabel.Text = "Script version:"
+VersionLabel.Size = UDim2.new(1, -20, 0, 30)
+VersionLabel.Position = UDim2.new(0, 10, 0, 10)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
+VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.TextSize = 16
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+VersionLabel.ZIndex = 12
+VersionLabel.Parent = VersionCard
+
+local VersionDropdown = Instance.new("TextButton")
+VersionDropdown.Name = "VersionDropdown"
+VersionDropdown.Text = "v1 ▼"
+VersionDropdown.Size = UDim2.new(1, -20, 0, 40)
+VersionDropdown.Position = UDim2.new(0, 10, 0, 40)
+VersionDropdown.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+VersionDropdown.TextColor3 = Color3.fromRGB(220, 220, 255)
+VersionDropdown.Font = Enum.Font.GothamMedium
+VersionDropdown.TextSize = 16
+VersionDropdown.ZIndex = 12
+VersionDropdown.Parent = VersionCard
+
+-- Карточка выбора типа доступа
+local AccessCard = createCard("Access", 260)
+local AccessLabel = Instance.new("TextLabel")
+AccessLabel.Name = "AccessLabel"
+AccessLabel.Text = "Access type:"
+AccessLabel.Size = UDim2.new(1, -20, 0, 30)
+AccessLabel.Position = UDim2.new(0, 10, 0, 10)
+AccessLabel.BackgroundTransparency = 1
+AccessLabel.TextColor3 = Color3.fromRGB(180, 180, 220)
+AccessLabel.Font = Enum.Font.Gotham
+AccessLabel.TextSize = 16
+AccessLabel.TextXAlignment = Enum.TextXAlignment.Left
+AccessLabel.ZIndex = 12
+AccessLabel.Parent = AccessCard
+
+local AccessDropdown = Instance.new("TextButton")
+AccessDropdown.Name = "AccessDropdown"
+AccessDropdown.Text = "key ▼"
+AccessDropdown.Size = UDim2.new(1, -20, 0, 40)
+AccessDropdown.Position = UDim2.new(0, 10, 0, 40)
+AccessDropdown.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+AccessDropdown.TextColor3 = Color3.fromRGB(220, 220, 255)
+AccessDropdown.Font = Enum.Font.GothamMedium
+AccessDropdown.TextSize = 16
+AccessDropdown.ZIndex = 12
+AccessDropdown.Parent = AccessCard
+
+-- Кнопка запуска
+local LaunchButton = Instance.new("TextButton")
+LaunchButton.Name = "LaunchButton"
+LaunchButton.Text = "RUN SCRIPT"
+LaunchButton.Size = UDim2.new(1, -40, 0, 50)
+LaunchButton.Position = UDim2.new(0, 20, 0, 490)
+LaunchButton.BackgroundColor3 = Color3.fromRGB(100, 70, 200)
+LaunchButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+LaunchButton.Font = Enum.Font.GothamBold
+LaunchButton.TextSize = 18
+LaunchButton.ZIndex = 11
+LaunchButton.Parent = MainFrame
+
+-- Закругление кнопки
+local LaunchCorner = Instance.new("UICorner")
+LaunchCorner.CornerRadius = UDim.new(0, 8)
+LaunchCorner.Parent = LaunchButton
+
+-- Градиент для кнопки запуска
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 80, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(90, 60, 180))
+})
+UIGradient.Rotation = 90
+UIGradient.Parent = LaunchButton
+
+-- Контейнер для выпадающих списков (поверх всех элементов)
+local DropdownContainer = Instance.new("Frame")
+DropdownContainer.Name = "DropdownContainer"
+DropdownContainer.Size = UDim2.new(0, 410, 0, 300)
+DropdownContainer.Position = UDim2.new(0, 20, 0, 90)
+DropdownContainer.BackgroundTransparency = 1
+DropdownContainer.Visible = false
+DropdownContainer.ZIndex = 20  -- Очень высокий приоритет
+DropdownContainer.Parent = ScreenGui  -- Помещаем прямо в ScreenGui для глобального позиционирования
+
+-- Фреймы для опций
+local LanguageOptions = Instance.new("ScrollingFrame")
+LanguageOptions.Name = "LanguageOptions"
+LanguageOptions.Size = UDim2.new(0, 410, 0, 0)
+LanguageOptions.Position = UDim2.new(0, 0, 0, 0)
+LanguageOptions.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+LanguageOptions.Visible = false
+LanguageOptions.ZIndex = 21
+LanguageOptions.CanvasSize = UDim2.new(0, 0, 0, 0)
+LanguageOptions.ScrollBarThickness = 5
+LanguageOptions.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+LanguageOptions.Parent = DropdownContainer
+
+local UICornerLang = Instance.new("UICorner")
+UICornerLang.CornerRadius = UDim.new(0, 6)
+UICornerLang.Parent = LanguageOptions
+
+local LanguageOptionLayout = Instance.new("UIListLayout")
+LanguageOptionLayout.Padding = UDim.new(0, 5)
+LanguageOptionLayout.Parent = LanguageOptions
+
+local VersionOptions = Instance.new("ScrollingFrame")
+VersionOptions.Name = "VersionOptions"
+VersionOptions.Size = UDim2.new(0, 410, 0, 0)
+VersionOptions.Position = UDim2.new(0, 0, 0, 0)
+VersionOptions.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+VersionOptions.Visible = false
+VersionOptions.ZIndex = 21
+VersionOptions.CanvasSize = UDim2.new(0, 0, 0, 0)
+VersionOptions.ScrollBarThickness = 5
+VersionOptions.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+VersionOptions.Parent = DropdownContainer
+
+local UICornerVer = Instance.new("UICorner")
+UICornerVer.CornerRadius = UDim.new(0, 6)
+UICornerVer.Parent = VersionOptions
+
+local VersionOptionLayout = Instance.new("UIListLayout")
+VersionOptionLayout.Padding = UDim.new(0, 5)
+VersionOptionLayout.Parent = VersionOptions
+
+local AccessOptions = Instance.new("ScrollingFrame")
+AccessOptions.Name = "AccessOptions"
+AccessOptions.Size = UDim2.new(0, 410, 0, 0)
+AccessOptions.Position = UDim2.new(0, 0, 0, 0)
+AccessOptions.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+AccessOptions.Visible = false
+AccessOptions.ZIndex = 21
+AccessOptions.CanvasSize = UDim2.new(0, 0, 0, 0)
+AccessOptions.ScrollBarThickness = 5
+AccessOptions.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+AccessOptions.Parent = DropdownContainer
+
+local UICornerAcc = Instance.new("UICorner")
+UICornerAcc.CornerRadius = UDim.new(0, 6)
+UICornerAcc.Parent = AccessOptions
+
+local AccessOptionLayout = Instance.new("UIListLayout")
+AccessOptionLayout.Padding = UDim.new(0, 5)
+AccessOptionLayout.Parent = AccessOptions
+
+-- Эффекты при наведении
+local function setupHoverEffects(button)
+    local originalColor = button.BackgroundColor3
+    
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = originalColor:lerp(Color3.new(1, 1, 1), 0.15)
+    end)
+    
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = originalColor
+    end)
+    
+    button.MouseButton1Down:Connect(function()
+        button.BackgroundColor3 = originalColor:lerp(Color3.new(0, 0, 0), 0.15)
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        button.BackgroundColor3 = originalColor:lerp(Color3.new(1, 1, 1), 0.15)
+    end)
+end
+
+-- Применяем эффекты ко всем кнопкам
+local allButtons = {
+    LanguageDropdown, VersionDropdown, AccessDropdown, 
+    LaunchButton, CloseButton, MinimizeButton
+}
+
+for _, button in ipairs(allButtons) do
+    setupHoverEffects(button)
+end
+
+-- База данных скриптов
+local ScriptDatabase = {
+    ["v1"] = {
+        ["English"] = {
+            ["free"] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/main/V2/eng/FREE",
+            ["key"] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/eng/KeySistem"
+        },
+        ["Русский"] = {
+            ["free"] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/main/V2/ru/FREE",
+            ["key"] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/ru/KeySistem"
+        }
+    }
+}
+
+-- Текущие настройки
+local currentSettings = {
+    language = "English",
+    version = "v1",
+    access = "key"
+}
+
+-- Создаем опции для выпадающих списков
+local function createOption(parent, text, callback)
+    local option = Instance.new("TextButton")
+    option.Name = text.."Option"
+    option.Text = text
+    option.Size = UDim2.new(1, 0, 0, 40)
+    option.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+    option.TextColor3 = Color3.fromRGB(220, 220, 255)
+    option.Font = Enum.Font.Gotham
+    option.TextSize = 16
+    option.ZIndex = 22  -- Самый высокий приоритет
+    option.Parent = parent
+    
+    setupHoverEffects(option)
+    
+    option.MouseButton1Click:Connect(function()
+        if callback then callback(text) end
+    end)
+    
+    return option
+end
+
+-- Создаем языковые опции
+createOption(LanguageOptions, "English", function()
+    currentSettings.language = "English"
+    LanguageDropdown.Text = "English ▼"
+    closeAllDropdowns()
+end)
+
+createOption(LanguageOptions, "Русский", function()
+    currentSettings.language = "Русский"
+    LanguageDropdown.Text = "Русский ▼"
+    closeAllDropdowns()
+end)
+
+-- Создаем опции версий
+createOption(VersionOptions, "v1", function()
+    currentSettings.version = "v1"
+    VersionDropdown.Text = "v1 ▼"
+    closeAllDropdowns()
+end)
+
+-- Создаем опции доступа
+createOption(AccessOptions, "free", function()
+    currentSettings.access = "free"
+    AccessDropdown.Text = "free ▼"
+    closeAllDropdowns()
+end)
+
+createOption(AccessOptions, "key", function()
+    currentSettings.access = "key"
+    AccessDropdown.Text = "key ▼"
+    closeAllDropdowns()
+end)
+
+-- Функция управления выпадающими списками
+local activeDropdown = nil
+
+local function closeAllDropdowns()
+    DropdownContainer.Visible = false
+    
+    if activeDropdown then
+        activeDropdown.Visible = false
+        activeDropdown.Size = UDim2.new(0, 410, 0, 0)
+        activeDropdown = nil
+    end
+    
+    LanguageDropdown.Text = LanguageDropdown.Text:gsub(" ▲", " ▼")
+    VersionDropdown.Text = VersionDropdown.Text:gsub(" ▲", " ▼")
+    AccessDropdown.Text = AccessDropdown.Text:gsub(" ▲", " ▼")
+end
+
+local function calculateDropdownPosition(dropdownButton)
+    local buttonPosition = dropdownButton.AbsolutePosition
+    local buttonSize = dropdownButton.AbsoluteSize
+    
+    return UDim2.new(
+        0, buttonPosition.X, 
+        0, buttonPosition.Y + buttonSize.Y
+    )
+end
+
+local function toggleDropdown(dropdown, optionsFrame)
+    -- Если кликнули на активный дропдаун - закрываем
+    if activeDropdown == optionsFrame then
+        closeAllDropdowns()
+        return
+    end
+    
+    -- Закрываем предыдущий открытый дропдаун
+    closeAllDropdowns()
+    
+    -- Открываем новый
+    activeDropdown = optionsFrame
+    DropdownContainer.Visible = true
+    activeDropdown.Visible = true
+    
+    -- Позиционируем контейнер
+    local position = calculateDropdownPosition(dropdown)
+    DropdownContainer.Position = position
+    
+    -- Устанавливаем размер
+    local optionCount = #optionsFrame:GetChildren() - 1 -- Исключаем UIListLayout
+    local maxHeight = math.min(optionCount * 45, 200)
+    activeDropdown.Size = UDim2.new(0, 410, 0, maxHeight)
+    activeDropdown.CanvasSize = UDim2.new(0, 0, 0, optionCount * 45)
+    
+    -- Обновляем текст кнопки
+    dropdown.Text = dropdown.Text:gsub(" ▼", " ▲")
+end
+
+-- Обработчики событий для выпадающих списков
+LanguageDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(LanguageDropdown, LanguageOptions)
+end)
+
+VersionDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(VersionDropdown, VersionOptions)
+end)
+
+AccessDropdown.MouseButton1Click:Connect(function()
+    toggleDropdown(AccessDropdown, AccessOptions)
+end)
+
+-- Запуск скрипта
+LaunchButton.MouseButton1Click:Connect(function()
+    -- Получаем данные скрипта
+    local versionData = ScriptDatabase[currentSettings.version]
+    if not versionData then
+        warn("Version not found:", currentSettings.version)
+        return
+    end
+    
+    local langData = versionData[currentSettings.language]
+    if not langData then
+        warn("Language not found:", currentSettings.language)
+        return
+    end
+    
+    local scriptUrl = langData[currentSettings.access]
+    if not scriptUrl then
+        warn("Script URL not found")
+        return
+    end
+    
+    -- Загрузка и выполнение скрипта
+    local success, errorMsg = pcall(function()
+        local scriptContent = game:HttpGet(scriptUrl, true)
+        loadstring(scriptContent)()
+    end)
+    
+    if not success then
+        warn("Error loading script:", errorMsg)
+        -- Анимация ошибки
+        LaunchButton.Text = "ERROR!"
+        LaunchButton.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+        wait(1.5)
+        LaunchButton.Text = "RUN SCRIPT"
+        LaunchButton.BackgroundColor3 = Color3.fromRGB(100, 70, 200)
+    else
+        -- Анимация успешного запуска
+        LaunchButton.Text = "SUCCESSFULLY!"
+        LaunchButton.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
+        wait(1.5)
+        LaunchButton.Text = "RUN SCRIPT"
+        LaunchButton.BackgroundColor3 = Color3.fromRGB(100, 70, 200)
+    end
+end)
+
+-- Функция перемещения окна
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(
+        startPos.X.Scale, 
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale, 
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+DragFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+DragFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateInput(input)
+    end
+end)
+
+-- Функция закрытия
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Функция сворачивания
+local minimized = false
+local originalSize = MainFrame.Size
+local originalPosition = MainFrame.Position
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    if minimized then
+        -- Восстанавливаем
+        MainFrame.Size = originalSize
+        MainFrame.Position = originalPosition
+        SettingsFrame.Visible = true
+        LaunchButton.Visible = true
+        MinimizeButton.Text = "-"
+    else
+        -- Сворачиваем
+        originalSize = MainFrame.Size
+        originalPosition = MainFrame.Position
+        MainFrame.Size = UDim2.new(0, 450, 0, 40)
+        MainFrame.Position = UDim2.new(0.5, -225, 0.05, 0)
+        SettingsFrame.Visible = false
+        LaunchButton.Visible = false
+        MinimizeButton.Text = "+"
+    end
+    minimized = not minimized
+    closeAllDropdowns()
+end)
+
+-- Закрытие выпадающих списков при клике вне их
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- Проверяем, был ли клик внутри какого-либо дропдауна
+        local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+        local guiInset = game:GetService("GuiService"):GetGuiInset()
+        mousePos = Vector2.new(mousePos.X - guiInset.X, mousePos.Y - guiInset.Y)
+        
+        local function isPointInFrame(frame)
+            if not frame.Visible then return false end
+            local pos = frame.AbsolutePosition
+            local size = frame.AbsoluteSize
+            return mousePos.X >= pos.X and mousePos.X <= pos.X + size.X and
+                   mousePos.Y >= pos.Y and mousePos.Y <= pos.Y + size.Y
+        end
+        
+        local clickedInDropdown = false
+        
+        if DropdownContainer.Visible then
+            if activeDropdown then
+                clickedInDropdown = isPointInFrame(activeDropdown) or 
+                                   isPointInFrame(LanguageDropdown) or
+                                   isPointInFrame(VersionDropdown) or
+                                   isPointInFrame(AccessDropdown)
+            end
+        end
+        
+        if not clickedInDropdown then
+            closeAllDropdowns()
+        end
+    end
+end)
+
+-- Добавление новых скриптов
+local function addNewScript(version, language, accessType, url)
+    if not ScriptDatabase[version] then
+        ScriptDatabase[version] = {}
+    end
+    
+    if not ScriptDatabase[version][language] then
+        ScriptDatabase[version][language] = {}
+    end
+    
+    ScriptDatabase[version][language][accessType] = url
+    
+    -- Добавляем опцию в выпадающий список версий
+    createOption(VersionOptions, version, function()
+        currentSettings.version = version
+        VersionDropdown.Text = version.." ▼"
+        closeAllDropdowns()
+    end)
+end
+
+-- Пример добавления скрипта:
+-- addNewScript("v2", "English", "free", "https://pastebin.com/raw/EXAMPLE")
+-- addNewScript("v2", "Русский", "key", "https://pastebin.com/raw/EXAMPLE")

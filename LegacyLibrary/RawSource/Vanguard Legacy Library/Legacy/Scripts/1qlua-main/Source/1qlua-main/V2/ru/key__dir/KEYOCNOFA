@@ -1,0 +1,2300 @@
+local LibraryUrl = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/labar"
+if not game:IsLoaded() then game.Loaded:Wait() end
+local player = game.Players.LocalPlayer
+local Success, Library = pcall(function()
+    return loadstring(game:HttpGet(LibraryUrl))()
+end)
+if not Success or not Library then 
+    return warn("Error loading UI library!") 
+end
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+Library:Watermark("| >ᴗ< | ♡1Qlua♡ (Хаб) | >ᴗ< |  v12 | >ᴗ< ")
+local Window = Library:Window("| 1Qlua ♡ Хаб |")
+
+-- функций
+-- музыка
+-- Настройки музыки
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local SoundService = game:GetService("SoundService")
+
+local settings = {
+    SoundFile = "cat.mp3",
+    SoundUrl = "https://cdn.discordapp.com/attachments/1374346480130719744/1455053866943910164/the_living_tombstone_-_Cats_slowedreverb_-_GemanTyoma_youtube.mp3?ex=69535403&is=69520283&hm=707c5099eda0ed08a13a1c43c222560b62795aea96d8ec440b2deadf2111616c&",
+    DefaultVolume = 0.5,
+    LoopEnabled = true,
+    AutoPlay = true,
+}
+local sound = nil
+local isMusicLoaded = false
+local isPlaying = false
+local currentVolume = 0.5
+local isLooped = true
+local musicToggle = nil
+
+local function initializeMusic()
+    if not isMusicLoaded then
+        if not isfile(settings.SoundFile) then
+            writefile(settings.SoundFile, game:HttpGet(settings.SoundUrl))
+        end
+        sound = Instance.new("Sound")
+        sound.SoundId = getcustomasset(settings.SoundFile)
+        sound.Volume = currentVolume
+        sound.Looped = isLooped
+        sound.Parent = SoundService
+        isMusicLoaded = true
+        return true
+    end
+    return false
+end
+local function playMusic()
+    if sound and not sound.IsPlaying then
+        sound:Play()
+        isPlaying = true
+        return true
+    end
+    return false
+end
+local function stopMusic()
+    if sound and sound.IsPlaying then
+        sound:Stop()
+        isPlaying = false
+        return true
+    end
+    return false
+end
+local function toggleMusic()
+    if sound then
+        if sound.IsPlaying then
+            sound:Stop()
+            isPlaying = false
+            return false
+        else
+            sound:Play()
+            isPlaying = true
+            return true
+        end
+    end
+    return false
+end
+local function setVolume(newVolume)
+    currentVolume = newVolume
+    if sound then
+        sound.Volume = currentVolume
+    end
+end
+task.spawn(function()
+    task.wait(1)
+    local loaded = initializeMusic()
+    
+    if loaded then
+        task.wait(2) 
+        if settings.AutoPlay then
+            if playMusic() then
+                if musicToggle then
+                    musicToggle:Set(true)
+                end
+            end
+        end
+    end
+end)
+
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer and sound then
+        sound:Stop()
+        sound:Destroy()
+    end
+end)
+local walkflinging = false
+local antifling = nil
+local function enableWalkFling()
+    if walkflinging then return end
+    walkflinging = true
+    task.spawn(function()
+        local RunService = game:GetService("RunService")
+        local LocalPlayer = game.Players.LocalPlayer
+        while walkflinging do
+            RunService.Heartbeat:Wait()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local vel = root.Velocity
+                root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                
+                RunService.RenderStepped:Wait()
+                if root then
+                    root.Velocity = vel
+                end
+            end
+        end
+    end)
+end
+local function disableWalkFling()
+    walkflinging = false
+end
+local function enableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+    end
+    antifling = game:GetService("RunService").Stepped:Connect(function()
+        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                for _, v in pairs(player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
+end
+local function disableAntiFling()
+    if antifling then
+        antifling:Disconnect()
+        antifling = nil
+    end
+end
+-- ТУТ НАЧАЛО ДРУГОЙ ФУНКЦИИ
+-- это если что игроки
+local SelectedPlayer = nil
+local PlayerESP = {}
+local Spectating = false
+local OriginalCameraSubject = nil
+local ESPEnabled = false
+local AvatarCache = {}
+local PlayerSelectionGUI = Instance.new("ScreenGui")
+PlayerSelectionGUI.Name = "PlayerSelector"
+PlayerSelectionGUI.ResetOnSpawn = false
+PlayerSelectionGUI.ZIndexBehavior = Enum.ZIndexBehavior.Global  
+if syn then
+    PlayerSelectionGUI.Parent = syn.protect_gui and syn.protect_gui(PlayerSelectionGUI) or game:GetService("CoreGui")
+else
+    PlayerSelectionGUI.Parent = game:GetService("CoreGui")
+end
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 350, 0, 450)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.ZIndex = 100 
+MainFrame.Parent = PlayerSelectionGUI
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = MainFrame
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.Text = "Выберите игрока"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.Gotham
+Title.TextSize = 16
+Title.ZIndex = 101
+Title.Parent = MainFrame
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.Text = "X"
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 14
+CloseButton.ZIndex = 101
+CloseButton.Parent = MainFrame
+local SearchBox = Instance.new("TextBox")
+SearchBox.Size = UDim2.new(1, -20, 0, 30)
+SearchBox.Position = UDim2.new(0, 10, 0, 50)
+SearchBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.PlaceholderText = "Поиск игрока..."
+SearchBox.Font = Enum.Font.Gotham
+SearchBox.TextSize = 14
+SearchBox.Text = "" 
+SearchBox.ZIndex = 101
+SearchBox.Parent = MainFrame
+local SearchBoxCorner = Instance.new("UICorner")
+SearchBoxCorner.CornerRadius = UDim.new(0, 4)
+SearchBoxCorner.Parent = SearchBox
+local PlayersFrame = Instance.new("ScrollingFrame")
+PlayersFrame.Size = UDim2.new(1, -20, 1, -100)
+PlayersFrame.Position = UDim2.new(0, 10, 0, 90)
+PlayersFrame.BackgroundTransparency = 1
+PlayersFrame.ScrollBarThickness = 5
+PlayersFrame.ZIndex = 101
+PlayersFrame.Parent = MainFrame
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = PlayersFrame
+local function GetPlayerAvatar(player)
+    local userId = player.UserId
+    if AvatarCache[userId] then
+        return AvatarCache[userId]
+    end
+    local success, result = pcall(function()
+        return game:GetService("Players"):GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+    end)
+    if success and result then
+        AvatarCache[userId] = result
+        return result
+    end
+    return "rbxasset://textures/ui/GuiImagePlaceholder.png"
+end
+local function CreatePlayerButton(player)
+    local PlayerButton = Instance.new("Frame")
+    PlayerButton.Size = UDim2.new(1, 0, 0, 50)
+    PlayerButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    PlayerButton.ZIndex = 102
+    PlayerButton.Parent = PlayersFrame
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 4)
+    ButtonCorner.Parent = PlayerButton
+    local Avatar = Instance.new("ImageLabel")
+    Avatar.Size = UDim2.new(0, 40, 0, 40)
+    Avatar.Position = UDim2.new(0, 5, 0.5, -20)
+    Avatar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Avatar.Image = GetPlayerAvatar(player)
+    Avatar.ZIndex = 103
+    Avatar.Parent = PlayerButton
+    local AvatarCorner = Instance.new("UICorner")
+    AvatarCorner.CornerRadius = UDim.new(0, 4)
+    AvatarCorner.Parent = Avatar
+    local PlayerName = Instance.new("TextLabel")
+    PlayerName.Size = UDim2.new(1, -55, 1, 0)
+    PlayerName.Position = UDim2.new(0, 50, 0, 0)
+    PlayerName.BackgroundTransparency = 1
+    PlayerName.Text = player.Name
+    PlayerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PlayerName.Font = Enum.Font.Gotham
+    PlayerName.TextSize = 14
+    PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+    PlayerName.ZIndex = 103
+    PlayerName.Parent = PlayerButton
+    local SelectButton = Instance.new("TextButton")
+    SelectButton.Size = UDim2.new(1, 0, 1, 0)
+    SelectButton.BackgroundTransparency = 1
+    SelectButton.Text = ""
+    SelectButton.ZIndex = 104
+    SelectButton.Parent = PlayerButton
+    SelectButton.MouseButton1Click:Connect(function()
+        SelectedPlayer = player
+        MainFrame.Visible = false
+    end)
+    return PlayerButton
+end
+local function UpdatePlayerList()
+    for _, child in pairs(PlayersFrame:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    local searchText = string.lower(SearchBox.Text)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local playerName = string.lower(player.Name)
+            if searchText == "" or string.find(playerName, searchText, 1, true) then
+                CreatePlayerButton(player)
+            end
+        end
+    end
+end
+local function TeleportToPlayer()
+    if SelectedPlayer and SelectedPlayer.Character and SelectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = SelectedPlayer.Character.HumanoidRootPart.CFrame
+        end
+    end
+end
+local function ToggleESP(state)
+    ESPEnabled = state
+    if not state then
+        for _, esp in pairs(PlayerESP) do
+            if esp then
+                esp:Destroy()
+            end
+        end
+        PlayerESP = {}
+    elseif SelectedPlayer then
+        if PlayerESP[SelectedPlayer] then
+            PlayerESP[SelectedPlayer]:Destroy()
+            PlayerESP[SelectedPlayer] = nil
+        end
+        if SelectedPlayer.Character then
+            local highlight = Instance.new("Highlight")
+            highlight.OutlineTransparency = 0
+            highlight.FillTransparency = 0.5
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.Parent = SelectedPlayer.Character
+            PlayerESP[SelectedPlayer] = highlight
+        end
+    end
+end
+local function ToggleSpectate(state)
+    Spectating = state
+    if state and SelectedPlayer and SelectedPlayer.Character then
+        OriginalCameraSubject = Camera.CameraSubject
+        Camera.CameraSubject = SelectedPlayer.Character:FindFirstChildOfClass("Humanoid")
+    else
+        if OriginalCameraSubject then
+            Camera.CameraSubject = OriginalCameraSubject
+        end
+    end
+end
+local function ResetCamera()
+    if LocalPlayer.Character then
+        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    end
+    Spectating = false
+end
+--функции
+local NoClipEnabled = false
+local NoClipConnection = nil
+local FullbrightEnabled = false
+local OriginalLighting = nil
+local function setupNoClip()
+    if NoClipConnection then
+        NoClipConnection:Disconnect()
+        NoClipConnection = nil
+    end
+    NoClipConnection = RunService.Stepped:Connect(function()
+        if NoClipEnabled and LocalPlayer.Character then
+            for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+local function setFullbright(enabled)
+    local Lighting = game:GetService("Lighting")
+    if enabled then
+        OriginalLighting = {
+            Ambient = Lighting.Ambient,
+            Brightness = Lighting.Brightness,
+            GlobalShadows = Lighting.GlobalShadows,
+            OutdoorAmbient = Lighting.OutdoorAmbient
+        }
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.Brightness = 2
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    else
+        if OriginalLighting then
+            Lighting.Ambient = OriginalLighting.Ambient
+            Lighting.Brightness = OriginalLighting.Brightness
+            Lighting.GlobalShadows = OriginalLighting.GlobalShadows
+            Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        end
+    end
+end
+local walkSpeedValue = 16
+local jumpHeightValue = 7.2
+local fovValue = 70
+local speedLoop, jumpLoop, fovLoop
+local function stopAllLoops()
+    if speedLoop then speedLoop:Disconnect() speedLoop = nil end
+    if jumpLoop then jumpLoop:Disconnect() jumpLoop = nil end
+    if fovLoop then fovLoop:Disconnect() fovLoop = nil end
+end
+local function startAllLoops()
+    stopAllLoops()
+    speedLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = walkSpeedValue
+        end
+    end)
+    jumpLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.JumpHeight = jumpHeightValue
+        end
+    end)
+    fovLoop = game:GetService("RunService").Heartbeat:Connect(function()
+        local camera = workspace.CurrentCamera
+        if camera then
+            camera.FieldOfView = fovValue
+        end
+    end)
+end
+
+-- tab
+Window:Section("╰┈> Основной")
+local MainTab = Window:Tab("♡ Игрок ♡", "eye") 
+local GameTab = Window:Tab("♡ Игры ♡", "eye") 
+local TPTab = Window:Tab("♡ Телепорт ♡", "eye")
+Window:Section("★ | Настройки")
+local SettingsTab = Window:Tab("☆ Настройки", "7733771472" )
+
+
+local GeneralPage = GameTab:SubTab("♡ Fling Things and People ♡")
+
+local FarmGroup = GeneralPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://9965929384", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Fling Things and People                       Fling Things and People  Швыряют вещи и людей кидать веши и людей флинг",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = GeneralPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт для кидания игроков",
+    Content = "Авто выкидывание хорошое",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "FTAP Hub",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Bruhiscrazy/codespaces-blank/refs/heads/main/FTAPadminwatch.lua"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://9288958329", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local ScriptPage = GameTab:SubTab("❀ Lamber Tycon 2 ❀")
+
+local FarmGroup = ScriptPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://85952302690707", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Lumber Tycoon 2                       ламбер такон 2 lamber",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = ScriptPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт для игры",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "Kron Hub",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/DevKron/Kron_Hub/main/version_1.0"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://7475075233", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local CounterPage = GameTab:SubTab("♡ Counter Blox ♡")
+
+local FarmGroup = CounterPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://6106706486", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Counter Blox                              контрл блокс кс го 2 ",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = CounterPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "Лучший скрипт для игры",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "Thegxx V1",
+    Callback = function()
+loadstring(game:HttpGet("https://pastebin.com/raw/bPUYMYis"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://8598068647", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local BloxPage = GameTab:SubTab("❀ Blox Fruits ❀")
+
+local FarmGroup = BloxPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://6465306677", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Blox Fruits                                    блокс фрукс ",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = BloxPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт для фарма",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "Kevinzzz",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/KevinGithubUsers/KevinGithubUsers/refs/heads/main/VScript(Blox%20Fruits).txt"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://6089224007", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local FischPage = GameTab:SubTab("♡ Fisch ♡")
+
+local FarmGroup = FischPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://77005458544600", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Fisch                                                фищ фиш ",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = FischPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт для фарма",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "html",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/vvisuall/VISUAL/refs/heads/main/ab"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://11603721148", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local BlindPage = GameTab:SubTab("❀ Blind Shot ❀")
+
+local FarmGroup = BlindPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://71291571288785", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Blind Shot                                    блинг шот ",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = BlindPage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт ",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "Casper",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/c2rpt/Blind-shot/refs/heads/main/Main.lua"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://8942361465", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+local BeePage = GameTab:SubTab("♡ Bee Swarm Simulator ♡")
+
+local FarmGroup = BeePage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+
+FarmGroup:AddImage({
+    Image = "rbxassetid://70670008160718", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+FarmGroup:AddParagraph({
+    Title = "Bee Swarm Simulator                                                бее сфарм симулятор бии сварм  ",
+    Content = "Для пойска (теги)",
+    TextWrapped = true
+})
+FarmGroup:AddParagraph({
+    Title = "",
+    TextWrapped = true
+})
+
+local ExtraGroup = BeePage:Groupbox("╰┈> скрипты ♡", "Right", "eye")
+
+ExtraGroup:AddParagraph({
+    Title = "хорошый скрипт для фарма",
+    Content = "хорошые функции",
+    TextWrapped = true
+})
+
+ExtraGroup:AddButton({
+    Title = "Atlas",
+    Callback = function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Chris12089/atlasbss/main/script.lua"))()
+    end
+})
+
+ExtraGroup:AddImage({
+    Image = "rbxassetid://6768122900", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+
+
+-- ТУТ СКРИПТЫ!!!
+
+local GeneralPage = MainTab:SubTab("♡ Основной ♡")
+local ScriptPage = MainTab:SubTab("❀ Скрипты ❀")
+
+local InterfacePage = SettingsTab:SubTab("Интерфейс")
+local GamePage = SettingsTab:SubTab("Игра")
+local MusicPage = SettingsTab:SubTab("Музыка")
+local PerformancePage = SettingsTab:SubTab("Производительность")
+local SecurityPage = SettingsTab:SubTab("Безопасность")
+
+local FarmGroup = GeneralPage:Groupbox("╰┈> Основное ♡", "Left", "camera")
+local ExtraGroup = GeneralPage:Groupbox("╰┈> Функции ♡", "Right", "eye")
+local TpGrouo = GeneralPage:Groupbox("╰┈> Игроки ♡", "Left", "camera")
+local FilngGroup = GeneralPage:Groupbox("╰┈> Filng ♡", "Right", "camera")
+local MusicGroup = MusicPage:Groupbox("Управление", "Left")
+local InfGroup = MusicPage:Groupbox("Текуший трек", "Right")
+
+
+local PlayerGroup = ScriptPage:Groupbox("╰┈> Игрок♡", "Left", "camera")
+local ScriptsGroup = ScriptPage:Groupbox("╰┈> Скрипты♡", "Right", "eye")
+
+
+FarmGroup:AddSlider({
+    Title = "♡Скорость⤵ \nпередвижения♡",
+    Min = 0,
+    Max = 1500,
+    Default = 16,
+    Suffix = " ❀studs❀",
+    Callback = function(value)
+        walkSpeedValue = value
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = walkSpeedValue
+        end
+    end
+})
+FarmGroup:AddSlider({
+    Title = "♡Высота- \n -прыжка♡",
+    Min = 0,
+    Max = 500,
+    Default = 50,
+    Suffix = " ❀сила❀",
+    Callback = function(value)
+        jumpHeightValue = value / 7
+        if jumpHeightValue < 0.5 then jumpHeightValue = 0.5 end
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.JumpHeight = jumpHeightValue
+        end
+    end
+})
+FarmGroup:AddSlider({
+    Title = "♡Поле- \n-зрения♡",
+    Min = 0,
+    Max = 120,
+    Default = 70,
+    Suffix = " ❀градусов❀",
+    Callback = function(value)
+        fovValue = value
+        local camera = workspace.CurrentCamera
+        if camera then
+            camera.FieldOfView = fovValue
+        end
+    end
+})
+
+startAllLoops()
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    task.wait(0.5)
+    local humanoid = character:WaitForChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = walkSpeedValue
+        humanoid.JumpHeight = jumpHeightValue
+    end
+    startAllLoops()
+end)
+if game.Players.LocalPlayer.Character then
+    local character = game.Players.LocalPlayer.Character
+    local humanoid = character:WaitForChild("Humanoid", 1)
+    if humanoid then
+        humanoid.WalkSpeed = walkSpeedValue
+        humanoid.JumpHeight = jumpHeightValue
+    end
+end
+if workspace.CurrentCamera then
+    workspace.CurrentCamera.FieldOfView = fovValue
+end
+ExtraGroup:AddToggle({
+    Title = "˗ˋˏ♡ˎˊ˗NoClip˗ˋˏ♡ˎˊ˗",
+    Default = false,
+    Flag = "NoClipFlag",
+    Callback = function(Value)
+        NoClipEnabled = Value
+        if Value then
+            setupNoClip()
+        elseif NoClipConnection then
+            NoClipConnection:Disconnect()
+            NoClipConnection = nil
+        end
+        if not Value and LocalPlayer.Character then
+            for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+})
+ExtraGroup:AddToggle({
+    Title = "˗ˋˏ♡ˎˊ˗Fullbright˗ˋˏ♡ˎˊ˗",
+    Default = false,
+    Flag = "FullbrightFlag",
+    Callback = function(Value)
+        FullbrightEnabled = Value
+        setFullbright(Value)
+    end
+})
+LocalPlayer.CharacterAdded:Connect(function()
+    if NoClipEnabled then
+        task.wait(0.5)
+        setupNoClip()
+    end
+end)
+game:GetService("UserInputService").WindowFocused:Connect(function()
+    if not NoClipEnabled and not FullbrightEnabled then return end
+    if not NoClipEnabled and NoClipConnection then
+        NoClipConnection:Disconnect()
+        NoClipConnection = nil
+    end
+    if not FullbrightEnabled and OriginalLighting then
+        setFullbright(false)
+    end
+end)
+ExtraGroup:AddImage({
+    Image = "rbxassetid://5410949701", 
+    Size = UDim2.new(0, 120, 0, 120), 
+})
+PlayerGroup:AddButton({
+    Title = "Полёт (V)",
+    Description = "Включение режима полёта по нажатию V ",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/9bNj1EcR'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Невидимость (E)",
+    Description = "Делает вашего персонажа невидимым",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/VtWhnEnm'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "ТП к игрокам",
+    Description = "Телепортироваться к другим игрокам",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/z4HARAHs'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Падение на месте (R)",
+    Description = "Персонаж падает на месте без движения",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/CTUaCKN1'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Свободная камера (Shift+P)",
+    Description = "Отключает привязку камеры к персонажу",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/ct8Kq5F0'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Полет на машине (V)",
+    Description = "Позволяет транспорту летать",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/9bNj1EcR'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Чекпойнты",
+    Description = "Создает точки для быстрой телепортации",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/rz7uUmED'),true))()
+    end
+})
+
+PlayerGroup:AddButton({
+    Title = "Шейдеры",
+    Description = "Улучшает визуальные эффекты игры",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/1XA5qM3D'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Infinite Yield",
+    Description = "Мощные админ-команды для управления игрой",
+    Callback = function()
+       loadstring(game:HttpGet(('https://raw.githubusercontent.com/Infinite-Store/Infinite-Store/main/main.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "f3x",
+    Description = "Прикольный кубик",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/infyiff/backup/refs/heads/main/f3x.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "DEX Explorer",
+    Description = "Инструмент для исследования игровых объектов",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/infyiff/backup/main/dex.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "DEX++",
+    Description = "Инструмент для исследования игровых объектов",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/ltseverydayyou/uuuuuuu/refs/heads/main/DexPlusBackup.luau'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Играть с писюном",
+    Description = "Добавляет анимацию для развлечения",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/73RsNXY2'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Удалить стены",
+    Description = "Удаляет препятствия в игре",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/FBKJTUyw'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Добавить всех в друзья",
+    Description = "Автоматически отправляет заявки в друзья",
+    Callback = function()
+        local plrs = game:GetService('Players')
+        for i,v in pairs(plrs:GetChildren()) do
+            task.wait(1)
+            plrs.LocalPlayer:RequestFriendship(v)
+        end
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Обход голосового чата",
+    Description = "Позволяет обойти ограничения голосового чата",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/CorpseCMD/MyScripts/main/VoicechatBypass.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Sigma Spy",
+    Description = "Мониторинг игровых событий",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/depthso/Sigma-Spy/main/Main.lua'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Админ Команды от 1qlua",
+    Description = "Набор административных команд",
+    Callback = function()
+        loadstring(game:HttpGet(('https://pastebin.com/raw/t3chuwNu'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Тест инжектора",
+    Description = "Проверить ваш инжектор",
+    Callback = function()
+        loadstring(game:HttpGet(('https://rawscripts.net/raw/Universal-Script-UNChecker-GUI-Version-27355'),true))()
+    end
+})
+
+ScriptsGroup:AddButton({
+    Title = "Поменять сервер",
+    Description = "Быстро поменять сервер",
+    Callback = function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/Syr0nix/RedFoxServerBowser/main/Mainlua'),true))()
+    end
+})
+TpGrouo:AddButton({
+    Title = "☃ Выбрать | игрока ☃",
+    Callback = function()
+        UpdatePlayerList()
+        MainFrame.Visible = true
+        task.wait(0.1)
+        SearchBox:CaptureFocus()
+    end
+})
+TpGrouo:AddButton({
+    Title = "웃 Телепортироваться 웃",
+    Callback = function()
+        TeleportToPlayer()
+    end
+})
+TpGrouo:AddToggle({
+    Title = "『ESP игрока』",
+    Default = false,
+    Callback = function(Value)
+        ToggleESP(Value)
+    end
+})
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    UpdatePlayerList()
+end)
+Players.PlayerAdded:Connect(function(player)
+    task.wait(0.5)
+    UpdatePlayerList()
+end)
+Players.PlayerRemoving:Connect(function(player)
+    task.wait(0.5)
+    UpdatePlayerList()
+    if player == SelectedPlayer then
+        SelectedPlayer = nil
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: Нет")
+        end
+    end
+    if PlayerESP[player] then
+        PlayerESP[player]:Destroy()
+        PlayerESP[player] = nil
+    end
+end)
+local function CharacterAdded(player, character)
+    if PlayerESP[player] and ESPEnabled then
+        PlayerESP[player]:Destroy()
+        local highlight = Instance.new("Highlight")
+        highlight.OutlineTransparency = 0
+        highlight.FillTransparency = 0.5
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.Parent = character
+        PlayerESP[player] = highlight
+    end
+end
+local function CharacterRemoving(player, character)
+    if PlayerESP[player] then
+        PlayerESP[player]:Destroy()
+        PlayerESP[player] = nil
+    end
+end
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        player.CharacterAdded:Connect(function(character)
+            CharacterAdded(player, character)
+        end)
+    end
+    player.CharacterAdded:Connect(function(character)
+        CharacterAdded(player, character)
+    end)
+    player.CharacterRemoving:Connect(function(character)
+        CharacterRemoving(player, character)
+    end)
+end
+local connection
+connection = RunService.RenderStepped:Connect(function()
+    if SelectedPlayer then
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: " .. SelectedPlayer.Name)
+        end
+    else
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: Нет")
+        end
+    end
+end)
+PlayerSelectionGUI.Destroying:Connect(function()
+    if connection then
+        connection:Disconnect()
+    end
+    for _, esp in pairs(PlayerESP) do
+        if esp then
+            esp:Destroy()
+        end
+    end
+end)
+UpdatePlayerList()
+FilngGroup:AddToggle({
+    Title = "☼walk | Fling☼",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableWalkFling()
+        else
+            disableWalkFling()
+        end
+    end
+})
+FilngGroup:AddToggle({
+    Title = "✴Anti | Fling✴",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableAntiFling()
+        else
+            disableAntiFling()
+        end
+    end
+})
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid").Died:Connect(function()
+        disableWalkFling()
+        disableAntiFling()
+    end)
+end)
+local deletionModeEnabled = false
+local deletionKeybind = Enum.KeyCode.KeypadZero
+local mouse = LocalPlayer:GetMouse()
+local highlight = Instance.new("Highlight")
+highlight.FillTransparency = 1
+highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+highlight.Parent = game:GetService("CoreGui")
+local DeletionGroup = GeneralPage:Groupbox("Object Deletion", "Left")
+local function deleteObjectUnderCursor()
+    if not deletionModeEnabled then return end
+    local target = mouse.Target
+    if target then
+        if target:IsDescendantOf(Workspace) then
+            local success, err = pcall(function()
+                target:Destroy()
+            end)
+            if success then
+                Library:Notify("Deleted", "Object removed: " .. target.Name, 2)
+            else
+                Library:Notify("Error", "Failed to delete object", 2)
+            end
+        else
+            Library:Notify("Warning", "This object cannot be deleted", 2)
+        end
+    else
+        Library:Notify("Warning", "No object under cursor", 2)
+    end
+end
+local function updateHighlight()
+    if deletionModeEnabled then
+        if mouse.Target and mouse.Target:IsDescendantOf(Workspace) then
+            highlight.Adornee = mouse.Target
+            highlight.Enabled = true
+        else
+            highlight.Enabled = false
+        end
+    else
+        highlight.Enabled = false
+    end
+end
+DeletionGroup:AddToggle({
+    Title = "Удаления обьектов",
+    Default = false,
+    Flag = "DeletionModeToggle",
+    Callback = function(Value)
+        deletionModeEnabled = Value
+        
+        if Value then
+            Library:Notify("Delete Mode", "ENABLED - click objects to delete", 2)
+        else
+            Library:Notify("Delete Mode", "DISABLED", 2)
+        end
+    end
+})
+DeletionGroup:AddKeybind({
+    Title = "Кнопка на удаления",
+    Default = Enum.KeyCode.KeypadZero,
+    Flag = "DeletionHotkey",
+    Callback = function(Key)
+        deletionKeybind = Key
+        Library:Notify("Hotkey", "Set to: " .. tostring(Key), 2)
+    end
+})
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == deletionKeybind then
+        deletionModeEnabled = not deletionModeEnabled
+        if Library.Items["DeletionModeToggle"] then
+            Library.Items["DeletionModeToggle"].Set(deletionModeEnabled)
+        end
+        if deletionModeEnabled then
+            Library:Notify("Delete Mode", "ENABLED - click objects to delete", 2)
+        else
+            Library:Notify("Delete Mode", "DISABLED", 2)
+        end
+    end
+end)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if deletionModeEnabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        task.wait(0.05)
+        deleteObjectUnderCursor()
+    end
+end)
+game:GetService("RunService").Heartbeat:Connect(function()
+    updateHighlight()
+end)
+
+-- телепортация
+
+local GeneralPage = TPTab:SubTab("Авто фарм")
+local TeleportGroup = GeneralPage:Groupbox("Телепортация", "Left", "move", "true")
+local OffsetGroup = GeneralPage:Groupbox("Настройка координат", "Right")
+local ModeGroup = GeneralPage:Groupbox("Моды", "Left")
+local KeybindGroup = GeneralPage:Groupbox("Контролер кнопки", "Right")
+local teleportEnabled = false
+local teleportLoop = nil
+local currentTarget = nil
+local isTeleporting = false
+local teleportMode = "Teleport"
+local teleportDelay = 1 
+local flySpeed = 50
+local offset = Vector3.new(0, 0, 0) 
+local playerList = {}
+local teleportKeybind = Enum.KeyCode.KeypadZero
+local faceTarget = false 
+
+local function updatePlayerList()
+    playerList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerList, player)
+        end
+    end
+end
+local function getPlayerPosition(player)
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local targetCFrame = player.Character.HumanoidRootPart.CFrame
+        local offsetCFrame = CFrame.new(offset.X, offset.Y, offset.Z)
+        return (targetCFrame * offsetCFrame).Position
+    end
+    return nil
+end
+local function isValidPlayer(player)
+    return player and player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+end
+local function getTargetLookDirection(targetPlayer)
+    if not isValidPlayer(targetPlayer) then return nil end
+    return targetPlayer.Character.HumanoidRootPart.CFrame.LookVector
+end
+local function alignWithTarget(targetPlayer)
+    if not faceTarget then return end
+    if not isValidPlayer(targetPlayer) then return end
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local charRoot = LocalPlayer.Character.HumanoidRootPart
+    local targetRoot = targetPlayer.Character.HumanoidRootPart
+    local targetLookVector = targetRoot.CFrame.LookVector
+    local targetPosition = targetRoot.Position
+    local charPosition = charRoot.Position
+    local lookAtPosition = targetPosition + (targetLookVector * 10)
+    charRoot.CFrame = CFrame.new(charPosition, charPosition + targetLookVector)
+    local camera = Workspace.CurrentCamera
+    if camera then
+        local cameraDistance = 10
+        local cameraHeight = 3
+        local cameraOffset = Vector3.new(0, cameraHeight, cameraDistance)
+        local upVector = Vector3.new(0, 1, 0)
+        local rightVector = targetLookVector:Cross(upVector).Unit
+        local actualUpVector = rightVector:Cross(targetLookVector).Unit
+        local cameraCFrame = CFrame.fromMatrix(charPosition + Vector3.new(0, cameraHeight, 0), 
+                                             rightVector, actualUpVector, -targetLookVector)
+        local cameraLookAt = charPosition + (targetLookVector * 100)
+        camera.CFrame = CFrame.new(cameraCFrame.Position, cameraLookAt)
+    end
+end
+local function goToTarget(targetPlayer)
+    if not isValidPlayer(targetPlayer) then
+        return false
+    end
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    isTeleporting = true
+    currentTarget = targetPlayer
+    if teleportMode == "Teleport" then
+        local startTime = tick()
+        while tick() - startTime < teleportDelay and teleportEnabled do
+            RunService.Heartbeat:Wait()
+        end
+        if teleportEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = getPlayerPosition(targetPlayer)
+            if targetPosition then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+                if faceTarget then
+                    alignWithTarget(targetPlayer)
+                end
+                isTeleporting = false
+                return true
+            end
+        end
+    else
+        local startTime = tick()  
+        while teleportEnabled and isValidPlayer(targetPlayer) and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
+            local currentTargetPosition = getPlayerPosition(targetPlayer)
+            if not currentTargetPosition then break end
+            local currentPosition = LocalPlayer.Character.HumanoidRootPart.Position
+            local direction = (currentTargetPosition - currentPosition)
+            local distance = direction.Magnitude
+            if faceTarget then
+                alignWithTarget(targetPlayer)
+            end
+            if distance < 2 then
+                break
+            end
+            local step = math.min(distance, flySpeed * RunService.Heartbeat:Wait())
+            local newPosition = currentPosition + (direction.Unit * step)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition)
+            RunService.Heartbeat:Wait()
+            if tick() - startTime > 10 then
+                break
+            end
+        end
+        if teleportEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local finalPosition = getPlayerPosition(targetPlayer)
+            if finalPosition then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(finalPosition)
+                if faceTarget then
+                    alignWithTarget(targetPlayer)
+                end
+            end
+        end
+    end
+    isTeleporting = false
+    return false
+end
+local function startTeleportation()
+    if teleportLoop then
+        task.cancel(teleportLoop)
+        teleportLoop = nil
+    end
+    updatePlayerList()
+    if #playerList == 0 then
+        Library:Notify("Teleport", "No other players found!", 3)
+        teleportEnabled = false
+        if Library.Items["TeleportToggle"] then
+            Library.Items["TeleportToggle"].Set(false)
+        end
+        return
+    end
+    teleportLoop = task.spawn(function()
+        while teleportEnabled do
+            updatePlayerList()
+            if #playerList == 0 then
+                task.wait(1)
+                continue
+            end
+            for i = #playerList, 2, -1 do
+                local j = math.random(i)
+                playerList[i], playerList[j] = playerList[j], playerList[i]
+            end
+            for _, targetPlayer in ipairs(playerList) do
+                if not teleportEnabled then break end
+                if isValidPlayer(targetPlayer) then
+                    goToTarget(targetPlayer)
+                end
+                while isTeleporting and teleportEnabled do
+                    task.wait()
+                end
+                if not teleportEnabled then break end
+            end
+        end
+    end)
+end
+local function toggleTeleportation()
+    teleportEnabled = not teleportEnabled
+    if teleportEnabled then
+        Library:Notify("Teleport", "Teleportation enabled!", 2)
+        startTeleportation()
+    else
+        if teleportLoop then
+            task.cancel(teleportLoop)
+            teleportLoop = nil
+        end
+        isTeleporting = false
+        currentTarget = nil
+        Library:Notify("Teleport", "Teleportation disabled!", 2)
+    end
+    if Library.Items["TeleportToggle"] then
+        Library.Items["TeleportToggle"].Set(teleportEnabled)
+    end
+end
+TeleportGroup:AddToggle({
+    Title = "Включить тп",
+    Default = false,
+    Flag = "TeleportToggle",
+    Callback = function(Value)
+        teleportEnabled = Value
+        
+        if Value then
+            Library:Notify("Teleport", "Teleportation enabled!", 2)
+            startTeleportation()
+        else
+            if teleportLoop then
+                task.cancel(teleportLoop)
+                teleportLoop = nil
+            end
+            isTeleporting = false
+            currentTarget = nil
+            Library:Notify("Teleport", "Teleportation disabled!", 2)
+        end
+    end
+})
+TeleportGroup:AddSlider({
+    Title = "Скорость телепортации",
+    Min = 0.1,
+    Max = 5,
+    Default = 1,
+    Rounding = 1,
+    Suffix = " sec",
+    Flag = "TeleportDelay",
+    Callback = function(Value)
+        teleportDelay = Value
+    end
+})
+OffsetGroup:AddSlider({
+    Title = "Лево право",
+    Min = -50,
+    Max = 50,
+    Default = 0,
+    Rounding = 0,
+    Suffix = " studs",
+    Flag = "XOffset",
+    Callback = function(Value)
+        offset = Vector3.new(Value, offset.Y, offset.Z)
+    end
+})
+OffsetGroup:AddSlider({
+    Title = "верх вниз",
+    Min = -50,
+    Max = 50,
+    Default = 0,
+    Rounding = 0,
+    Suffix = " studs",
+    Flag = "YOffset",
+    Callback = function(Value)
+        offset = Vector3.new(offset.X, Value, offset.Z)
+    end
+})
+OffsetGroup:AddSlider({
+    Title = "назад веред",
+    Min = -50,
+    Max = 50,
+    Default = 0,
+    Rounding = 0,
+    Suffix = " studs",
+    Flag = "ZOffset",
+    Callback = function(Value)
+        offset = Vector3.new(offset.X, offset.Y, Value)
+    end
+})
+ModeGroup:AddDropdown({
+    Title = "Телепорт мод",
+    Values = {"Teleport", "Fly"},
+    Default = "Teleport",
+    Flag = "TeleportMode",
+    Callback = function(Value)
+        teleportMode = Value
+    end
+})
+ModeGroup:AddSlider({
+    Title = "Флай скорость",
+    Min = 10,
+    Max = 200,
+    Default = 50,
+    Rounding = 0,
+    Suffix = " studs/sec",
+    Flag = "FlySpeed",
+    Callback = function(Value)
+        flySpeed = Value
+    end
+})
+ModeGroup:AddToggle({
+    Title = "Поворот к игроку",
+    Default = false,
+    Flag = "FaceTarget",
+    Callback = function(Value)
+        faceTarget = Value
+        Library:Notify("Face Target", Value and "Enabled - Will face same direction as target" or "Disabled", 2)
+    end
+})
+KeybindGroup:AddKeybind({
+    Title = "Кнопка \nвклучения",
+    Default = Enum.KeyCode.T,
+    Flag = "TeleportKeybind",
+    Callback = function(Key)
+        teleportKeybind = Key
+        Library:Notify("Keybind", "Key set to: " .. tostring(Key), 2)
+    end
+})
+
+-- тп к игрокам
+
+local PlayerPage = TPTab:SubTab("Тп к игрока")
+local TpGrouo = PlayerPage:Groupbox("Выбор игрока", "Left", "move", "true")
+TpGrouo:AddButton({
+    Title = "☃ Выбрать | игрока ☃",
+    Callback = function()
+        UpdatePlayerList()
+        MainFrame.Visible = true
+        task.wait(0.1)
+        SearchBox:CaptureFocus()
+    end
+})
+TpGrouo:AddButton({
+    Title = "웃 Телепортироваться 웃",
+    Callback = function()
+        TeleportToPlayer()
+    end
+})
+TpGrouo:AddToggle({
+    Title = "『ESP игрока』",
+    Default = false,
+    Callback = function(Value)
+        ToggleESP(Value)
+    end
+})
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    UpdatePlayerList()
+end)
+Players.PlayerAdded:Connect(function(player)
+    task.wait(0.5)
+    UpdatePlayerList()
+end)
+Players.PlayerRemoving:Connect(function(player)
+    task.wait(0.5)
+    UpdatePlayerList()
+    if player == SelectedPlayer then
+        SelectedPlayer = nil
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: Нет")
+        end
+    end
+    if PlayerESP[player] then
+        PlayerESP[player]:Destroy()
+        PlayerESP[player] = nil
+    end
+end)
+local function CharacterAdded(player, character)
+    if PlayerESP[player] and ESPEnabled then
+        PlayerESP[player]:Destroy()
+        local highlight = Instance.new("Highlight")
+        highlight.OutlineTransparency = 0
+        highlight.FillTransparency = 0.5
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.Parent = character
+        PlayerESP[player] = highlight
+    end
+end
+local function CharacterRemoving(player, character)
+    if PlayerESP[player] then
+        PlayerESP[player]:Destroy()
+        PlayerESP[player] = nil
+    end
+end
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        player.CharacterAdded:Connect(function(character)
+            CharacterAdded(player, character)
+        end)
+    end
+    player.CharacterAdded:Connect(function(character)
+        CharacterAdded(player, character)
+    end)
+    player.CharacterRemoving:Connect(function(character)
+        CharacterRemoving(player, character)
+    end)
+end
+local connection
+connection = RunService.RenderStepped:Connect(function()
+    if SelectedPlayer then
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: " .. SelectedPlayer.Name)
+        end
+    else
+        if selectedPlayerLabel then
+            selectedPlayerLabel.SetText("Выбранный: Нет")
+        end
+    end
+end)
+PlayerSelectionGUI.Destroying:Connect(function()
+    if connection then
+        connection:Disconnect()
+    end
+    for _, esp in pairs(PlayerESP) do
+        if esp then
+            esp:Destroy()
+        end
+    end
+end)
+UpdatePlayerList()
+local keybindConnection = nil
+local function setupKeybind()
+    if keybindConnection then
+        keybindConnection:Disconnect()
+    end
+    
+    keybindConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == teleportKeybind then
+            toggleTeleportation()
+        end
+    end)
+end
+setupKeybind()
+
+
+-- FLYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+local flyEnabled = false
+local vflyEnabled = false
+local flyConnection = nil
+local vflyConnection = nil
+
+local flySettings = {
+    speed = 50,
+    keybind = Enum.KeyCode.KeypadZero
+}
+local vflySettings = {
+    speed = 600,
+    acceleration = 4,
+    turnSpeed = 16,
+    speedMultiplier = 3,
+    keybind = Enum.KeyCode.KeypadZero,
+    speedKey = Enum.KeyCode.LeftControl
+}
+local CurrentVelocity = Vector3.new(0,0,0)
+local UserRootPart = nil
+local function FlyFunction()
+    if not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart then return end
+    local direction = Vector3.new(0, 0, 0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        direction = direction + workspace.CurrentCamera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        direction = direction - workspace.CurrentCamera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        direction = direction - workspace.CurrentCamera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        direction = direction + workspace.CurrentCamera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        direction = direction + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        direction = direction + Vector3.new(0, -1, 0)
+    end
+    if direction.Magnitude > 0 then
+        direction = direction.Unit * flySettings.speed
+    end
+    rootPart.Velocity = Vector3.new(direction.X, direction.Y, direction.Z)
+end
+local function VFlyFlight(delta)
+    if not vflyEnabled or not UserRootPart then return end
+    
+    local BaseVelocity = Vector3.new(0,0,0)
+    local Camera = workspace.CurrentCamera
+    if not UserInputService:GetFocusedTextBox() then
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.LookVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.RightVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.LookVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.RightVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.UpVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(vflySettings.speedKey) then
+            BaseVelocity = BaseVelocity * vflySettings.speedMultiplier
+        end
+    end
+    local car = UserRootPart:GetRootPart()
+    if car.Anchored then return end
+    if not isnetworkowner then return end
+    CurrentVelocity = CurrentVelocity:Lerp(
+        BaseVelocity,
+        math.clamp(delta * vflySettings.acceleration, 0, 1)
+    )
+    car.Velocity = CurrentVelocity + Vector3.new(0, 2, 0)
+    if car ~= UserRootPart then
+        car.RotVelocity = Vector3.new(0,0,0)
+        car.CFrame = car.CFrame:Lerp(CFrame.lookAt(
+            car.Position,
+            car.Position + CurrentVelocity + Camera.CFrame.LookVector
+        ), math.clamp(delta * vflySettings.turnSpeed, 0, 1))
+    end
+end
+local function ToggleFly()
+    flyEnabled = not flyEnabled
+    if flyEnabled then
+        if vflyEnabled then
+            ToggleVFly()
+        end
+        flyConnection = RunService.Heartbeat:Connect(FlyFunction)
+        StarterGui:SetCore("SendNotification",{
+            Title = "Fly",
+            Text = "Fly enabled"
+        })
+    else
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
+        if LocalPlayer.Character then
+            local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                rootPart.Velocity = Vector3.new(0, rootPart.Velocity.Y, 0)
+            end
+        end
+        StarterGui:SetCore("SendNotification",{
+            Title = "Fly",
+            Text = "Fly disabled"
+        })
+    end
+    if Library.Items["FlyToggle"] then
+        Library.Items["FlyToggle"].Set(flyEnabled)
+    end
+end
+local function ToggleVFly()
+    vflyEnabled = not vflyEnabled
+    if vflyEnabled then
+        if flyEnabled then
+            ToggleFly()
+        end
+        if LocalPlayer.Character then
+            UserRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if UserRootPart then
+                CurrentVelocity = UserRootPart.Velocity
+            end
+        end
+        vflyConnection = RunService.Heartbeat:Connect(VFlyFlight)
+        StarterGui:SetCore("SendNotification",{
+            Title = "V Fly",
+            Text = "V Fly enabled"
+        })
+    else
+        if vflyConnection then
+            vflyConnection:Disconnect()
+            vflyConnection = nil
+        end
+        StarterGui:SetCore("SendNotification",{
+            Title = "V Fly",
+            Text = "V Fly disabled"
+        })
+    end
+    if Library.Items["VFlyToggle"] then
+        Library.Items["VFlyToggle"].Set(vflyEnabled)
+    end
+end
+local function ProcessKeybind(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == flySettings.keybind then
+        ToggleFly()
+    end
+    if input.KeyCode == vflySettings.keybind then
+        ToggleVFly()
+    end
+end
+UserInputService.InputBegan:Connect(ProcessKeybind)
+LocalPlayer.CharacterAdded:Connect(function(character)
+    wait(1)
+    if character then
+        UserRootPart = character:WaitForChild("HumanoidRootPart")
+    end
+end)
+if LocalPlayer.Character then
+    UserRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local FlyPage = MainTab:SubTab("♡ Флай ♡")
+local FlyGroup = FlyPage:Groupbox("Обычный флай", "Left", "rocket", "true")
+local VFlyGroup = FlyPage:Groupbox("Машина флай", "Right", "zap", "true")
+FlyGroup:AddToggle({
+    Title = "Включить флай",
+    Default = false,
+    Flag = "FlyToggle",
+    Callback = function(Value)
+        if Value ~= flyEnabled then
+            ToggleFly()
+        end
+    end
+})
+
+FlyGroup:AddSlider({
+    Title = "Скорость полета",
+    Min = 16,
+    Max = 250,
+    Default = flySettings.speed,
+    Rounding = 0,
+    Suffix = " studs",
+    Flag = "FlySpeed",
+    Callback = function(Value)
+        flySettings.speed = Value
+    end
+})
+
+FlyGroup:AddKeybind({
+    Title = "Кнопка полета",
+    Default = flySettings.keybind,
+    Flag = "FlyKeybind",
+    Callback = function(Key)
+        flySettings.keybind = Key
+        Library:Notify("Fly", "Keybind updated to: " .. tostring(Key), 2)
+    end
+})
+
+VFlyGroup:AddToggle({
+    Title = "Включить Vfly",
+    Default = false,
+    Flag = "VFlyToggle",
+    Callback = function(Value)
+        if Value ~= vflyEnabled then
+            ToggleVFly()
+        end
+    end
+})
+
+VFlyGroup:AddSlider({
+    Title = "Скорость Vfly",
+    Min = 100,
+    Max = 2000,
+    Default = vflySettings.speed,
+    Rounding = 0,
+    Suffix = " studs",
+    Flag = "VFlySpeed",
+    Callback = function(Value)
+        vflySettings.speed = Value
+    end
+})
+
+VFlyGroup:AddSlider({
+    Title = "Чуствительность",
+    Min = 1,
+    Max = 20,
+    Default = vflySettings.acceleration,
+    Rounding = 1,
+    Flag = "VFlyAccel",
+    Callback = function(Value)
+        vflySettings.acceleration = Value
+    end
+})
+
+VFlyGroup:AddSlider({
+    Title = "Буст скорости при бусте",
+    Min = 2,
+    Max = 10,
+    Default = vflySettings.speedMultiplier,
+    Rounding = 1,
+    Flag = "VFlyMultiplier",
+    Callback = function(Value)
+        vflySettings.speedMultiplier = Value
+    end
+})
+
+VFlyGroup:AddKeybind({
+    Title = "Кнопка для Vfly",
+    Default = vflySettings.keybind,
+    Flag = "VFlyKeybind",
+    Callback = function(Key)
+        vflySettings.keybind = Key
+        Library:Notify("V Fly", "Keybind updated to: " .. tostring(Key), 2)
+    end
+})
+
+VFlyGroup:AddKeybind({
+    Title = "Кнопка для буста",
+    Default = vflySettings.speedKey,
+    Flag = "VFlyBoostKey",
+    Callback = function(Key)
+        vflySettings.speedKey = Key
+        Library:Notify("V Fly", "Boost key updated to: " .. tostring(Key), 2)
+    end
+})
+
+
+-- НАСТРОЙКИ
+
+
+local InterfaceGroup = InterfacePage:Groupbox("Настройки интерфейса", "Left")
+
+InterfaceGroup:AddToggle({
+    Title = "Показывать водяной знак",
+    Default = true,
+    Flag = "WatermarkToggle",
+    Callback = function(Value)
+        Library.WatermarkSettings.Enabled = Value
+    end
+})
+
+InterfaceGroup:AddTextbox({
+    Title = "Текст водяного знака",
+    Default = "",
+    Placeholder = "Введите свой текст...",
+    ClearOnFocus = false,
+    Callback = function(Value)
+        Library.WatermarkSettings.Text = Value
+    end
+})
+
+-- ==================== ТЕМА И ЦВЕТА ====================
+local ThemeGroup = InterfacePage:Groupbox("Тема и цвета", "Right")
+
+-- Предустановленные темы
+local ThemeList = {"По умолчанию", "Темная", "Фиолетовая", "Зеленая", "Синяя", "Красная"}
+if Library.ThemePresets then
+    for ThemeName, _ in pairs(Library.ThemePresets) do
+        table.insert(ThemeList, ThemeName)
+    end
+    table.sort(ThemeList)
+end
+
+ThemeGroup:AddDropdown({
+    Title = "Предустановленная тема",
+    Values = ThemeList,
+    Default = "По умолчанию",
+    Multi = false,
+    Callback = function(Value)
+        if Library.SetTheme then
+            Library:SetTheme(Value)
+            Library:Notify("Тема", "Применена тема: " .. Value, 2)
+        end
+    end
+})
+
+ThemeGroup:AddSeparator()
+
+-- Кастомизация цветов
+ThemeGroup:AddLabel("Пользовательские цвета")
+
+ThemeGroup:AddColorPicker({
+    Title = "Акцентный цвет", 
+    Default = Library.Theme.Accent or Color3.fromRGB(0, 170, 255), 
+    Flag = "ThemeAccent",
+    Callback = function(Color, Alpha)
+        if Library.UpdateTheme then
+            Library:UpdateTheme("Accent", Color)
+        end
+    end
+})
+
+ThemeGroup:AddColorPicker({
+    Title = "Фон", 
+    Default = Library.Theme.Background or Color3.fromRGB(20, 20, 20), 
+    Flag = "ThemeBackground",
+    Callback = function(Color, Alpha)
+        if Library.UpdateTheme then
+            Library:UpdateTheme("Background", Color)
+        end
+    end
+})
+
+ThemeGroup:AddColorPicker({
+    Title = "Текст", 
+    Default = Library.Theme.Text or Color3.fromRGB(255, 255, 255), 
+    Flag = "ThemeText",
+    Callback = function(Color, Alpha)
+        if Library.UpdateTheme then
+            Library:UpdateTheme("Text", Color)
+        end
+    end
+})
+
+ThemeGroup:AddButton({
+    Title = "Сбросить цвета",
+    Callback = function()
+        if Library.SetTheme then
+            Library:SetTheme("Default")
+            Library:Notify("Тема", "Цвета сброшены", 2)
+        end
+    end
+})
+
+-- ==================== НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ ====================
+local PerformanceGroup = PerformancePage:Groupbox("Оптимизация", "Left")
+
+PerformanceGroup:AddButton({
+    Title = "Оптимизировать игру",
+    Description = "Улучшить FPS игры",
+    Callback = function()
+        local Lighting = game:GetService("Lighting")
+        
+        -- Базовая оптимизация графики
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 100000
+        Lighting.Brightness = 2
+        
+        -- Оптимизация для различных типов игр
+        if game:GetService("Terrain") then
+            game:GetService("Terrain").Decoration = false
+        end
+        
+        Library:Notify("Оптимизация", "Настройки графики применены", 3)
+    end
+})
+
+-- ==================== ГОРЯЧИЕ КЛАВИШИ ====================
+local KeybindsGroup = GamePage:Groupbox("Горячие клавиши", "Left")
+
+-- Горячая клавиша для показа/скрытия UI
+local uiVisible = true
+KeybindsGroup:AddKeybind({
+    Title = "Показать/Скрыть UI",
+    Default = Enum.KeyCode.RightShift,
+    Flag = "ToggleUIKey",
+    Callback = function(Key)
+        -- Сохраняем клавишу в настройках
+        Library.Settings.ToggleUIKey = Key
+        Library:Notify("Клавиша", "Клавиша установлена: " .. tostring(Key), 2)
+    end
+})
+
+-- Обработка горячей клавиши в отдельном потоке
+task.spawn(function()
+    while true do
+        task.wait()
+        if Library.Settings and Library.Settings.ToggleUIKey then
+            if UserInputService:IsKeyDown(Library.Settings.ToggleUIKey) then
+                if Window.Instance then
+                    Window.Instance.Enabled = not uiVisible
+                    uiVisible = not uiVisible
+                    task.wait(0.3) -- Задержка для предотвращения спама
+                end
+            end 
+        end
+    end
+end)
+
+-- Альтернативная клавиша для скрытия
+KeybindsGroup:AddKeybind({
+    Title = "Экстренное скрытие",
+    Default = Enum.KeyCode.End,
+    Flag = "HideUIKey",
+    Callback = function(Key)
+        if Window.Instance then
+            Window.Instance.Enabled = false
+            uiVisible = false
+            Library:Notify("UI", "Интерфейс скрыт", 1)
+        end
+    end
+})
+local GameSettingsGroup = GamePage:Groupbox("Настройки персонажа", "Right")
+GameSettingsGroup:AddButton({
+    Title = "Телепорт на спавн",
+    Callback = function()
+        local spawnPoints = {
+            workspace:FindFirstChild("SpawnLocation"),
+            workspace:FindFirstChild("Spawn"),
+            workspace:FindFirstChild("SpawnPoint")
+        }
+        for _, spawn in pairs(spawnPoints) do
+            if spawn then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = spawn.CFrame
+                    Library:Notify("Телепорт", "Перенесен на спавн", 2)
+                    return
+                end
+            end
+        end
+        Library:Notify("Ошибка", "Спавн не найден", 3)
+    end
+})
+local SecurityGroup = SecurityPage:Groupbox("Защита", "Left")
+SecurityGroup:AddToggle({
+    Title = "Анти-афк",
+    Default = true,
+    Description = "Предотвращать кик за бездействие",
+    Callback = function(Value)
+        if Value then
+            local vu = game:GetService("VirtualUser")
+            game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                wait(1)
+                vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+            Library:Notify("Защита", "Анти-АФК активирован", 2)
+        else
+            Library:Notify("Защита", "Анти-АФК отключен", 2)
+        end
+    end
+})
+
+SecurityGroup:AddToggle({
+    Title = "Скрывать интерфейс",
+    Default = false,
+    Description = "Автоматически скрывать UI при скриншотах",
+    Callback = function(Value)
+        Library.Settings.AutoHide = Value
+        if Value then
+            Library:Notify("Защита", "UI будет скрываться при PrintScreen", 2)
+        end
+    end
+})
+
+SecurityGroup:AddToggle({
+    Title = "Защита от вылетов",
+    Default = true,
+    Description = "Пытаться предотвратить вылеты игры",
+    Callback = function(Value)
+        Library.Settings.CrashProtection = Value
+        if Value then
+            -- Базовая защита от распространенных вылетов
+            game:GetService("ScriptContext").Error:Connect(function(message, trace)
+                if string.find(message:lower(), "crash") or string.find(message:lower(), "kick") then
+                    warn("Защита: предотвращен вылет - " .. message)
+                end
+            end)
+        end
+    end
+})
+
+local InfoGroup = PerformancePage:Groupbox("Информация", "Right")
+
+InfoGroup:AddLabelText("Версия скрипта:", "RedOnyx V17")
+InfoGroup:AddLabelText("Игра:", game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+InfoGroup:AddLabelText("Игрок:", LocalPlayer.Name)
+InfoGroup:AddLabelText("Место в игре:", game.PlaceId)
+
+local fpsLabel = InfoGroup:AddLabel("FPS: 60")
+task.spawn(function()
+    local frames = 0
+    local lastTime = tick()
+    
+    while true do
+        task.wait(0.1)
+        frames = frames + 1
+        
+        if tick() - lastTime >= 1 then
+            local fps = math.floor(frames / (tick() - lastTime))
+            frames = 0
+            lastTime = tick()
+        end
+    end
+end)
+InfoGroup:AddSeparator()
+InfoGroup:AddButton({
+    Title = "Скопировать информацию",
+    Description = "Скопировать информацию об игре",
+    Callback = function()
+        local info = string.format([[
+Игра: %s
+ID игры: %s
+Игрок: %s
+Сервер: %s
+]], 
+            game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+            game.PlaceId,
+            LocalPlayer.Name,
+            game.JobId
+        )
+        setclipboard(info)
+        Library:Notify("Инфо", "Информация скопирована!", 2)
+    end
+})
+local QuickActionsGroup = SecurityPage:Groupbox("Быстрые действия", "Right")
+QuickActionsGroup:AddButton({
+    Title = "Переподключиться",
+    Description = "Вернуться на этот сервер",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId)
+    end
+})
+QuickActionsGroup:AddButton({
+    Title = "Сменить сервер",
+    Description = "Перейти на другой сервер",
+    Callback = function()
+        -- Простой поиск другого сервера
+        local success, result = pcall(function()
+            return game:GetService("HttpService"):JSONDecode(
+                game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?limit=10")
+            )
+        end)
+        if success and result.data then
+            for _, server in pairs(result.data) do
+                if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id)
+                    return
+                end
+            end
+        end
+        Library:Notify("Ошибка", "Не удалось найти сервер", 3)
+    end
+})
+QuickActionsGroup:AddButton({
+    Title = "Скопировать ID игры",
+    Callback = function()
+        setclipboard(tostring(game.PlaceId))
+        Library:Notify("Инфо", "ID игры скопирован!", 2)
+    end
+})
+QuickActionsGroup:AddButton({
+    Title = "Сбросить персонажа",
+    Callback = function()
+        if LocalPlayer.Character then
+            LocalPlayer.Character:BreakJoints()
+            task.wait(0.5)
+            if LocalPlayer.Character then
+                LocalPlayer.Character:Destroy()
+            end
+        end
+    end
+})
+musicToggle = MusicGroup:AddToggle({
+    Title = "Включить музыку",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            playMusic()
+        else
+            stopMusic()
+        end
+    end
+})
+MusicGroup:AddSlider({
+    Title = "Громкость",
+    Min = 0,
+    Max = 5,
+    Default = currentVolume,
+    Rounding = 1,
+    Suffix = "",
+    Callback = function(Value)
+        setVolume(Value)
+    end
+})
+MusicGroup:AddToggle({
+    Title = "Повторять трек",
+    Default = isLooped,
+    Callback = function(Value)
+        isLooped = Value
+        if sound then
+            sound.Looped = isLooped
+        end
+    end
+})
+MusicGroup:AddButton({
+    Title = "Перезапустить трек",
+    Callback = function()
+        if sound then
+            sound:Stop()
+            task.wait(0.1)
+            sound:Play()
+            if musicToggle then
+                musicToggle:Set(true)
+            end
+        end
+    end
+})
+InfGroup:AddParagraph({
+    Title = "The Living Tombstone - \nCats (замедлено + \nреверберация)",
+    TextWrapped = true
+})
+game:GetService("Players").PlayerRemoving:Connect(function(player)
+    if player == LocalPlayer and sound then
+        sound:Stop()
+        sound:Destroy()
+    end
+end)
+local oldWarn = warn
+warn = function() end

@@ -1,0 +1,89 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Найти ближайший объект с заданным именем
+local function findNearestObject(objectName)
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    
+    local humanoidRoot = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRoot then return nil end
+    
+    local closestObject = nil
+    local minDistance = math.huge
+    
+    -- Ищем среди всех объектов в Workspace
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name == objectName and obj.Parent ~= nil then  -- Проверка что объект существует
+            local position
+            -- Получаем позицию в зависимости от типа объекта
+            if obj:IsA("BasePart") then
+                position = obj.Position
+            elseif obj:IsA("Model") then
+                position = obj:GetPivot().Position
+            else
+                continue
+            end
+            
+            local distance = (humanoidRoot.Position - position).Magnitude
+            if distance < minDistance then
+                minDistance = distance
+                closestObject = obj
+            end
+        end
+    end
+    
+    return closestObject
+end
+
+-- Основная функция телепортации (только к ближайшему объекту)
+getgenv().TPTO_ONLY = function(objectName)
+    if not objectName or type(objectName) ~= "string" then
+        warn("❌ Укажите название объекта: TPTO_ONLY(\"название_объекта\")")
+        return
+    end
+    
+    local character = LocalPlayer.Character
+    if not character then
+        warn("❌ Персонаж не найден")
+        return
+    end
+    
+    local humanoidRoot = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRoot then
+        warn("❌ Не найдена RootPart персонажа")
+        return
+    end
+    
+    local targetObject = findNearestObject(objectName)
+    if not targetObject then
+        warn("❌ Объект с именем '"..objectName.."' не найден")
+        return
+    end
+    
+    -- Получаем позицию объекта
+    local targetPosition
+    if targetObject:IsA("BasePart") then
+        targetPosition = targetObject.Position
+    elseif targetObject:IsA("Model") then
+        targetPosition = targetObject:GetPivot().Position
+    else
+        warn("❌ Неподдерживаемый тип объекта")
+        return
+    end
+    
+    -- Телепортируемся к объекту (с небольшим смещением вверх)
+    humanoidRoot.CFrame = CFrame.new(targetPosition + Vector3.new(0, 3, 0))
+    
+    print(string.format("✅ Телепортирован к ближайшему объекту: %s (расстояние: %.1f)", 
+        targetObject:GetFullName(),
+        (humanoidRoot.Position - targetPosition).Magnitude
+    ))
+end
+
+print("✨ TPTO_ONLY скрипт загружен!")
+print("TPTO_ONLY(\"название\") - телепорт к ближайшему объекту (однократно)")
+print("Примеры:")
+print("TPTO_ONLY(\"Дерево\") - телепорт к ближайшему дереву")
+print("TPTO_ONLY(\"Камень\") - телепорт к ближайшему камню")

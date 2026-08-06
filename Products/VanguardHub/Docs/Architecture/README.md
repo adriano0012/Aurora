@@ -1,0 +1,1 @@
+# Architecture Docs`n`nDocumentação arquitetural do VanguardHub.

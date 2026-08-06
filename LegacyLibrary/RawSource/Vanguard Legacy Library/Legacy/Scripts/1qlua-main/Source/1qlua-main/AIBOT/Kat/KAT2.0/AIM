@@ -1,0 +1,300 @@
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local AIM_SETTINGS = {
+    Hotkey = Enum.KeyCode.E,
+    TeamCheck = true,
+    MaxDistance = 1000,
+    ClickButton = 1,
+    FOV = 10000,
+    AutoShoot = true,
+    CheckWalls = true,
+    HeadshotChance = 0.25,
+    BodyShotChance = 0.75,
+    IgnoreGhosts = true,
+    IgnoreForceField = true
+}
+
+local localPlayer = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+
+local function isPlayerGhost(player)
+    if not player or not player.Character then return false end
+    
+    local character = player.Character
+    if AIM_SETTINGS.IgnoreForceField then
+        local forceField = character:FindFirstChildOfClass("ForceField")
+        if forceField then
+            return true
+        end
+    end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        if humanoid.Health <= 0 then
+            return true
+        end
+        
+        if humanoid:GetAttribute("IsGhost") == true then
+            return true
+        end
+    end
+    
+    return false
+end
+
+local function isVisible(targetPart)
+    if not AIM_SETTINGS.CheckWalls then return true end
+    
+    local character = localPlayer.Character
+    if not character then return false end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return false end
+    
+    local origin = humanoidRootPart.Position
+    local direction = (targetPart.Position - origin).Unit
+    local distance = (targetPart.Position - origin).Magnitude
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
+    
+    local raycastResult = Workspace:Raycast(origin, direction * distance, raycastParams)
+    
+    return raycastResult == nil
+end
+
+local function getTargetPosition(player)
+    if not player or not player.Character then return nil end
+    
+    if AIM_SETTINGS.IgnoreGhosts and isPlayerGhost(player) then
+        return nil
+    end
+    
+    local character = player.Character
+    
+    local randomValue = math.random()
+    
+    if randomValue <= AIM_SETTINGS.HeadshotChance then
+        local head = character:FindFirstChild("Head")
+        if head and isVisible(head) then
+            return head.Position
+        end
+    end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    
+    if humanoidRootPart and isVisible(humanoidRootPart) then
+        return humanoidRootPart.Position
+    elseif torso and isVisible(torso) then
+        return torso.Position
+    end
+    
+    return nil
+end
+
+local function getPlayerScreenPosition(player)
+    if not player or not player.Character then return nil end
+    
+    local targetPosition = getTargetPosition(player)
+    if not targetPosition then return nil end
+    
+    local screenPosition, visible = camera:WorldToViewportPoint(targetPosition)
+    
+    if visible then
+        return Vector2.new(screenPosition.X, screenPosition.Y)
+    end
+    
+    return nil
+end
+
+local function getMousePosition()
+    return UserInputService:GetMouseLocation()
+end
+
+local function isInFOV(screenPosition)
+    if not screenPosition then return false end
+    
+    local mousePos = getMousePosition()
+    local distance = (screenPosition - mousePos).Magnitude
+    
+    return distance <= AIM_SETTINGS.FOV
+end
+
+local function getNearestPlayerInFOV()
+    if not localPlayer or not localPlayer.Character then 
+        print("Локальный игрок не найден")
+        return nil 
+    end
+    
+    local localHumanoidRootPart = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not localHumanoidRootPart then 
+        print("HumanoidRootPart не найден")
+        return nil 
+    end
+    
+    local mousePos = getMousePosition()
+    local localPosition = localHumanoidRootPart.Position
+    local nearestPlayer = nil
+    local nearestDistance = math.huge
+    local nearestFOVDistance = math.huge
+    
+    local foundPlayers = 0
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player == localPlayer then continue end
+        
+        local character = player.Character
+        if not character then 
+            continue 
+        end
+        
+        if AIM_SETTINGS.TeamCheck and player.Team and localPlayer.Team and player.Team == localPlayer.Team then
+            continue
+        end
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+
+            continue
+        end
+        
+        if AIM_SETTINGS.IgnoreGhosts and isPlayerGhost(player) then
+            continue
+        end
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if not humanoidRootPart then 
+            continue 
+        end
+        local distance = (humanoidRootPart.Position - localPosition).Magnitude
+        if distance > AIM_SETTINGS.MaxDistance then
+            continue
+        end
+        local targetPos = getTargetPosition(player)
+        if not targetPos then
+            continue
+        end
+        
+        local screenPosition = getPlayerScreenPosition(player)
+        if screenPosition and isInFOV(screenPosition) then
+            local fovDistance = (mousePos - screenPosition).Magnitude
+            if fovDistance < nearestFOVDistance then
+                nearestFOVDistance = fovDistance
+                nearestPlayer = player
+                nearestDistance = distance
+                foundPlayers = foundPlayers + 1
+            end
+        else
+        end
+    end
+    
+    if nearestPlayer then
+    else
+    end
+    
+    return nearestPlayer, nearestDistance
+end
+local function clickAtPosition(position)
+    if not position then return false end
+    
+    VirtualInputManager:SendMouseMoveEvent(
+        position.X,
+        position.Y,
+        game:GetService("CoreGui")
+    )
+    if AIM_SETTINGS.ClickButton == 1 then
+        VirtualInputManager:SendMouseButtonEvent(
+            position.X, position.Y, 0, true, nil, 0
+        )
+        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(
+            position.X, position.Y, 0, false, nil, 0
+        )
+    else
+        VirtualInputManager:SendMouseButtonEvent(
+            position.X, position.Y, 1, true, nil, 0
+        )
+        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(
+            position.X, position.Y, 1, false, nil, 0
+        )
+    end
+    return true
+end
+
+local function shootNearestPlayer()
+    local nearestPlayer = getNearestPlayerInFOV()
+    if not nearestPlayer then
+        return false
+    end
+    
+    if AIM_SETTINGS.IgnoreGhosts and isPlayerGhost(nearestPlayer) then
+        return false
+    end
+    
+    local screenPosition = getPlayerScreenPosition(nearestPlayer)
+    if not screenPosition then
+        return false
+    end
+    return clickAtPosition(screenPosition)
+end
+local autoShootConnection
+local function toggleAutoShoot()
+    if AIM_SETTINGS.AutoShoot then
+        if autoShootConnection then
+            autoShootConnection:Disconnect()
+            autoShootConnection = nil
+        else
+            autoShootConnection = RunService.Heartbeat:Connect(function()
+                local target = getNearestPlayerInFOV()
+                if target then
+                    if not (AIM_SETTINGS.IgnoreGhosts and isPlayerGhost(target)) then
+                        shootNearestPlayer()
+                    end
+                end
+            end)
+        end
+    end
+end
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == AIM_SETTINGS.Hotkey then
+        if AIM_SETTINGS.AutoShoot then
+            toggleAutoShoot()
+        else
+            shootNearestPlayer()
+        end
+    end
+end)
+getgenv().SHOOT_NEAREST = shootNearestPlayer
+getgenv().TOGGLE_AUTO_SHOOT = toggleAutoShoot
+getgenv().GET_NEAREST_PLAYER = getNearestPlayerInFOV
+getgenv().IS_PLAYER_GHOST = isPlayerGhost
+getgenv().SETUP_AIM_SHOOT = function(settings)
+    if settings.Hotkey then AIM_SETTINGS.Hotkey = settings.Hotkey end
+    if settings.TeamCheck ~= nil then AIM_SETTINGS.TeamCheck = settings.TeamCheck end
+    if settings.MaxDistance then AIM_SETTINGS.MaxDistance = settings.MaxDistance end
+    if settings.ClickButton then AIM_SETTINGS.ClickButton = settings.ClickButton end
+    if settings.FOV then AIM_SETTINGS.FOV = settings.FOV end
+    if settings.AutoShoot ~= nil then AIM_SETTINGS.AutoShoot = settings.AutoShoot end
+    if settings.CheckWalls ~= nil then AIM_SETTINGS.CheckWalls = settings.CheckWalls end
+    if settings.HeadshotChance then AIM_SETTINGS.HeadshotChance = settings.HeadshotChance end
+    if settings.BodyShotChance then AIM_SETTINGS.BodyShotChance = settings.BodyShotChance end
+    if settings.IgnoreGhosts ~= nil then AIM_SETTINGS.IgnoreGhosts = settings.IgnoreGhosts end
+    if settings.IgnoreForceField ~= nil then AIM_SETTINGS.IgnoreForceField = settings.IgnoreForceField end
+end
+getgenv().DISABLE_GHOST_CHECK = function()
+    local oldSetting = AIM_SETTINGS.IgnoreGhosts
+    AIM_SETTINGS.IgnoreGhosts = false
+    return oldSetting
+end
+
+getgenv().ENABLE_GHOST_CHECK = function()
+    AIM_SETTINGS.IgnoreGhosts = true
+end

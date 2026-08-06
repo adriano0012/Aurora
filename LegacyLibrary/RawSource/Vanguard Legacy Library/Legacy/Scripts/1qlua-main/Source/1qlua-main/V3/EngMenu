@@ -1,0 +1,479 @@
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local coreGui = game:GetService("CoreGui")
+local players = game:GetService("Players")
+local runService = game:GetService("RunService")
+local tweenService = game:GetService("TweenService")
+local userInputService = game:GetService("UserInputService")
+local localPlayer = players.LocalPlayer
+local camera = workspace.CurrentCamera
+local mouse = localPlayer:GetMouse()
+
+local customButtons = {
+    {
+        name = "Noclip",
+        image = "rbxassetid://6479819618",
+        color = Color3.fromRGB(33, 193, 131),
+        scriptOn = function()
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Menu/script/Noclip11"))()
+        end,
+        scriptOff = function()
+              loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Menu/script/Noclip1"))()
+        end
+    },
+    {
+        name = "Esp",
+        image = "rbxassetid://135902940840625",
+        color = Color3.fromRGB(94, 170, 193),
+        scriptOn = function()
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Menu/script/ESP"))()
+        end,
+        scriptOff = function()
+              loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Menu/script/ESP"))()
+        end
+    },
+    {
+        name = "Fly",
+        image = "rbxassetid://9134755504",
+        color = Color3.fromRGB(184, 60, 193),
+        scriptOn = function()
+             loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Menu/script/FLY"))()
+        end,
+        scriptOff = function()
+              _G.DisableFly()
+        end
+    },
+    {
+        name = "Infinite Jump",
+        image = "rbxassetid://113429706896542",
+        color = Color3.fromRGB(193, 49, 83),
+        scriptOn = function()
+            if _G.InfiniteJumpConn then _G.InfiniteJumpConn:Disconnect() end
+            _G.InfiniteJumpConn = userInputService.JumpRequest:Connect(function()
+                local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                end
+            end)
+        end,
+        scriptOff = function()
+            if _G.InfiniteJumpConn then
+                _G.InfiniteJumpConn:Disconnect()
+                _G.InfiniteJumpConn = nil
+            end
+        end
+    },
+    {
+        name = "Day / night",
+        image = "rbxassetid://11887653877",
+        color = Color3.fromRGB(193, 110, 55),
+        scriptOn = function()
+              game:GetService("Lighting").ClockTime = 12
+        end,
+        scriptOff = function()
+             game:GetService("Lighting").ClockTime = 0
+        end
+    }
+}
+local sliders = {
+    {
+        name = "player speed",
+        color = Color3.fromRGB(44, 153, 93),
+        values = {0, 300},
+        default = 16,
+        value = 16,
+        enabled = false,
+        active = false,
+        callback = function(value)
+        end,
+    },
+    {
+        name = "jump power",
+        color = Color3.fromRGB(59, 126, 184),
+        values = {0, 350},
+        default = 50,
+        value = 50,
+        enabled = false,
+        active = false,
+        callback = function(value)
+        end,
+    },
+    {
+        name = "flight speed",
+        color = Color3.fromRGB(177, 45, 45),
+        values = {1, 1000},
+        default = 100,
+        value = 100,
+        enabled = false,
+        active = false,
+        callback = function(value)
+            _G.FlightSpeed = value
+        end,
+    },
+    {
+        name = "field of view",
+        color = Color3.fromRGB(198, 178, 75),
+        values = {45, 120},
+        default = 70,
+        value = 70,
+        enabled = false,
+        active = false,
+        callback = function(value)
+            tweenService:Create(camera, TweenInfo.new(0.6, Enum.EasingStyle.Exponential), { FieldOfView = value }):Play()
+        end,
+    },
+}
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+
+        local character = localPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        
+        for _, slider in ipairs(sliders) do
+            if slider.enabled then
+                if slider.name == "player speed" and humanoid then
+                    humanoid.WalkSpeed = slider.value
+                elseif slider.name == "jump power" and humanoid then
+                    if humanoid.UseJumpPower then
+                        humanoid.JumpPower = slider.value
+                    else
+                        humanoid.JumpHeight = slider.value
+                    end
+                elseif slider.name == "flight speed" then
+                    _G.FlightSpeed = slider.value
+                elseif slider.name == "field of view" then
+                    camera.FieldOfView = slider.value
+                end
+            end
+        end
+    end
+end)
+
+local guiParent = gethui and gethui() or coreGui
+local UI = game:GetObjects('rbxassetid://14183548964')[1]
+UI.Name = "CharacterPanel"
+UI.Parent = guiParent
+
+local characterPanel = UI:FindFirstChild("Character")
+if not characterPanel then
+    return
+end
+
+for _, child in ipairs(UI:GetChildren()) do
+    if child ~= characterPanel and child:IsA("Frame") then
+        child:Destroy()
+    end
+end
+if UI:FindFirstChild("Notifications") then UI.Notifications:Destroy() end
+if UI:FindFirstChild("Toasts") then UI.Toasts:Destroy() end
+if UI:FindFirstChild("SmartBar") then UI.SmartBar:Destroy() end
+if UI:FindFirstChild("Toggle") then UI.Toggle:Destroy() end
+
+characterPanel.Parent = UI
+characterPanel.Visible = true
+characterPanel.Position = UDim2.new(0.5, 0, 1, -120)
+characterPanel.Size = UDim2.new(0, 581, 0, 246)
+characterPanel.BackgroundTransparency = 0
+characterPanel.Title.TextTransparency = 0
+characterPanel.Icon.ImageTransparency = 0
+characterPanel.UIStroke.Transparency = 0.95
+characterPanel.Shadow.ImageTransparency = 0.7
+
+do
+    local dragging = false
+    local dragStart = Vector2.new()
+    local panelPosUDim = nil
+    local panelSize = Vector2.new()
+
+    characterPanel.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            panelPosUDim = characterPanel.Position
+            panelSize = Vector2.new(characterPanel.AbsoluteSize.X, characterPanel.AbsoluteSize.Y)
+        end
+    end)
+
+    characterPanel.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    characterPanel.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            local viewport = camera.ViewportSize
+            local currentAbsX = panelPosUDim.X.Scale * viewport.X + panelPosUDim.X.Offset
+            local currentAbsY = panelPosUDim.Y.Scale * viewport.Y + panelPosUDim.Y.Offset
+            local newAbsX = currentAbsX + delta.X
+            local newAbsY = currentAbsY + delta.Y
+            local newOffsetX = newAbsX - panelPosUDim.X.Scale * viewport.X
+            local newOffsetY = newAbsY - panelPosUDim.Y.Scale * viewport.Y
+
+            characterPanel.Position = UDim2.new(panelPosUDim.X.Scale, newOffsetX, panelPosUDim.Y.Scale, newOffsetY)
+        end
+    end)
+end
+
+local grid = characterPanel.Interactions.Grid
+for _, child in ipairs(grid:GetChildren()) do
+    if child:IsA("Frame") and child.Name ~= "Template" then
+        child:Destroy()
+    end
+end
+
+local gridScroller = Instance.new("ScrollingFrame")
+gridScroller.Name = "Scroller"
+gridScroller.Size = UDim2.new(1, 0, 1, 0)
+gridScroller.Position = UDim2.new(0, 0, 0, 0)
+gridScroller.BackgroundTransparency = 1
+gridScroller.ScrollBarThickness = 4
+gridScroller.ScrollingDirection = Enum.ScrollingDirection.Y
+gridScroller.AutomaticCanvasSize = Enum.AutomaticSize.Y
+gridScroller.Parent = grid
+
+local gridContainer = Instance.new("Frame")
+gridContainer.Name = "Container"
+gridContainer.Size = UDim2.new(1, 0, 0, 0) 
+gridContainer.Position = UDim2.new(0.01, 0.01, 0.01, 0.01)
+gridContainer.BackgroundTransparency = 1
+gridContainer.AutomaticSize = Enum.AutomaticSize.Y
+gridContainer.Parent = gridScroller
+
+local gridPadding = Instance.new("UIPadding")
+gridPadding.Parent = gridContainer
+gridPadding.PaddingRight = UDim.new(0, gridScroller.ScrollBarThickness + 8)
+
+local gridLayout = grid:FindFirstChildOfClass("UIGridLayout")
+if gridLayout then
+    local newGridLayout = gridLayout:Clone()
+    newGridLayout.Parent = gridContainer
+    newGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    newGridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    gridLayout:Destroy()
+end
+grid.Template.Visible = false
+local function updateGridCanvas()
+    gridScroller.CanvasSize = UDim2.new(0, 0, 0, gridContainer.AbsoluteSize.Y)
+end
+gridContainer:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateGridCanvas)
+
+for i, btnData in ipairs(customButtons) do
+    local newBtn = grid.Template:Clone()
+    newBtn.Name = btnData.name
+    newBtn.Parent = gridContainer
+    newBtn.BackgroundColor3 = btnData.color
+    newBtn.UIStroke.Color = btnData.color
+    newBtn.Icon.Image = btnData.image
+    newBtn.Visible = true
+    newBtn.BackgroundTransparency = 0.55
+    newBtn.UIStroke.Transparency = 0.4
+    newBtn.Icon.ImageTransparency = 0.5
+    
+    local isOn = false
+    
+    newBtn.MouseEnter:Connect(function()
+        characterPanel.Interactions.ActionsTitle.Text = string.upper(btnData.name)
+        if isOn then return end
+        tweenService:Create(newBtn, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.4}):Play()
+        tweenService:Create(newBtn.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.6}):Play()
+    end)
+    
+    newBtn.MouseLeave:Connect(function()
+        if isOn then return end
+        tweenService:Create(newBtn, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.55}):Play()
+        tweenService:Create(newBtn.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.4}):Play()
+    end)
+    
+    grid.MouseLeave:Connect(function()
+        characterPanel.Interactions.ActionsTitle.Text = "PLAYER ACTIONS"
+    end)
+    
+    newBtn.Interact.MouseButton1Click:Connect(function()
+        isOn = not isOn
+        if isOn then
+            pcall(btnData.scriptOn)
+            tweenService:Create(newBtn, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.1}):Play()
+            tweenService:Create(newBtn.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Transparency = 1}):Play()
+            tweenService:Create(newBtn.Icon, TweenInfo.new(0.45, Enum.EasingStyle.Quint), {ImageTransparency = 0.1}):Play()
+        else
+            pcall(btnData.scriptOff)
+            tweenService:Create(newBtn, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.55}):Play()
+            tweenService:Create(newBtn.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.4}):Play()
+            tweenService:Create(newBtn.Icon, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {ImageTransparency = 0.5}):Play()
+        end
+    end)
+end
+updateGridCanvas()
+
+local slidersContainer = characterPanel.Interactions.Sliders
+for _, child in ipairs(slidersContainer:GetChildren()) do
+    if child:IsA("Frame") and child.Name ~= "Template" then
+        child:Destroy()
+    end
+end
+
+local slidersScroller = Instance.new("ScrollingFrame")
+slidersScroller.Name = "Scroller"
+slidersScroller.Size = UDim2.new(1.2, 0, 1, 0)
+slidersScroller.Position = UDim2.new(-0.1, 0, 0, 0)
+slidersScroller.BackgroundTransparency = 1
+slidersScroller.ScrollBarThickness = 4
+slidersScroller.ScrollingDirection = Enum.ScrollingDirection.Y
+slidersScroller.AutomaticCanvasSize = Enum.AutomaticSize.Y
+slidersScroller.Parent = slidersContainer
+
+local slidersContainerFrame = Instance.new("Frame")
+slidersContainerFrame.Name = "Container"
+slidersContainerFrame.Size = UDim2.new(1, 0, 0, 0)
+slidersContainerFrame.Position = UDim2.new(0, 0, 0.02, 0)
+slidersContainerFrame.BackgroundTransparency = 1
+slidersContainerFrame.AutomaticSize = Enum.AutomaticSize.Y
+slidersContainerFrame.Parent = slidersScroller
+
+local slidersPadding = Instance.new("UIPadding")
+slidersPadding.Parent = slidersContainerFrame
+slidersPadding.PaddingRight = UDim.new(0, slidersScroller.ScrollBarThickness + -8)
+
+local slidersLayout = slidersContainer:FindFirstChildOfClass("UIListLayout")
+if slidersLayout then
+    local newSlidersLayout = slidersLayout:Clone()
+    newSlidersLayout.Parent = slidersContainerFrame
+    slidersLayout:Destroy()
+end
+slidersContainer.Template.Visible = false
+
+local function updateSlidersCanvas()
+    slidersScroller.CanvasSize = UDim2.new(0, 0, 0, slidersContainerFrame.AbsoluteSize.Y)
+end
+slidersContainerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateSlidersCanvas)
+
+local function updateSlider(data, setValue)
+    local sliderFrame = data.object.Interact
+    local sliderPos = sliderFrame.AbsolutePosition.X
+    local sliderSize = sliderFrame.AbsoluteSize.X
+    local relative
+    if setValue then
+        setValue = math.clamp(setValue, data.values[1], data.values[2])
+        relative = (setValue - data.values[1]) / (data.values[2] - data.values[1])
+    else
+        local mouseX = mouse.X
+        relative = (mouseX - sliderPos) / sliderSize
+        relative = math.clamp(relative, 0, 1)
+    end
+    data.object.Progress.Size = UDim2.new(relative, 0, 1, 0)
+    local value = data.values[1] + (data.values[2] - data.values[1]) * relative
+    value = math.floor(value + 0.5)
+    data.object.Information.Text = value .. " " .. data.name
+    data.value = value
+    if data.callback and not setValue then
+        data.callback(value)
+    elseif setValue then
+        data.callback(value)
+    end
+end
+
+for _, slider in ipairs(sliders) do
+    local newSlider = slidersContainer.Template:Clone()
+    newSlider.Name = slider.name .. " Slider"
+    newSlider.Parent = slidersContainerFrame
+    newSlider.BackgroundColor3 = slider.color
+    newSlider.Progress.BackgroundColor3 = slider.color
+    newSlider.UIStroke.Color = slider.color
+    newSlider.Information.Text = slider.name
+    newSlider.Visible = true
+    slider.object = newSlider
+    
+    newSlider.MouseEnter:Connect(function()
+        if slider.enabled then return end
+        tweenService:Create(newSlider, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.85}):Play()
+        tweenService:Create(newSlider.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.6}):Play()
+        tweenService:Create(newSlider.Information, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {TextTransparency = 0.2}):Play()
+    end)
+    
+    newSlider.MouseLeave:Connect(function()
+        if slider.enabled then return end
+        tweenService:Create(newSlider, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.8}):Play()
+        tweenService:Create(newSlider.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.5}):Play()
+        tweenService:Create(newSlider.Information, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {TextTransparency = 0.3}):Play()
+    end)
+    
+    newSlider.Interact.MouseButton1Down:Connect(function()
+        slider.active = true
+        if not slider.enabled then
+            tweenService:Create(slider.object, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.9}):Play()
+            tweenService:Create(slider.object.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
+            tweenService:Create(slider.object.Information, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {TextTransparency = 0.05}):Play()
+        end
+    end)
+    
+    updateSlider(slider, slider.default)
+end
+updateSlidersCanvas()
+
+userInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        for _, slider in ipairs(sliders) do
+            if slider.active then
+                slider.enabled = true
+                slider.active = false
+                
+                tweenService:Create(slider.object, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.7}):Play()
+                tweenService:Create(slider.object.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {Transparency = 0.8}):Play()
+                tweenService:Create(slider.object.Information, TweenInfo.new(0.4, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()
+            end
+        end
+    end
+end)
+
+mouse.Move:Connect(function()
+    for _, slider in ipairs(sliders) do
+        if slider.active then
+            updateSlider(slider)
+        end
+    end
+end)
+
+characterPanel.Interactions.Reset.MouseButton1Click:Connect(function()
+    for _, slider in ipairs(sliders) do
+        updateSlider(slider, slider.default)
+    end
+    tweenService:Create(characterPanel.Interactions.Reset, TweenInfo.new(.5, Enum.EasingStyle.Back), {Rotation = 0}):Play()
+end)
+
+characterPanel.Interactions.Reset.MouseEnter:Connect(function()
+    tweenService:Create(characterPanel.Interactions.Reset, TweenInfo.new(.5, Enum.EasingStyle.Quint), {ImageTransparency = 0}):Play()
+end)
+characterPanel.Interactions.Reset.MouseLeave:Connect(function()
+    tweenService:Create(characterPanel.Interactions.Reset, TweenInfo.new(.5, Enum.EasingStyle.Quint), {ImageTransparency = 0.7}):Play()
+end)
+
+characterPanel.Interactions.Serverhop.Interact.MouseButton1Click:Connect(function()
+    local httpService = game:GetService("HttpService")
+    local teleportService = game:GetService("TeleportService")
+    local placeId = game.PlaceId
+    local jobId = game.JobId
+    local servers = {}
+    local success, data = pcall(function()
+        return httpService:JSONDecode(game:HttpGetAsync("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100")).data
+    end)
+    if success then
+        for _, v in ipairs(data) do
+            if type(v) == "table" and v.maxPlayers > v.playing and v.id ~= jobId then
+                table.insert(servers, v.id)
+            end
+        end
+        if #servers > 0 then
+            teleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], localPlayer)
+        end
+    end
+end)
+
+characterPanel.Interactions.Rejoin.Interact.MouseButton1Click:Connect(function()
+    game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, localPlayer)
+end)
+
+_G.CharacterPanel = characterPanel

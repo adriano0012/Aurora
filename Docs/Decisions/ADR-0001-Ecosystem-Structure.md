@@ -1,0 +1,1 @@
+# ADR-0001 Ecosystem Structure`n`nDecisão: separar o ecossistema Aurora em produtos, pesquisa legacy, infraestrutura, jogos próprios e áreas compartilhadas.

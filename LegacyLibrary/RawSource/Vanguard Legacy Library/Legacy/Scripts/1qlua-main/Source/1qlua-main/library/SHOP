@@ -1,0 +1,68 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Функция для уведомлений
+local function Notify(title, message)
+    print("["..title.."] "..message)
+    -- Можно добавить GUI-уведомление через библиотеку, если нужно
+end
+
+getgenv().SHOP = function()
+    local PlaceId = game.PlaceId
+    local JobId = game.JobId
+    
+    -- Получаем список серверов
+    local success, servers = pcall(function()
+        local serverList = {}
+        local response = game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
+        local data = HttpService:JSONDecode(response)
+        
+        if data and data.data then
+            for _, server in ipairs(data.data) do
+                if type(server) == "table" and tonumber(server.playing) and tonumber(server.maxPlayers) then
+                    if server.playing < server.maxPlayers and server.id ~= JobId then
+                        table.insert(serverList, server.id)
+                    end
+                end
+            end
+        end
+        
+        return serverList
+    end)
+    
+    -- Обработка ошибок
+    if not success then
+        Notify("SHOP Error", "Failed to get server list")
+        return false
+    end
+    
+    -- Выбор сервера
+    if #servers > 0 then
+        local randomServer = servers[math.random(1, #servers)]
+        Notify("SHOP", "Joining new server...")
+        
+        -- Пытаемся телепортироваться
+        local teleportSuccess = pcall(function()
+            TeleportService:TeleportToPlaceInstance(PlaceId, randomServer, LocalPlayer)
+        end)
+        
+        if not teleportSuccess then
+            Notify("SHOP Error", "Teleport failed, trying again...")
+            task.wait(2)
+            TeleportService:TeleportToPlaceInstance(PlaceId, randomServer, LocalPlayer)
+        end
+    else
+        Notify("SHOP", "No available servers found")
+        return false
+    end
+    
+    return true
+end
+
+-- Альтернативные команды
+getgenv().SERVERHOP = SHOP
+getgenv().REJOIN = function()
+    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end

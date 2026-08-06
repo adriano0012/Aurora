@@ -1,0 +1,1 @@
+# Update`n`nEstrutura futura para manifests, canais e rollback. Ainda não implementado.

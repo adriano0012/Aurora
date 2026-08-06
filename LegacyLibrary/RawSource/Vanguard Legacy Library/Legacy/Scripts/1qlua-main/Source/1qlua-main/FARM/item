@@ -1,0 +1,59 @@
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+print("=== Скрипт запущен ===")
+
+local function debugPrint(message)
+    print("[DEBUG] " .. message)
+end
+
+local function pressKey()
+    debugPrint("Нажимаю клавишу 1")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+end
+
+local function checkWeapon()
+    -- Проверяем три возможных места, где может быть оружие
+    local weaponFound = false
+    
+    -- 1. В руках персонажа
+    if localPlayer.Character then
+        if localPlayer.Character:FindFirstChild("WeaponHandle") then
+            debugPrint("Оружие найдено в руках")
+            weaponFound = true
+        end
+    end
+    
+    -- 2. В инвентаре (Backpack)
+    local backpack = localPlayer:FindFirstChild("Backpack")
+    if backpack and backpack:FindFirstChild("WeaponHandle") then
+        debugPrint("Оружие найдено в инвентаре")
+        weaponFound = true
+    end
+    
+    -- 3. В рабочем пространстве (Workspace)
+    local weaponInWorkspace = workspace:FindFirstChild(localPlayer.Name)
+    if weaponInWorkspace and weaponInWorkspace:FindFirstChild("WeaponHandle") then
+        debugPrint("Оружие найдено в workspace")
+        weaponFound = true
+    end
+    
+    return weaponFound
+end
+
+debugPrint("Начинаю основной цикл проверки")
+
+while task.wait(1) do
+    debugPrint("Проверяю наличие оружия...")
+    local hasWeapon = checkWeapon()
+    
+    if not hasWeapon then
+        debugPrint("Оружие не найдено, пытаюсь взять")
+        pressKey()
+    else
+        debugPrint("Оружие уже есть, ничего не делаю")
+    end
+end

@@ -1,0 +1,215 @@
+-- LocalScript - Улучшенная версия с BodyVelocity
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+
+-- Конфигурация
+local MAX_SPEED = 20
+local CHECK_INTERVAL = 0.2
+local TELEPORT_BACK = true
+local LOGS_ENABLED = true
+local FREEZE_DURATION = 0.3
+local ENABLED = true
+
+-- Данные
+local lastPosition = nil
+local lastCheckTime = tick()
+local lastValidPosition = Vector3.new(0,0,0)
+local isFrozen = false
+local freezeUntil = 0
+local systemActive = ENABLED
+local freezeBodyVelocity = nil
+
+-- Функция для надежной заморозки
+function freezePlayer(duration)
+    if not systemActive or not TELEPORT_BACK then return end
+    
+    isFrozen = true
+    freezeUntil = tick() + duration
+    
+    local character = Player.Character
+    if not character then return end
+    
+    -- Удаляем старый BodyVelocity если есть
+    if freezeBodyVelocity then
+        freezeBodyVelocity:Destroy()
+        freezeBodyVelocity = nil
+    end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    -- Создаем BodyVelocity для полной остановки
+    freezeBodyVelocity = Instance.new("BodyVelocity")
+    freezeBodyVelocity.Name = "AntiSpeedFreeze"
+    freezeBodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    freezeBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    freezeBodyVelocity.P = 100000
+    freezeBodyVelocity.Parent = root
+    
+    -- Замораживаем Humanoid
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 0
+        humanoid.JumpPower = 0
+    end
+    
+    -- Автоматическое снятие через duration секунд
+    task.delay(duration, function()
+        if freezeBodyVelocity and freezeBodyVelocity.Parent then
+            freezeBodyVelocity:Destroy()
+        end
+        freezeBodyVelocity = nil
+        
+        if humanoid and humanoid.Parent then
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+        end
+        
+        isFrozen = false
+    end)
+    
+    if LOGS_ENABLED then
+        print(string.format("[AntiSpeed] Полная заморозка на %.1f сек", duration))
+    end
+end
+
+-- Функция принудительной остановки
+function forceStopPlayer()
+    local character = Player.Character
+    if not character then return end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    -- Останавливаем физически
+    root.Velocity = Vector3.new(0, 0, 0)
+    root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+end
+
+-- Основная логика
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.P then
+        systemActive = not systemActive
+        
+        if systemActive then
+            print("[AntiSpeed] Включено")
+            -- При включении берем текущую позицию
+            local character = Player.Character
+            if character then
+                local root = character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    lastValidPosition = root.Position
+                    lastPosition = root.Position
+                end
+            end
+        else
+            print("[AntiSpeed] Выключено")
+            -- При выключении убираем заморозку если была
+            if freezeBodyVelocity then
+                freezeBodyVelocity:Destroy()
+                freezeBodyVelocity = nil
+            end
+            isFrozen = false
+        end
+    end
+end)
+
+-- Основной цикл
+RunService.Heartbeat:Connect(function(deltaTime)
+    if not systemActive then return end
+    
+    -- Проверяем конец заморозки
+    if isFrozen and tick() > freezeUntil then
+        isFrozen = false
+        if freezeBodyVelocity then
+            freezeBodyVelocity:Destroy()
+            freezeBodyVelocity = nil
+        end
+    end
+    
+    if isFrozen then return end
+    
+    local character = Player.Character
+    if not character then return end
+    
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    local currentPos = root.Position
+    local currentTime = tick()
+    
+    if lastPosition then
+        local timePassed = currentTime - lastCheckTime
+        
+        if timePassed >= CHECK_INTERVAL then
+            local distance = (currentPos - lastPosition).Magnitude
+            local speed = distance / timePassed
+            
+            -- Проверка скорости
+            if speed > MAX_SPEED then
+                if LOGS_ENABLED then
+                    print(string.format("[AntiSpeed] Нарушение! %.1f > %d", speed, MAX_SPEED))
+                end
+                
+                if TELEPORT_BACK then
+                    -- 1. Телепортация назад
+                    root.CFrame = CFrame.new(lastValidPosition)
+                    
+                    -- 2. Принудительная остановка
+                    forceStopPlayer()
+                    
+                    -- 3. Заморозка на месте
+                    freezePlayer(FREEZE_DURATION)
+                    
+                    -- 4. Обновляем UI
+                    print("[AntiSpeed] Игрок остановлен и заморожен")
+                end
+            else
+                -- Обновляем валидную позицию если скорость нормальная
+                lastValidPosition = currentPos
+            end
+            
+            lastPosition = currentPos
+            lastCheckTime = currentTime
+        end
+    else
+        -- Инициализация
+        lastPosition = currentPos
+        lastValidPosition = currentPos
+        lastCheckTime = currentTime
+    end
+end)
+
+-- Сброс при респавне
+Player.CharacterAdded:Connect(function(character)
+    wait(0.5)
+    
+    -- Убираем заморозку
+    if freezeBodyVelocity then
+        freezeBodyVelocity:Destroy()
+        freezeBodyVelocity = nil
+    end
+    isFrozen = false
+    
+    -- Сбрасываем данные
+    lastPosition = nil
+    lastValidPosition = Vector3.new(0,0,0)
+    
+    -- Восстанавливаем управление
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+    end
+    
+    print("[AntiSpeed] Респавн - сброс системы")
+end)
+
+print("[AntiSpeed] Загружено! Нажмите P для включения/выключения")
+print("[AntiSpeed] При нарушении: телепортация + полная остановка")

@@ -1,0 +1,1 @@
+# ADR-0002 Product Separation`n`nDecisão: cada produto oficial possui raiz própria e não compartilha código por proximidade física.

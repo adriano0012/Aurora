@@ -1,0 +1,221 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+
+local UI_SPEED = 1.5
+local WORLD_SPEED = 3
+local TRACER_SPEED = 100
+local ROT_SPEED = 45
+local ASSET_ID = "rbxassetid://138895356591238"
+local FACES = Enum.NormalId:GetEnumItems()
+
+local mainGui = player.PlayerGui:WaitForChild("MainGui")
+local mainFrame = mainGui:WaitForChild("MainFrame")
+local fighterInterfaces = mainFrame:WaitForChild("FighterInterfaces")
+local michael = fighterInterfaces:WaitForChild("MichaelN0va34")
+local itemInterfaces = mainFrame:WaitForChild("ItemInterfaces")
+local ammoContainer = michael:WaitForChild("Hotbar"):WaitForChild("Container"):WaitForChild("AmmoDisplays")
+local healthBar = michael:WaitForChild("Health"):WaitForChild("Container"):WaitForChild("Health"):WaitForChild("Bar")
+
+local gradientData = {}
+local worldEmitters = {}
+local tracers = {}
+local texturedParts = {}
+
+local WHITE = Color3.new(1, 1, 1)
+local UI_INTERVAL = 1 / 30
+local WORLD_INTERVAL = 1 / 30
+local lastUI = 0
+local lastWorld = 0
+
+local function getSoftColor(hue)
+	return Color3.fromHSV(hue % 1, 0.8, 1)
+end
+
+local function getRgbColor(t, speed)
+	return Color3.fromHSV((t * 0.1 * speed) % 1, 1, 1)
+end
+
+local function getTypeFlag(obj)
+	if obj:IsA("TextLabel") or obj:IsA("TextButton") then return 1 end
+	if obj:IsA("Frame") or obj:IsA("ScrollingFrame") then return 2 end
+	return 0
+end
+
+local function setupGradient(obj, name)
+	local g = obj:FindFirstChild(name)
+	if not g then
+		g = Instance.new("UIGradient")
+		g.Name = name
+		g.Parent = obj
+	end
+	gradientData[g] = { obj, getTypeFlag(obj) }
+	return g
+end
+
+local function tryRegisterGuiEffect(obj)
+	if obj:IsA("Frame") or obj:IsA("TextLabel") or obj:IsA("TextButton")
+		or obj:IsA("ImageLabel") or obj:IsA("ScrollingFrame") then
+		setupGradient(obj, "DeepRgbGradient")
+	end
+end
+
+for _, obj in ipairs(itemInterfaces:GetDescendants()) do tryRegisterGuiEffect(obj) end
+for _, obj in ipairs(ammoContainer:GetDescendants()) do tryRegisterGuiEffect(obj) end
+itemInterfaces.DescendantAdded:Connect(tryRegisterGuiEffect)
+ammoContainer.DescendantAdded:Connect(tryRegisterGuiEffect)
+
+local healthGradient = setupGradient(healthBar, "HealthGradient")
+
+local function applyTextureToPart(part)
+	if not (part:IsA("MeshPart") or part:IsA("Part") or part:IsA("UnionOperation")) then return end
+	if texturedParts[part] then return end
+	texturedParts[part] = true
+	local tag = Instance.new("BoolValue", part)
+	tag.Name = "CTex"
+	for _, face in ipairs(FACES) do
+		local tex = Instance.new("Texture")
+		tex.Name = "CustomTex"
+		tex.Texture = ASSET_ID
+		tex.Face = face
+		tex.StudsPerTileU = 0.5
+		tex.StudsPerTileV = 0.5
+		tex.ZIndex = 10
+		tex.Parent = part
+	end
+end
+
+local vmConnection
+
+local function watchViewModel(vm)
+	if vmConnection then vmConnection:Disconnect() end
+	for _, obj in ipairs(vm:GetDescendants()) do applyTextureToPart(obj) end
+	vmConnection = vm.DescendantAdded:Connect(applyTextureToPart)
+end
+
+local function findAndWatchVM()
+	local camera = Workspace.CurrentCamera
+	local vm = camera:FindFirstChild("ViewModels", true)
+		or Workspace:FindFirstChild("ViewModels", true)
+		or camera:FindFirstChild("Viewmodel", true)
+	if vm then watchViewModel(vm) end
+end
+
+findAndWatchVM()
+
+Workspace.CurrentCamera.DescendantAdded:Connect(function(obj)
+	if obj.Name == "ViewModels" or obj.Name == "Viewmodel" then
+		watchViewModel(obj)
+	end
+end)
+
+local function trackWeaponEffects(obj)
+	if obj.Name ~= "RPG" and obj.Name ~= "Flare Gun" then return end
+	local function check(child)
+		if child:IsA("ParticleEmitter") or child:IsA("Beam") or child:IsA("Trail") then
+			worldEmitters[child] = true
+		end
+	end
+	for _, child in ipairs(obj:GetDescendants()) do check(child) end
+	obj.DescendantAdded:Connect(check)
+end
+
+local function registerTracer(tracer)
+	local objects = {}
+	local function add(o)
+		if o:IsA("BasePart") or o:IsA("PointLight")
+			or o:IsA("ParticleEmitter") or o:IsA("Beam") or o:IsA("Trail") then
+			table.insert(objects, { o, o:IsA("BasePart") or o:IsA("PointLight") })
+		end
+	end
+	add(tracer)
+	for _, obj in ipairs(tracer:GetDescendants()) do add(obj) end
+	table.insert(tracers, { root = tracer, objects = objects })
+end
+
+for _, desc in ipairs(Workspace:GetDescendants()) do
+	trackWeaponEffects(desc)
+	if desc.Name == "TracerEffect" then registerTracer(desc) end
+end
+
+Workspace.DescendantAdded:Connect(function(desc)
+	trackWeaponEffects(desc)
+	if desc.Name == "TracerEffect" then registerTracer(desc) end
+end)
+
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	if t - lastUI < UI_INTERVAL then return end
+	lastUI = t
+
+	local hue = math.floor((t * UI_SPEED * 0.1) % 1 * 500) / 500
+	local rot = (t * ROT_SPEED) % 360
+
+	local uiColorSeq = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, getSoftColor(hue)),
+		ColorSequenceKeypoint.new(0.5, getSoftColor(hue + 0.2)),
+		ColorSequenceKeypoint.new(1, getSoftColor(hue)),
+	})
+
+	healthBar.BackgroundColor3 = WHITE
+	healthGradient.Color = uiColorSeq
+	healthGradient.Rotation = rot
+	healthGradient.Offset = Vector2.new(math.sin(t * UI_SPEED * 0.5) * 0.1, 0)
+
+	for gradient, data in pairs(gradientData) do
+		if gradient.Parent then
+			gradient.Color = uiColorSeq
+			gradient.Rotation = rot
+			local flag = data[2]
+			if flag == 1 then
+				data[1].TextColor3 = WHITE
+			elseif flag == 2 then
+				data[1].BackgroundColor3 = WHITE
+			end
+		else
+			gradientData[gradient] = nil
+		end
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	local t = os.clock()
+
+	if t - lastWorld >= WORLD_INTERVAL then
+		lastWorld = t
+		local worldSeq = ColorSequence.new(getRgbColor(t, WORLD_SPEED))
+		for emitter in pairs(worldEmitters) do
+			if emitter.Parent then
+				emitter.Color = worldSeq
+			else
+				worldEmitters[emitter] = nil
+			end
+		end
+	end
+
+	local n = #tracers
+	if n == 0 then return end
+
+	local tracerColor = getRgbColor(t, TRACER_SPEED)
+	local tracerSeq = ColorSequence.new(tracerColor)
+
+	local i = 1
+	while i <= n do
+		local entry = tracers[i]
+		if not entry.root.Parent then
+			tracers[i] = tracers[n]
+			tracers[n] = nil
+			n = n - 1
+		else
+			for _, pair in ipairs(entry.objects) do
+				local o = pair[1]
+				if o.Parent then
+					o.Color = pair[2] and tracerColor or tracerSeq
+				end
+			end
+			i = i + 1
+		end
+	end
+end)

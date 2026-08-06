@@ -1,0 +1,17 @@
+local scripts = {
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V3/Test1",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Roblox",
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+
+        if not success then
+        else
+        end
+    end)()
+end

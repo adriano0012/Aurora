@@ -1,0 +1,86 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+local function getrevolverInCharacter()
+    -- Ищем нож в персонаже (уже экипирован)
+    for _, tool in ipairs(character:GetChildren()) do
+        if tool:IsA("Tool") and tool.Name == "Knife" then
+            return tool
+        end
+    end
+    return nil
+end
+
+local function getrevolverInBackpack()
+    -- Ищем нож в инвентаре
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item:IsA("Tool") and item.Name == "Knife" then
+                return item
+            end
+        end
+    end
+    return nil
+end
+
+local function equiprevolver()
+    local revolver = getrevolverInBackpack()
+    if revolver then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(revolver)
+            print("revolver equipped successfully")
+            return true
+        end
+    end
+    return false
+end
+
+local function unequiprevolver()
+    local revolver = getrevolverInCharacter()
+    if revolver then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:UnequipTools()
+            print("revolver unequipped")
+            return true
+        end
+    end
+    return false
+end
+
+local function monitorrevolver()
+    while true do
+        wait(0.5)
+        
+        local equippedrevolver = getrevolverInCharacter()
+        local backpackrevolver = getrevolverInBackpack()
+        
+        if not equippedrevolver and backpackrevolver then
+            -- Нож в инвентаре, но не экипирован - экипируем
+            print("Equipping revolver from backpack...")
+            equiprevolver()
+            wait(0.5)
+        elseif equippedrevolver then
+            -- Нож экипирован - ждем
+            print("revolver is equipped, waiting...")
+            while getrevolverInCharacter() do
+                wait(0.5)
+            end
+        else
+            -- Ножа нет нигде
+            print("No revolver found anywhere")
+            wait(0.5)
+        end
+    end
+end
+
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+end)
+
+monitorrevolver()

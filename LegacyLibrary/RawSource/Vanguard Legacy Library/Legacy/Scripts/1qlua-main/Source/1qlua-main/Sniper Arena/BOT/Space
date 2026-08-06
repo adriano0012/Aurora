@@ -1,0 +1,33 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local VIM = game:GetService("VirtualInputManager")
+
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local function spamSpaceUntilGone(inner)
+    while inner and inner.Parent ~= nil do
+        VIM:SendKeyEvent(true,  Enum.KeyCode.Space, false, game)
+        task.wait(0.05)
+        VIM:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+        task.wait(0.05)
+    end
+end
+
+task.spawn(function()
+    local hud     = playerGui:WaitForChild("Hud",     60)
+    local gameF   = hud      :WaitForChild("Game",    60)
+    local started = gameF    :WaitForChild("Started", 60)
+    local padded  = started  :WaitForChild("Padded",  60)
+    local buttons = padded   :WaitForChild("Buttons", 60)
+
+    local existing = buttons:FindFirstChild("Inner")
+    if existing then
+        task.spawn(spamSpaceUntilGone, existing)
+    end
+
+    buttons.ChildAdded:Connect(function(child)
+        if child.Name == "Inner" then
+            task.spawn(spamSpaceUntilGone, child)
+        end
+    end)
+end)

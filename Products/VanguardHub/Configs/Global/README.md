@@ -1,0 +1,1 @@
+# Global Configs`n`nConfigs globais do hub que não pertencem a um jogo específico.

@@ -1,0 +1,1 @@
+# LT2 Data`n`nReservado para dados e manifests específicos do jogo.

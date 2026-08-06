@@ -1,0 +1,18 @@
+local scripts = {
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Sniper%20Arena/AIM",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Sniper%20Arena/ESP",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Sniper%20Arena/Image",
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+
+        if not success then
+        else
+        end
+    end)()
+end

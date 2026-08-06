@@ -1,0 +1,581 @@
+-- Анимация-Хелпер v1.0
+-- Автор: NeOleg
+
+-- Удаляем старый GUI если существует
+pcall(function()
+    if game:GetService("CoreGui"):FindFirstChild("AnimationHelper") then
+        game:GetService("CoreGui").AnimationHelper:Destroy()
+    end
+end)
+
+-- Основные сервисы
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Локальный игрок
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Создаем основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AnimationHelper"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 331)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+
+-- Закругление основного окна
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Тень для основного окна
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(40, 40, 40)
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+
+-- Закругление верхней панели
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Декоративная полоска вверху
+local TopStrip = Instance.new("Frame")
+TopStrip.Size = UDim2.new(1, 0, 0, 3)
+TopStrip.Position = UDim2.new(0, 0, 0, 0)
+TopStrip.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+TopStrip.BorderSizePixel = 0
+TopStrip.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopBar
+
+-- Декоративная полоска рядом с иконкой
+local IconStrip = Instance.new("Frame")
+IconStrip.Size = UDim2.new(0, 5, 0, 16)
+IconStrip.Position = UDim2.new(0, 42, 0.5, -8)
+IconStrip.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+IconStrip.BorderSizePixel = 0
+IconStrip.Parent = TopBar
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 55, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "АНИМАЦИЯ-ХЕЛПЕР"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.SourceSansBold
+Title.TextStrokeTransparency = 0.8
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+-- Кнопка сворачивания
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.TextSize = 20
+MinimizeText.Font = Enum.Font.SourceSansBold
+MinimizeText.Parent = MinimizeButton
+
+local MinimizeButtonBtn = Instance.new("ImageButton")
+MinimizeButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButtonBtn.BackgroundTransparency = 1
+MinimizeButtonBtn.Parent = MinimizeButton
+
+-- Кнопка закрытия
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.TextSize = 20
+CloseText.Font = Enum.Font.SourceSansBold
+CloseText.Parent = CloseButton
+
+local CloseButtonBtn = Instance.new("ImageButton")
+CloseButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+CloseButtonBtn.BackgroundTransparency = 1
+CloseButtonBtn.Parent = CloseButton
+
+-- Контейнер для контента
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -50)
+ContentFrame.Position = UDim2.new(0, 0, 0, 50)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.ClipsDescendants = true
+ContentFrame.Parent = MainFrame
+
+-- Поле поиска
+local SearchBox = Instance.new("TextBox")
+SearchBox.Name = "SearchBox"
+SearchBox.Size = UDim2.new(1, -20, 0, 35)
+SearchBox.Position = UDim2.new(0, 10, 0, 10)
+SearchBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SearchBox.BorderSizePixel = 0
+SearchBox.Text = ""
+SearchBox.PlaceholderText = "Поиск анимаций..."
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.TextSize = 14
+SearchBox.Font = Enum.Font.SourceSans
+SearchBox.ClearTextOnFocus = false
+
+local SearchBoxCorner = Instance.new("UICorner")
+SearchBoxCorner.CornerRadius = UDim.new(0, 6)
+SearchBoxCorner.Parent = SearchBox
+
+local SearchBoxPadding = Instance.new("UIPadding")
+SearchBoxPadding.PaddingLeft = UDim.new(0, 10)
+SearchBoxPadding.Parent = SearchBox
+
+-- Контейнер для списка анимаций
+local AnimationsScrollingFrame = Instance.new("ScrollingFrame")
+AnimationsScrollingFrame.Name = "AnimationsScrollingFrame"
+AnimationsScrollingFrame.Size = UDim2.new(1, -20, 1, -110)
+AnimationsScrollingFrame.Position = UDim2.new(0, 10, 0, 55)
+AnimationsScrollingFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+AnimationsScrollingFrame.BorderSizePixel = 0
+AnimationsScrollingFrame.ScrollBarThickness = 8
+AnimationsScrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+AnimationsScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local ScrollingCorner = Instance.new("UICorner")
+ScrollingCorner.CornerRadius = UDim.new(0, 6)
+ScrollingCorner.Parent = AnimationsScrollingFrame
+
+local ScrollingPadding = Instance.new("UIPadding")
+ScrollingPadding.PaddingTop = UDim.new(0, 5)
+ScrollingPadding.PaddingBottom = UDim.new(0, 5)
+ScrollingPadding.Parent = AnimationsScrollingFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = AnimationsScrollingFrame
+
+-- Кнопка обновления списка
+local RefreshButton = Instance.new("TextButton")
+RefreshButton.Name = "RefreshButton"
+RefreshButton.Size = UDim2.new(1, -20, 0, 35)
+RefreshButton.Position = UDim2.new(0, 10, 1, -45)
+RefreshButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+RefreshButton.BorderSizePixel = 0
+RefreshButton.Text = "ОБНОВИТЬ СПИСОК АНИМАЦИЙ"
+RefreshButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RefreshButton.TextSize = 14
+RefreshButton.Font = Enum.Font.SourceSansBold
+
+local RefreshCorner = Instance.new("UICorner")
+RefreshCorner.CornerRadius = UDim.new(0, 6)
+RefreshCorner.Parent = RefreshButton
+
+-- Кнопка отключения скрипта
+local DisableButton = Instance.new("TextButton")
+DisableButton.Name = "DisableButton"
+DisableButton.Size = UDim2.new(1, -20, 0, 35)
+DisableButton.Position = UDim2.new(0, 10, 1, -90)
+DisableButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+DisableButton.BorderSizePixel = 0
+DisableButton.Text = "ОТКЛЮЧИТЬ СКРИПТ"
+DisableButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DisableButton.TextSize = 14
+DisableButton.Font = Enum.Font.SourceSansBold
+
+local DisableCorner = Instance.new("UICorner")
+DisableCorner.CornerRadius = UDim.new(0, 6)
+DisableCorner.Parent = DisableButton
+
+-- Собираем все элементы
+CloseButton.Parent = TopBar
+MinimizeButton.Parent = TopBar
+TopBar.Parent = MainFrame
+
+SearchBox.Parent = ContentFrame
+AnimationsScrollingFrame.Parent = ContentFrame
+RefreshButton.Parent = ContentFrame
+DisableButton.Parent = ContentFrame
+
+MainFrame.Parent = ScreenGui
+
+-- Переменные для управления
+local isMinimized = false
+local isDragging = false
+local dragStart, startPos
+local animations = {}
+local currentAnimationTrack = nil
+local currentAnimationName = nil
+local activeButtons = {} -- Таблица для отслеживания активных кнопок
+
+-- Функция поиска всех анимаций в игре
+function findAllAnimations()
+    local allAnimations = {}
+    
+    local function searchInInstance(instance)
+        if instance:IsA("Animation") then
+            table.insert(allAnimations, {
+                Instance = instance,
+                Name = instance.Name,
+                AnimationId = instance.AnimationId,
+                Parent = instance.Parent
+            })
+        end
+        
+        for _, child in ipairs(instance:GetChildren()) do
+            searchInInstance(child)
+        end
+    end
+    
+    -- Ищем анимации во всех важных местах
+    searchInInstance(game:GetService("Workspace"))
+    searchInInstance(game:GetService("ReplicatedStorage"))
+    searchInInstance(game:GetService("StarterPack"))
+    searchInInstance(game:GetService("StarterPlayer"))
+    searchInInstance(game:GetService("Lighting"))
+    
+    return allAnimations
+end
+
+-- Функция создания кнопки анимации
+function createAnimationButton(animationData)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 40)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button.BorderSizePixel = 0
+    button.Text = animationData.Name
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14
+    button.Font = Enum.Font.SourceSans
+    button.TextXAlignment = Enum.TextXAlignment.Left
+    button.AutoButtonColor = false
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = button
+    
+    local buttonPadding = Instance.new("UIPadding")
+    buttonPadding.PaddingLeft = UDim.new(0, 10)
+    buttonPadding.Parent = button
+    
+    local playIcon = Instance.new("TextLabel")
+    playIcon.Name = "PlayIcon"
+    playIcon.Size = UDim2.new(0, 30, 1, 0)
+    playIcon.Position = UDim2.new(1, -35, 0, 0)
+    playIcon.BackgroundTransparency = 1
+    playIcon.Text = "▶"
+    playIcon.TextColor3 = Color3.fromRGB(253, 104, 159)
+    playIcon.TextSize = 16
+    playIcon.Font = Enum.Font.SourceSansBold
+    playIcon.Parent = button
+    
+    local parentLabel = Instance.new("TextLabel")
+    parentLabel.Size = UDim2.new(1, -50, 0.5, 0)
+    parentLabel.Position = UDim2.new(0, 10, 0.5, 0)
+    parentLabel.BackgroundTransparency = 1
+    parentLabel.Text = "Родитель: " .. animationData.Parent.Name
+    parentLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    parentLabel.TextSize = 11
+    parentLabel.Font = Enum.Font.SourceSans
+    parentLabel.TextXAlignment = Enum.TextXAlignment.Left
+    parentLabel.Parent = button
+    
+    -- Функция воспроизведения/остановки анимации
+    button.MouseButton1Click:Connect(function()
+        -- Если эта же анимация уже воспроизводится - останавливаем
+        if currentAnimationTrack and currentAnimationName == animationData.Name then
+            currentAnimationTrack:Stop()
+            currentAnimationTrack = nil
+            currentAnimationName = nil
+            playIcon.Text = "▶"
+            activeButtons[animationData.Name] = false
+        else
+            -- Останавливаем предыдущую анимацию
+            if currentAnimationTrack then
+                currentAnimationTrack:Stop()
+                -- Сбрасываем иконку предыдущей кнопки
+                if currentAnimationName and activeButtons[currentAnimationName] then
+                    -- Находим предыдущую кнопку и меняем её иконку
+                    for _, btn in ipairs(AnimationsScrollingFrame:GetChildren()) do
+                        if btn:IsA("TextButton") and btn.Text == currentAnimationName then
+                            local prevIcon = btn:FindFirstChild("PlayIcon")
+                            if prevIcon then
+                                prevIcon.Text = "▶"
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+            
+            -- Создаем и запускаем новую анимацию
+            local animation = Instance.new("Animation")
+            animation.AnimationId = animationData.AnimationId
+            animation.Name = animationData.Name
+            
+            local success, track = pcall(function()
+                return Humanoid:LoadAnimation(animation)
+            end)
+            
+            if success and track then
+                currentAnimationTrack = track
+                currentAnimationName = animationData.Name
+                track:Play()
+                playIcon.Text = "⏸"
+                activeButtons[animationData.Name] = true
+            else
+                playIcon.Text = "❌"
+                task.wait(0.5)
+                playIcon.Text = "▶"
+                activeButtons[animationData.Name] = false
+            end
+        end
+    end)
+    
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+    
+    button.MouseLeave:Connect(function()
+        if currentAnimationName == animationData.Name then
+            button.BackgroundColor3 = Color3.fromRGB(45, 45, 70) -- Подсветка активной анимации
+        else
+            button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end
+    end)
+    
+    -- Устанавливаем начальный цвет фона
+    if currentAnimationName == animationData.Name then
+        button.BackgroundColor3 = Color3.fromRGB(45, 45, 70)
+    end
+    
+    return button
+end
+
+-- Функция обновления списка анимаций
+function updateAnimationsList(searchTerm)
+    -- Очищаем старый список
+    for _, child in ipairs(AnimationsScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    -- Фильтруем анимации по поисковому запросу
+    local filteredAnimations = {}
+    local searchLower = searchTerm and string.lower(searchTerm) or ""
+    
+    for _, anim in ipairs(animations) do
+        if searchTerm == "" or string.find(string.lower(anim.Name), searchLower) then
+            table.insert(filteredAnimations, anim)
+        end
+    end
+    
+    -- Сортируем по имени
+    table.sort(filteredAnimations, function(a, b)
+        return a.Name < b.Name
+    end)
+    
+    -- Создаем кнопки для отфильтрованных анимаций
+    for _, animData in ipairs(filteredAnimations) do
+        local button = createAnimationButton(animData)
+        button.Parent = AnimationsScrollingFrame
+    end
+    
+    -- Обновляем заголовок с количеством
+    Title.Text = "АНИМАЦИИ [" .. #filteredAnimations .. "]"
+end
+
+-- Функция для обновления позиции окна с учетом границ экрана
+function updateFramePosition()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    local frameSize = MainFrame.AbsoluteSize
+    local position = MainFrame.Position
+    
+    -- Проверяем границы
+    local x = math.clamp(position.X.Offset, 0, viewportSize.X - frameSize.X)
+    local y = math.clamp(position.Y.Offset, 0, viewportSize.Y - frameSize.Y)
+    
+    MainFrame.Position = UDim2.new(0, x, 0, y)
+end
+
+-- Инициализация
+animations = findAllAnimations()
+updateAnimationsList("")
+
+-- Функционал перетаскивания окна
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                isDragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- Обновляем позицию при изменении размера окна
+RunService.RenderStepped:Connect(function()
+    if isDragging then
+        updateFramePosition()
+    end
+end)
+
+-- Кнопка сворачивания
+MinimizeButtonBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    
+    if isMinimized then
+        ContentFrame.Visible = false
+        MainFrame.Size = UDim2.new(0, 394, 0, 50)
+        MinimizeText.Text = "+"
+    else
+        ContentFrame.Visible = true
+        MainFrame.Size = UDim2.new(0, 394, 0, 331)
+        MinimizeText.Text = "-"
+        updateFramePosition()
+    end
+end)
+
+-- Кнопка закрытия
+CloseButtonBtn.MouseButton1Click:Connect(function()
+    if currentAnimationTrack then
+        currentAnimationTrack:Stop()
+    end
+    ScreenGui:Destroy()
+end)
+
+-- Кнопка обновления списка
+RefreshButton.MouseButton1Click:Connect(function()
+    -- Останавливаем текущую анимацию
+    if currentAnimationTrack then
+        currentAnimationTrack:Stop()
+        currentAnimationTrack = nil
+        currentAnimationName = nil
+    end
+    
+    -- Обновляем список
+    animations = findAllAnimations()
+    updateAnimationsList(SearchBox.Text)
+    
+    -- Анимация нажатия
+    local originalColor = RefreshButton.BackgroundColor3
+    RefreshButton.BackgroundColor3 = Color3.fromRGB(200, 80, 140)
+    
+    task.wait(0.1)
+    
+    RefreshButton.BackgroundColor3 = originalColor
+end)
+
+-- Кнопка отключения скрипта
+DisableButton.MouseButton1Click:Connect(function()
+    if currentAnimationTrack then
+        currentAnimationTrack:Stop()
+        currentAnimationTrack = nil
+        currentAnimationName = nil
+    end
+    
+    -- Анимация перед удалением
+    local originalColor = DisableButton.BackgroundColor3
+    DisableButton.BackgroundColor3 = Color3.fromRGB(150, 0, 40)
+    
+    task.wait(0.2)
+    
+    ScreenGui:Destroy()
+end)
+
+-- Поиск по вводу текста
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    updateAnimationsList(SearchBox.Text)
+end)
+
+-- Обработка фокуса на поле поиска
+SearchBox.Focused:Connect(function()
+    SearchBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+end)
+
+SearchBox.FocusLost:Connect(function()
+    SearchBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+end)
+
+-- Устанавливаем начальную позицию с учетом границ
+updateFramePosition()
+
+-- Выводим информацию в консоль
+print("Анимация-Хелпер загружен!")
+print("Найдено анимаций: " .. #animations)
+print("Управление:")
+print("  - Перетаскивание: за верхнюю панель")
+print("  - Свернуть/развернуть: кнопка '-'")
+print("  - Закрыть: кнопка 'X'")
+print("  - Поиск: поле ввода вверху")
+print("  - Обновить список: кнопка 'ОБНОВИТЬ СПИСОК АНИМАЦИЙ'")
+print("  - Отключить скрипт: кнопка 'ОТКЛЮЧИТЬ СКРИПТ'")
+print("  - Воспроизведение/остановка: клик по анимации")

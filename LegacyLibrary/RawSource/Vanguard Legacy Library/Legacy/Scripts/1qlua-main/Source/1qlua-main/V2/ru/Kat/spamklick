@@ -1,0 +1,98 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Переменные для управления
+local autoClickEnabled = false
+local connection = nil
+
+-- Функция для получения центра экрана
+local function getScreenCenter()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    return Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+end
+
+-- Функция выполнения клика в центре экрана
+local function performCenterClick()
+    local centerPos = getScreenCenter()
+    
+    -- Нажимаем левую кнопку мыши
+    VirtualInputManager:SendMouseButtonEvent(
+        centerPos.X,
+        centerPos.Y,
+        0, -- Левая кнопка мыши
+        true, -- Нажатие вниз
+        game,
+        0
+    )
+    
+    -- Короткая задержка
+    task.wait(0.05)
+    
+    -- Отпускаем кнопку
+    VirtualInputManager:SendMouseButtonEvent(
+        centerPos.X,
+        centerPos.Y,
+        0, -- Левая кнопка мыши
+        false, -- Нажатие вверх
+        game,
+        0
+    )
+end
+
+-- Функция для начала автоматического кликера
+local function startAutoClicker()
+    if connection then
+        connection:Disconnect()
+    end
+    
+    autoClickEnabled = true
+    print("✅ Автокликер включен - нажатие в центр экрана")
+    
+    connection = RunService.Heartbeat:Connect(function()
+        if autoClickEnabled then
+            performCenterClick()
+        end
+    end)
+end
+
+-- Функция для остановки автоматического кликера
+local function stopAutoClicker()
+    autoClickEnabled = false
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+    print("❌ Автокликер выключен")
+end
+
+-- Обработчик нажатий клавиш
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.L then
+        if autoClickEnabled then
+            stopAutoClicker()
+        else
+            startAutoClicker()
+        end
+    end
+end)
+
+-- Информация для пользователя
+print("🎯 Автокликер для центра экрана загружен!")
+print("📌 Нажмите L для включения/выключения")
+print("📍 Клики будут выполняться в центре экрана: " .. tostring(getScreenCenter()))
+
+-- Функции для ручного управления (опционально)
+getgenv().StartAutoClick = startAutoClicker
+getgenv().StopAutoClick = stopAutoClicker
+getgenv().ToggleAutoClick = function()
+    if autoClickEnabled then
+        stopAutoClicker()
+    else
+        startAutoClicker()
+    end
+end

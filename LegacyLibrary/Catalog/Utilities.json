@@ -1,0 +1,74 @@
+﻿[
+    {
+        "Name":  "Cache",
+        "Path":  "Utilities\\Cache"
+    },
+    {
+        "Name":  "CFrame",
+        "Path":  "Utilities\\CFrame"
+    },
+    {
+        "Name":  "Clipboard",
+        "Path":  "Utilities\\Clipboard"
+    },
+    {
+        "Name":  "Color",
+        "Path":  "Utilities\\Color"
+    },
+    {
+        "Name":  "Drawing",
+        "Path":  "Utilities\\Drawing"
+    },
+    {
+        "Name":  "Executor",
+        "Path":  "Utilities\\Executor"
+    },
+    {
+        "Name":  "Filesystem",
+        "Path":  "Utilities\\Filesystem"
+    },
+    {
+        "Name":  "HTTP",
+        "Path":  "Utilities\\HTTP"
+    },
+    {
+        "Name":  "Math",
+        "Path":  "Utilities\\Math"
+    },
+    {
+        "Name":  "Promise",
+        "Path":  "Utilities\\Promise"
+    },
+    {
+        "Name":  "Queue",
+        "Path":  "Utilities\\Queue"
+    },
+    {
+        "Name":  "Raycast",
+        "Path":  "Utilities\\Raycast"
+    },
+    {
+        "Name":  "Retry",
+        "Path":  "Utilities\\Retry"
+    },
+    {
+        "Name":  "Selection",
+        "Path":  "Utilities\\Selection"
+    },
+    {
+        "Name":  "Signal",
+        "Path":  "Utilities\\Signal"
+    },
+    {
+        "Name":  "String",
+        "Path":  "Utilities\\String"
+    },
+    {
+        "Name":  "Table",
+        "Path":  "Utilities\\Table"
+    },
+    {
+        "Name":  "Tween",
+        "Path":  "Utilities\\Tween"
+    }
+]

@@ -1,0 +1,1 @@
+# ADR-0004 Game Adapters`n`nDecisão: o VanguardHub usa adaptadores em `Games/<GameName>/` e mantém Core agnóstico a jogos.

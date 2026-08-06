@@ -1,0 +1,83 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Улучшенная функция поиска цели
+local function findTarget(target)
+    -- Попробуем найти по полному пути
+    local success, obj = pcall(function()
+        return Workspace:FindFirstChild(target, true) or
+               loadstring("return "..target)()
+    end)
+    
+    -- Если не нашли по пути, ищем ближайший объект с таким именем
+    if not success or not obj then
+        local closest = nil
+        local minDist = math.huge
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        for _, item in pairs(Workspace:GetDescendants()) do
+            if item.Name == target then
+                local part = item:IsA("BasePart") and item or item:FindFirstChildWhichIsA("BasePart")
+                if part and root then
+                    local dist = (part.Position - root.Position).Magnitude
+                    if dist < minDist then
+                        closest = part
+                        minDist = dist
+                    end
+                end
+            end
+        end
+        obj = closest
+    end
+    
+    -- Если нашли модель, но не часть - берем ее PrimaryPart или первую BasePart
+    if obj and obj:IsA("Model") then
+        obj = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart") or obj
+    end
+    
+    return obj
+end
+
+-- Основная функция с улучшенной обработкой
+getgenv().CAMTO = function(target)
+    if not target or type(target) ~= "string" then
+        warn("❌ Укажите цель: CAMTO(\"путь/имя_объекта\")")
+        return
+    end
+    
+    local obj = findTarget(target)
+    if not obj then
+        warn("❌ Объект не найден: "..target)
+        return
+    end
+    
+    local camera = Workspace.CurrentCamera
+    local char = LocalPlayer.Character
+    local humanoidRoot = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoidRoot then
+        warn("❌ Персонаж не найден")
+        return
+    end
+    
+    -- Получаем позицию объекта (работает для Parts, Models, MeshParts и т.д.)
+    local targetPos
+    if obj:IsA("BasePart") then
+        targetPos = obj.Position
+    elseif obj:IsA("Model") then
+        targetPos = obj:GetPivot().Position
+    else
+        -- Для других объектов используем их мировую позицию
+        targetPos = obj:GetAttribute("WorldPosition") or obj:GetPivot().Position
+    end
+    
+    -- Позиция камеры (5 метров позади и 2 метра выше персонажа)
+    local cameraPos = humanoidRoot.Position - humanoidRoot.CFrame.LookVector * 5 + Vector3.new(0, 2, 0)
+    
+    -- Направляем камеру
+    camera.CFrame = CFrame.new(cameraPos, targetPos)
+    
+    print(string.format("✅ Камера направлена на: %s (%s)", obj.Name, obj:GetFullName()))
+end

@@ -1,0 +1,1 @@
+# Environment`n`nÁrea reservada para resolver capacidades entre Studio e executores sem poluir a Library.

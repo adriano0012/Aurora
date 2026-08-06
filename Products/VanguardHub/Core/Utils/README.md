@@ -1,0 +1,1 @@
+# Utils`n`nEstrutura futura para utilitários reutilizáveis fora da Library.

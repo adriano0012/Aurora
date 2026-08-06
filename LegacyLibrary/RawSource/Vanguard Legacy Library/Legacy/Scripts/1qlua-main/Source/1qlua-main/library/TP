@@ -1,0 +1,114 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Глобальные переменные для хранения ссылок
+local Character
+local HumanoidRootPart
+
+-- Функция для обновления ссылок на персонажа
+local function UpdateCharacterReferences()
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    
+    -- Автоматическое обновление при смерти
+    LocalPlayer.CharacterAdded:Connect(function(newChar)
+        Character = newChar
+        HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    end)
+end
+
+-- Инициализация при запуске
+UpdateCharacterReferences()
+
+-- Функция для безопасного получения объекта
+local function findObject(objectPath)
+    local success, target = pcall(function()
+        -- Автоматическая коррекция кавычек
+        local fixedPath = objectPath:gsub('game:GetService%("', 'game:GetService(\'')
+                              :gsub('")', '\')')
+        return loadstring("return " .. fixedPath)()
+    end)
+    return if success then target else nil
+end
+
+-- Основная функция телепортации
+getgenv().TP = function(...)
+    -- Обновляем ссылки на случай смерти
+    if not Character or not HumanoidRootPart or not Character.Parent then
+        UpdateCharacterReferences()
+    end
+
+    local args = {...}
+    
+    -- Обработка телепортации к объекту
+    if #args == 1 and type(args[1]) == "string" and not args[1]:find(",") then
+        local target = findObject(args[1])
+        if not target then
+            warn("❌ Объект не найден: " .. args[1])
+            return false
+        end
+        
+        if target:IsA("BasePart") then
+            HumanoidRootPart.CFrame = target.CFrame * CFrame.new(0, 3, 0)
+        elseif target:IsA("Model") then
+            local part = target.PrimaryPart or target:FindFirstChildWhichIsA("BasePart")
+            if part then
+                HumanoidRootPart.CFrame = part.CFrame * CFrame.new(0, 3, 0)
+            else
+                warn("❌ У модели нет частей для телепортации")
+                return false
+            end
+        else
+            warn("❌ Можно телепортироваться только к BasePart или Model")
+            return false
+        end
+        print("✅ Телепортация к: " .. args[1])
+        return true
+    end
+    
+    -- Обработка координат
+    local x, y, z
+    
+    if #args == 1 then
+        -- Строка "x,y,z"
+        if type(args[1]) == "string" then
+            local coords = {}
+            for num in args[1]:gmatch("-?%d+") do
+                table.insert(coords, tonumber(num))
+            end
+            if #coords ~= 3 then
+                warn("❌ Нужно 3 координаты через запятую")
+                return false
+            end
+            x, y, z = coords[1], coords[2], coords[3]
+        
+        -- Таблица {x, y, z}
+        elseif type(args[1]) == "table" then
+            if #args[1] ~= 3 then
+                warn("❌ Нужно 3 координаты в таблице")
+                return false
+            end
+            x, y, z = args[1][1], args[1][2], args[1][3]
+        end
+    elseif #args == 3 then
+        -- Три отдельных числа
+        x, y, z = args[1], args[2], args[3]
+    else
+        warn("❌ Неверный формат. Используйте:")
+        warn("TP(\"workspace.Object\") - к объекту")
+        warn("TP(\"x,y,z\") или TP(x,y,z) - к координатам")
+        return false
+    end
+
+    -- Проверка координат
+    if not x or not y or not z then
+        warn("❌ Координаты должны быть числами")
+        return false
+    end
+
+    -- Телепортация к координатам
+    HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    print(string.format("✅ Телепортация к координатам: %d, %d, %d", x, y, z))
+    return true
+end

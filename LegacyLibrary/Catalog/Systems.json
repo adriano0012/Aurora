@@ -1,0 +1,122 @@
+﻿[
+    {
+        "Name":  "AutoBuild",
+        "Path":  "Systems\\AutoBuild"
+    },
+    {
+        "Name":  "AutoBuy",
+        "Path":  "Systems\\AutoBuy"
+    },
+    {
+        "Name":  "Blueprint",
+        "Path":  "Systems\\Blueprint"
+    },
+    {
+        "Name":  "BringTree",
+        "Path":  "Systems\\BringTree"
+    },
+    {
+        "Name":  "BuildPreview",
+        "Path":  "Systems\\BuildPreview"
+    },
+    {
+        "Name":  "Config",
+        "Path":  "Systems\\Config"
+    },
+    {
+        "Name":  "Dupe",
+        "Path":  "Systems\\Dupe"
+    },
+    {
+        "Name":  "ESP",
+        "Path":  "Systems\\ESP"
+    },
+    {
+        "Name":  "Fill",
+        "Path":  "Systems\\Fill"
+    },
+    {
+        "Name":  "HardDragger",
+        "Path":  "Systems\\HardDragger"
+    },
+    {
+        "Name":  "Item",
+        "Path":  "Systems\\Item"
+    },
+    {
+        "Name":  "Library",
+        "Path":  "Systems\\Library"
+    },
+    {
+        "Name":  "Loader",
+        "Path":  "Systems\\Loader"
+    },
+    {
+        "Name":  "ModWood",
+        "Path":  "Systems\\ModWood"
+    },
+    {
+        "Name":  "Notifications",
+        "Path":  "Systems\\Notifications"
+    },
+    {
+        "Name":  "Player",
+        "Path":  "Systems\\Player"
+    },
+    {
+        "Name":  "PlotArt",
+        "Path":  "Systems\\PlotArt"
+    },
+    {
+        "Name":  "Remote",
+        "Path":  "Systems\\Remote"
+    },
+    {
+        "Name":  "Save",
+        "Path":  "Systems\\Save"
+    },
+    {
+        "Name":  "Scanner",
+        "Path":  "Systems\\Scanner"
+    },
+    {
+        "Name":  "Slot",
+        "Path":  "Systems\\Slot"
+    },
+    {
+        "Name":  "Sorter",
+        "Path":  "Systems\\Sorter"
+    },
+    {
+        "Name":  "Statistics",
+        "Path":  "Systems\\Statistics"
+    },
+    {
+        "Name":  "Teleports",
+        "Path":  "Systems\\Teleports"
+    },
+    {
+        "Name":  "Themes",
+        "Path":  "Systems\\Themes"
+    },
+    {
+        "Name":  "TreeFinder",
+        "Path":  "Systems\\TreeFinder"
+    },
+    {
+        "Name":  "UI",
+        "Path":  "Systems\\UI"
+    },
+    {
+        "Name":  "Vehicle",
+        "Path":  "Systems\\Vehicle"
+    },
+    {
+        "Name":  "Webhook",
+        "Path":  "Systems\\Webhook"
+    },
+    {
+        "Name":  "World",
+        "Path":  "Systems\\World"
+    }
+]

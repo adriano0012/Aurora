@@ -1,0 +1,628 @@
+
+local ScriptManager = {
+    Scripts = {},
+    Favorites = {},
+    Loaded = false,
+    GUI = nil
+}
+
+-- Функция для загрузки сохраненных избранных скриптов
+function ScriptManager:LoadFavorites()
+    if not isfolder or not makefolder or not writefile or not readfile then
+        warn("Файловые функции недоступны")
+        self.Favorites = {}
+        return
+    end
+    
+    if not isfolder("ScriptManager") then
+        makefolder("ScriptManager")
+    end
+    
+    local path = "ScriptManager/favorites.json"
+    
+    if not isfile(path) then
+        self.Favorites = {}
+        return
+    end
+    
+    local success, result = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(readfile(path))
+    end)
+    
+    if success and type(result) == "table" then
+        self.Favorites = result
+    else
+        self.Favorites = {}
+    end
+end
+
+-- Функция для сохранения избранных скриптов
+function ScriptManager:SaveFavorites()
+    if not writefile then return end
+    
+    local path = "ScriptManager/favorites.json"
+    local success, err = pcall(function()
+        writefile(path, game:GetService("HttpService"):JSONEncode(self.Favorites))
+    end)
+    
+    if not success then
+        warn("Ошибка сохранения: " .. tostring(err))
+    end
+end
+
+-- Функция для добавления скрипта
+function ScriptManager:AddScript(name, url)
+    table.insert(self.Scripts, {
+        Name = name,
+        URL = url
+    })
+end
+
+-- Функция для добавления в избранное
+function ScriptManager:AddFavorite(name)
+    if not table.find(self.Favorites, name) then
+        table.insert(self.Favorites, name)
+        self:SaveFavorites()
+        return true
+    end
+    return false
+end
+
+-- Функция для удаления из избранного
+function ScriptManager:RemoveFavorite(name)
+    local index = table.find(self.Favorites, name)
+    if index then
+        table.remove(self.Favorites, index)
+        self:SaveFavorites()
+        return true
+    end
+    return false
+end
+
+-- Функция для запуска скрипта
+function ScriptManager:ExecuteScript(url)
+    -- Подготовительный скрипт
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/Si1it7Zd'))()
+    end)
+    
+    if not success then
+        warn("Ошибка подготовки: " .. tostring(err))
+    end
+    
+    task.wait(0.4)
+    
+    -- Основной скрипт
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(url))()
+    end)
+    
+    if not success then
+        warn("Ошибка выполнения: " .. tostring(err))
+    end
+end
+
+-- Функция для запуска случайного скрипта
+function ScriptManager:ExecuteRandomScript()
+    if #self.Scripts > 0 then
+        local randomScript = self.Scripts[math.random(1, #self.Scripts)]
+        self:ExecuteScript(randomScript.URL)
+    else
+        warn("Нет доступныной музыки")
+    end
+end
+
+-- Создание красивого GUI с возможностью перемещения
+function ScriptManager:CreateGUI()
+    local UserInputService = game:GetService("UserInputService")
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ScriptManagerGUI"
+    screenGui.Parent = game:GetService("CoreGui")
+    
+    -- Главный фрейм с красивым дизайном
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = UDim2.new(0, 500, 0, 550)
+    mainFrame.Position = UDim2.new(0.5, -250, 0.5, 150)
+    mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    mainFrame.BorderSizePixel = 0
+    
+    -- Скругленные углы
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = mainFrame
+    
+    -- Тень
+    local shadow = Instance.new("UIStroke")
+    shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    shadow.Color = Color3.fromRGB(60, 60, 80)
+    shadow.Thickness = 2
+    shadow.Transparency = 0.5
+    shadow.Parent = mainFrame
+    
+    mainFrame.Parent = screenGui
+    
+    -- Заголовок с градиентом (для перемещения)
+    local title = Instance.new("Frame")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    title.Name = "TitleBar"
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = title
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = "Яндекс музыка"
+    titleLabel.Size = UDim2.new(1, -50, 1, 0)
+    titleLabel.Position = UDim2.new(0, 15, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 20
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = title
+    
+    title.Parent = mainFrame
+    
+    -- Кнопка закрытия
+    local closeButton = Instance.new("TextButton")
+    closeButton.Text = "×"
+    closeButton.Size = UDim2.new(0, 40, 0, 40)
+    closeButton.Position = UDim2.new(1, -45, 0, 5)
+    closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextSize = 24
+    closeButton.ZIndex = 2
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = closeButton
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+        self.GUI = nil
+    end)
+    
+    closeButton.Parent = mainFrame
+    
+    -- Табы
+    local tabButtonsFrame = Instance.new("Frame")
+    tabButtonsFrame.Size = UDim2.new(1, -40, 0, 40)
+    tabButtonsFrame.Position = UDim2.new(0, 20, 0, 60)
+    tabButtonsFrame.BackgroundTransparency = 1
+    tabButtonsFrame.Parent = mainFrame
+    
+    local mainTabButton = Instance.new("TextButton")
+    mainTabButton.Text = "ВСЯ МУЗЫКА"
+    mainTabButton.Size = UDim2.new(0.5, -5, 1, 0)
+    mainTabButton.Position = UDim2.new(0, 0, 0, 0)
+    mainTabButton.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+    mainTabButton.TextColor3 = Color3.fromRGB(240, 240, 255)
+    mainTabButton.Font = Enum.Font.GothamBold
+    mainTabButton.TextSize = 14
+    
+    local tabCorner1 = Instance.new("UICorner")
+    tabCorner1.CornerRadius = UDim.new(0, 8)
+    tabCorner1.Parent = mainTabButton
+    
+    mainTabButton.Parent = tabButtonsFrame
+    
+    local favoritesTabButton = Instance.new("TextButton")
+    favoritesTabButton.Text = "ИЗБРАННОЕ"
+    favoritesTabButton.Size = UDim2.new(0.5, -5, 1, 0)
+    favoritesTabButton.Position = UDim2.new(0.5, 5, 0, 0)
+    favoritesTabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    favoritesTabButton.TextColor3 = Color3.fromRGB(200, 200, 220)
+    favoritesTabButton.Font = Enum.Font.GothamBold
+    favoritesTabButton.TextSize = 14
+    
+    local tabCorner2 = Instance.new("UICorner")
+    tabCorner2.CornerRadius = UDim.new(0, 8)
+    tabCorner2.Parent = favoritesTabButton
+    
+    favoritesTabButton.Parent = tabButtonsFrame
+    
+    -- Контейнеры для табов
+    local tabsContainer = Instance.new("Frame")
+    tabsContainer.Size = UDim2.new(1, -40, 0.7, -10)
+    tabsContainer.Position = UDim2.new(0, 20, 0, 110)
+    tabsContainer.BackgroundTransparency = 1
+    tabsContainer.Parent = mainFrame
+    
+    local mainTab = Instance.new("ScrollingFrame")
+    mainTab.Size = UDim2.new(1, 0, 1, 0)
+    mainTab.Position = UDim2.new(0, 0, 0, 0)
+    mainTab.BackgroundTransparency = 1
+    mainTab.ScrollBarThickness = 6
+    mainTab.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 150)
+    mainTab.CanvasSize = UDim2.new(0, 0, 0, 0)
+    mainTab.Visible = true
+    mainTab.Parent = tabsContainer
+    
+    local favoritesTab = Instance.new("ScrollingFrame")
+    favoritesTab.Size = UDim2.new(1, 0, 1, 0)
+    favoritesTab.Position = UDim2.new(0, 0, 0, 0)
+    favoritesTab.BackgroundTransparency = 1
+    favoritesTab.ScrollBarThickness = 6
+    favoritesTab.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 150)
+    favoritesTab.CanvasSize = UDim2.new(0, 0, 0, 0)
+    favoritesTab.Visible = false
+    favoritesTab.Parent = tabsContainer
+    
+    -- Поиск (ниже кнопок)
+    local searchBoxFrame = Instance.new("Frame")
+    searchBoxFrame.Size = UDim2.new(1, -40, 0, 40)
+    searchBoxFrame.Position = UDim2.new(0, 20, 0, 390)
+    searchBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    
+    local searchCorner = Instance.new("UICorner")
+    searchCorner.CornerRadius = UDim.new(0, 8)
+    searchCorner.Parent = searchBoxFrame
+    
+    local searchBox = Instance.new("TextBox")
+    searchBox.PlaceholderText = "Поиск скриптов..."
+    searchBox.Size = UDim2.new(1, -20, 1, -10)
+    searchBox.Position = UDim2.new(0, 10, 0, 5)
+    searchBox.BackgroundTransparency = 1
+    searchBox.TextColor3 = Color3.fromRGB(220, 220, 255)
+    searchBox.Font = Enum.Font.Gotham
+    searchBox.TextSize = 14
+    searchBox.TextXAlignment = Enum.TextXAlignment.Left
+    searchBox.Parent = searchBoxFrame
+    
+    local searchIcon = Instance.new("ImageLabel")
+    searchIcon.Size = UDim2.new(0, 20, 0, 20)
+    searchIcon.Position = UDim2.new(1, -30, 0.5, -10)
+    searchIcon.BackgroundTransparency = 1
+    searchIcon.Image = "rbxassetid://3926305904"
+    searchIcon.ImageRectOffset = Vector2.new(964, 324)
+    searchIcon.ImageRectSize = Vector2.new(36, 36)
+    searchIcon.ImageColor3 = Color3.fromRGB(180, 180, 220)
+    searchIcon.Parent = searchBoxFrame
+    
+    searchBoxFrame.Parent = mainFrame
+    
+    -- Кнопки действий (снизу)
+    local actionsFrame = Instance.new("Frame")
+    actionsFrame.Size = UDim2.new(1, -40, 0, 50)
+    actionsFrame.Position = UDim2.new(0, 20, 1, -65)
+    actionsFrame.BackgroundTransparency = 1
+    actionsFrame.Parent = mainFrame
+    
+    local randomScriptButton = Instance.new("TextButton")
+    randomScriptButton.Text = "СЛУЧАЙНАЯ МУЗЫКА"
+    randomScriptButton.Size = UDim2.new(0.5, -5, 1, 0)
+    randomScriptButton.Position = UDim2.new(0, 0, 0, 0)
+    randomScriptButton.BackgroundColor3 = Color3.fromRGB(80, 120, 180)
+    randomScriptButton.TextColor3 = Color3.fromRGB(240, 240, 255)
+    randomScriptButton.Font = Enum.Font.GothamBold
+    randomScriptButton.TextSize = 14
+    
+    local randomCorner = Instance.new("UICorner")
+    randomCorner.CornerRadius = UDim.new(0, 8)
+    randomCorner.Parent = randomScriptButton
+    
+    randomScriptButton.Parent = actionsFrame
+    
+    local saveButton = Instance.new("TextButton")
+    saveButton.Text = "СОХРАНИТЬ"
+    saveButton.Size = UDim2.new(0.5, -5, 1, 0)
+    saveButton.Position = UDim2.new(0.5, 5, 0, 0)
+    saveButton.BackgroundColor3 = Color3.fromRGB(70, 160, 90)
+    saveButton.TextColor3 = Color3.fromRGB(240, 240, 255)
+    saveButton.Font = Enum.Font.GothamBold
+    saveButton.TextSize = 14
+    
+    local saveCorner = Instance.new("UICorner")
+    saveCorner.CornerRadius = UDim.new(0, 8)
+    saveCorner.Parent = saveButton
+    
+    saveButton.Parent = actionsFrame
+    
+    -- Управление табами
+    mainTabButton.MouseButton1Click:Connect(function()
+        mainTab.Visible = true
+        favoritesTab.Visible = false
+        mainTabButton.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+        favoritesTabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    end)
+    
+    favoritesTabButton.MouseButton1Click:Connect(function()
+        mainTab.Visible = false
+        favoritesTab.Visible = true
+        mainTabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+        favoritesTabButton.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+        self:UpdateFavoritesUI()
+    end)
+    
+    -- Функция для перемещения GUI
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    title.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    
+    -- Возвращаем элементы управления
+    return {
+        ScreenGui = screenGui,
+        MainTab = mainTab,
+        FavoritesTab = favoritesTab,
+        SearchBox = searchBox,
+        RandomScriptButton = randomScriptButton,
+        SaveButton = saveButton,
+        MainFrame = mainFrame
+    }
+end
+
+-- Создание красивой кнопки скрипта с улучшенным текстом
+function ScriptManager:CreateScriptButton(parent, scriptData, isFavorite)
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "ScriptButton_" .. scriptData.Name
+    buttonFrame.Size = UDim2.new(1, 0, 0, 50)
+    buttonFrame.Position = UDim2.new(0, 0, 0, #parent:GetChildren() * 55)
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    buttonFrame.BackgroundTransparency = 0.5
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 8)
+    buttonCorner.Parent = buttonFrame
+    
+    local buttonStroke = Instance.new("UIStroke")
+    buttonStroke.Color = Color3.fromRGB(70, 70, 100)
+    buttonStroke.Thickness = 1
+    buttonStroke.Parent = buttonFrame
+    
+    buttonFrame.Parent = parent
+    
+    -- Иконка скрипта
+    local scriptIcon = Instance.new("ImageLabel")
+    scriptIcon.Size = UDim2.new(0, 30, 0, 30)
+    scriptIcon.Position = UDim2.new(0, 10, 0.5, -15)
+    scriptIcon.BackgroundTransparency = 1
+    scriptIcon.Image = "rbxassetid://3926305904"
+    scriptIcon.ImageRectOffset = Vector2.new(964, 204)
+    scriptIcon.ImageRectSize = Vector2.new(36, 36)
+    scriptIcon.ImageColor3 = Color3.fromRGB(100, 150, 255)
+    scriptIcon.Parent = buttonFrame
+    
+    -- Текст скрипта (сдвинут вправо)
+    local button = Instance.new("TextButton")
+    button.Text = scriptData.Name
+    button.Size = UDim2.new(1, -90, 1, -10) -- Уменьшена ширина, чтобы не залезал на кнопку лайка
+    button.Position = UDim2.new(0, 50, 0, 5) -- Сдвинут вправо на 50 пикселей
+    button.BackgroundTransparency = 1
+    button.TextColor3 = Color3.fromRGB(220, 220, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.TextXAlignment = Enum.TextXAlignment.Left
+    button.Parent = buttonFrame
+    
+    -- Кнопка лайка
+    local likeButton = Instance.new("TextButton")
+    likeButton.Text = isFavorite and "❤️" or "🤍"
+    likeButton.Size = UDim2.new(0, 40, 1, 0)
+    likeButton.Position = UDim2.new(1, -40, 0, 0)
+    likeButton.BackgroundTransparency = 1
+    likeButton.TextColor3 = isFavorite and Color3.fromRGB(255, 100, 150) or Color3.fromRGB(180, 180, 220)
+    likeButton.Font = Enum.Font.GothamBold
+    likeButton.TextSize = 18
+    likeButton.Parent = buttonFrame
+    
+    button.MouseButton1Click:Connect(function()
+        self:ExecuteScript(scriptData.URL)
+    end)
+    
+    likeButton.MouseButton1Click:Connect(function()
+        if isFavorite then
+            self:RemoveFavorite(scriptData.Name)
+            likeButton.Text = "🤍"
+            likeButton.TextColor3 = Color3.fromRGB(180, 180, 220)
+        else
+            self:AddFavorite(scriptData.Name)
+            likeButton.Text = "❤️"
+            likeButton.TextColor3 = Color3.fromRGB(255, 100, 150)
+        end
+        self:UpdateFavoritesUI()
+    end)
+    
+    -- Анимация при наведении
+    button.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(
+            buttonFrame,
+            TweenInfo.new(0.2),
+            {BackgroundTransparency = 0.3}
+        ):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(
+            buttonFrame,
+            TweenInfo.new(0.2),
+            {BackgroundTransparency = 0.5}
+        ):Play()
+    end)
+    
+    likeButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(
+            likeButton,
+            TweenInfo.new(0.2),
+            {TextColor3 = Color3.fromRGB(255, 150, 180)}
+        ):Play()
+    end)
+    
+    likeButton.MouseLeave:Connect(function()
+        if isFavorite then
+            game:GetService("TweenService"):Create(
+                likeButton,
+                TweenInfo.new(0.2),
+                {TextColor3 = Color3.fromRGB(255, 100, 150)}
+            ):Play()
+        else
+            game:GetService("TweenService"):Create(
+                likeButton,
+                TweenInfo.new(0.2),
+                {TextColor3 = Color3.fromRGB(180, 180, 220)}
+            ):Play()
+        end
+    end)
+    
+    -- Обновляем CanvasSize
+    parent.CanvasSize = UDim2.new(0, 0, 0, #parent:GetChildren() * 55)
+end
+
+-- Обновление UI скриптов
+function ScriptManager:UpdateScriptsUI(filter)
+    if not self.GUI or not self.GUI.MainTab then return end
+    
+    -- Очищаем текущие кнопки
+    for _, child in ipairs(self.GUI.MainTab:GetChildren()) do
+        if child:IsA("Frame") and string.find(child.Name, "ScriptButton_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Создаем новые кнопки
+    for _, script in ipairs(self.Scripts) do
+        if not filter or string.find(string.lower(script.Name), string.lower(filter or "")) then
+            local isFavorite = table.find(self.Favorites, script.Name) ~= nil
+            self:CreateScriptButton(self.GUI.MainTab, script, isFavorite)
+        end
+    end
+end
+
+-- Обновление UI избранного
+function ScriptManager:UpdateFavoritesUI()
+    if not self.GUI or not self.GUI.FavoritesTab then return end
+    
+    -- Очищаем текущие кнопки
+    for _, child in ipairs(self.GUI.FavoritesTab:GetChildren()) do
+        if child:IsA("Frame") and string.find(child.Name, "ScriptButton_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Создаем новые кнопки
+    for _, name in ipairs(self.Favorites) do
+        for _, script in ipairs(self.Scripts) do
+            if script.Name == name then
+                self:CreateScriptButton(self.GUI.FavoritesTab, script, true)
+                break
+            end
+        end
+    end
+end
+
+-- Инициализация GUI
+function ScriptManager:InitGUI()
+    if self.GUI then
+        self.GUI.ScreenGui:Destroy()
+    end
+    
+    self.GUI = self:CreateGUI()
+    
+    -- Поиск
+    self.GUI.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        self:UpdateScriptsUI(self.GUI.SearchBox.Text)
+    end)
+    
+    -- Кнопка случайного скрипта
+    self.GUI.RandomScriptButton.MouseButton1Click:Connect(function()
+        self:ExecuteRandomScript()
+    end)
+    
+    -- Кнопка сохранения
+    self.GUI.SaveButton.MouseButton1Click:Connect(function()
+        self:SaveFavorites()
+        
+        -- Анимация сохранения
+        local originalText = self.GUI.SaveButton.Text
+        self.GUI.SaveButton.Text = "СОХРАНЕНО!"
+        game:GetService("TweenService"):Create(
+            self.GUI.SaveButton,
+            TweenInfo.new(0.3),
+            {BackgroundColor3 = Color3.fromRGB(90, 190, 110)}
+        ):Play()
+        
+        wait(1)
+        
+        game:GetService("TweenService"):Create(
+            self.GUI.SaveButton,
+            TweenInfo.new(0.3),
+            {BackgroundColor3 = Color3.fromRGB(70, 160, 90)}
+        ):Play()
+        self.GUI.SaveButton.Text = originalText
+    end)
+    
+    -- Первоначальное обновление UI
+    self:UpdateScriptsUI()
+    self:UpdateFavoritesUI()
+end
+
+-- Добавление скриптов (примеры)
+ScriptManager:AddScript("porno game", "https://pastebin.com/raw/aXuM2Fps")
+ScriptManager:AddScript("DJ MENOR DA DZ7 - Simplesmente o Melhor", "https://pastebin.com/raw/y20MFubc")
+ScriptManager:AddScript("itgmq Hardstyle - All The Things She Said", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/itgmq%20Hardstyle%20-%20All%20The%20Things%20She%20Said")
+ScriptManager:AddScript("шизоняшка - рвётся бошка", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/WIZO_HAWKA")
+ScriptManager:AddScript("ПОЛМАТЕРИ - докс", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/DOKS_POLMERIZ")
+ScriptManager:AddScript("Lida - Аниме музончик", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/LIDA-ANIMEMUZON")
+ScriptManager:AddScript("5mewmet - это называется любовь -3", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/5MEWMETLOVENAME")
+ScriptManager:AddScript("ZXCUR$EDD - Демон в голове 2", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/ZXCUR%24EDDDemonvgolove2")
+ScriptManager:AddScript("说辞․ - 老天保佑金山银山", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/kitaibabai")
+ScriptManager:AddScript("Серега Пират - Почему ты еще не фанат？", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/CEREGAPIRATPOWEMITIEIENEFANAT")
+ScriptManager:AddScript("ФРЭНК - Саня и Лёха", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/FRANKECAWALEXA")
+ScriptManager:AddScript("VHM4D - MONTAGEM NECK HURT MANGO FUNK", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/MANGONEG")
+ScriptManager:AddScript("PHARAOH - Caramel", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/PHARAONCaramel")
+ScriptManager:AddScript("Toxi$ - ВЗЛОМ prod. by SLAVA MARLOW", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/TOXIKBZLOM")
+ScriptManager:AddScript("nxvctresx - X1v1v1d3", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/X1v1v1d3")
+ScriptManager:AddScript("enveel - Призрак Speed Up", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/eveelprizrak")
+ScriptManager:AddScript("Асфальт", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/discortkorolwit/ASVALT")
+ScriptManager:AddScript("Король и Шут - Дурак и молния", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/discortkorolwit/KOROLWITGurakUMolnii")
+ScriptManager:AddScript("Король и Шут - Мёртвый анархист", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/discortkorolwit/KOROLWITMertvianarxict")
+ScriptManager:AddScript("Король и Шут - Кукла колдуна", "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/Music/discortkorolwit/korolwitKYKLA")
+
+
+
+
+
+-- Загрузка избранного
+ScriptManager:LoadFavorites()
+
+-- Автоматическое открытие при загрузке
+ScriptManager:InitGUI()
+
+ScriptManager.Loaded = true
+print("Яндекс музыка!")

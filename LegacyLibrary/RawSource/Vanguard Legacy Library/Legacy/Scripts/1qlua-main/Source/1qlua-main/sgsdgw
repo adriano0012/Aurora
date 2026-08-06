@@ -1,0 +1,270 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "UI Title",
+    Icon = "door-open",
+    Author = "Example UI",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    Resizable = true,
+    SideBarWidth = 200,
+    Background = "",
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function()
+            print("clicked")
+        end,
+    }
+})
+
+local Tabk = Window:Tab({
+    Title = "Приветствие!",
+    Icon = "bird",
+    Locked = false,
+})
+
+Window:SelectTab(1)
+
+
+Tabk:Paragraph({
+    Title = "Привет, это скрипт для Slab battle.",
+    Desc = "Скрипт для создания бота.\nЭтот скрипт полностью открытым кодом.",
+    Color = "Red",
+    Locked = false,
+})
+
+Tabk:Paragraph({
+    Title = "Удачной игры!",
+    Color = "Blue",
+    Locked = false,
+})
+
+local Tab = Window:Tab({
+    Title = "Настройка бота",
+    Icon = "bird",
+    Locked = false,
+})
+
+Tab:Section({ 
+    Title = "Выкл/Вкл",
+    TextXAlignment = "Left",
+    TextSize = 17,
+})
+
+
+Tab:Button({
+    Title = "Запустить бота",
+    Locked = false,
+    Callback = function()
+        local player = game:GetService("Players").LocalPlayer
+local running = true
+
+-- Функция для остановки бота
+_G.StopBot = function()
+    running = false
+    if _G.clickThread then
+        coroutine.close(_G.clickThread)
+    end
+end
+
+local function startBot()
+    while running do
+        -- Ожидание персонажа
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        local rootPart = character:WaitForChild("HumanoidRootPart")
+
+        -- Настройки
+        local SPAWN_AREA = Vector3.new(-1000, 328, -2)
+        local BATTLE_AREA = {
+            min = Vector3.new(-800, 0, -800),
+            max = Vector3.new(800, 100, 800)
+        }
+        local TELEPORT = workspace.Lobby.Teleport1
+        local CLICK_DELAY = 0.1
+
+        -- Функция для спама атаками
+        local function spamClicks()
+            while running do
+                if character and character:FindFirstChildOfClass("Tool") then
+                    character:FindFirstChildOfClass("Tool"):Activate()
+                end
+                task.wait(CLICK_DELAY)
+            end
+        end
+
+        -- Проверка зоны
+        local function isInArea(pos, area)
+            return pos.X > area.min.X and pos.Z > area.min.Z and
+                   pos.X < area.max.X and pos.Z < area.max.Z and
+                   pos.Y < area.max.Y
+        end
+
+        -- Найти ближайшего живого игрока
+        local function findNearestPlayer()
+            local closest, dist = nil, math.huge
+            local myPos = rootPart.Position
+            
+            for _, p in ipairs(game.Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                    local targetPart = p.Character:FindFirstChild("HumanoidRootPart")
+                    if targetPart then
+                        local d = (targetPart.Position - myPos).Magnitude
+                        if d < dist then
+                            closest = targetPart
+                            dist = d
+                        end
+                    end
+                end
+            end
+            
+            return closest
+        end
+
+        -- Улучшенный переход к порталу
+        local function goToPortal()
+            local attempts = 0
+            while running and attempts < 5 do
+                humanoid:MoveTo(TELEPORT.Position)
+                
+                local startTime = os.clock()
+                while running and (rootPart.Position - TELEPORT.Position).Magnitude > 5 do
+                    -- Если не двигаемся - прыгаем
+                    if os.clock() - startTime > 2 then
+                        humanoid.Jump = true
+                        task.wait(0.5)
+                        humanoid:MoveTo(TELEPORT.Position)
+                        startTime = os.clock()
+                        attempts = attempts + 1
+                    end
+                    task.wait(0.1)
+                end
+                
+                if (rootPart.Position - TELEPORT.Position).Magnitude <= 5 then
+                    return true
+                end
+            end
+            return false
+        end
+
+        -- Основной цикл
+        while running do
+            -- Переинициализация при смерти
+            if not character or not humanoid or humanoid.Health <= 0 then
+                -- Очистка перед возрождением
+                if _G.clickThread then
+                    coroutine.close(_G.clickThread)
+                    _G.clickThread = nil
+                end
+                
+                -- Ожидание нового персонажа
+                character = player.Character or player.CharacterAdded:Wait()
+                humanoid = character:WaitForChild("Humanoid")
+                rootPart = character:WaitForChild("HumanoidRootPart")
+                
+                -- Ждем пока персонаж полностью загрузится
+                task.wait(2)
+                
+                -- После смерти сразу идем к порталу
+                if (rootPart.Position - SPAWN_AREA).Magnitude < 150 then
+                    goToPortal()
+                end
+                
+                continue
+            end
+
+            local currentPos = rootPart.Position
+            local inSpawn = (currentPos - SPAWN_AREA).Magnitude < 150
+            local inBattle = isInArea(currentPos, BATTLE_AREA)
+
+            if inSpawn then
+                -- Активный переход к порталу
+                if not goToPortal() then
+                    -- Если не получилось - пробуем еще раз
+                    task.wait(1)
+                    humanoid.Jump = true
+                    task.wait(0.5)
+                    goToPortal()
+                end
+            elseif inBattle then
+                -- Запуск атаки
+                if not _G.clickThread then
+                    _G.clickThread = task.spawn(spamClicks)
+                end
+
+                -- Преследование ближайшего игрока
+                local target = findNearestPlayer()
+                if target then
+                    humanoid:MoveTo(target.Position)
+                    task.wait(0.1) -- Частое обновление цели
+                else
+                    -- Патрулирование
+                    humanoid:MoveTo(Vector3.new(0, currentPos.Y, 0))
+                    task.wait(1)
+                end
+            else
+                -- Возврат в боевую зону
+                humanoid:MoveTo(Vector3.new(0, currentPos.Y, 0))
+                task.wait(0.5)
+            end
+            
+            task.wait(0.1)
+        end
+
+        -- Очистка при остановке
+        if _G.clickThread then
+            coroutine.close(_G.clickThread)
+            _G.clickThread = nil
+        end
+    end
+end
+
+-- Запуск бота
+task.spawn(startBot)
+
+print("Бот запущен с гарантированным переходом к порталу!")
+    end
+})
+
+Tab:Button({
+    Title = "Выключить бота",
+    Locked = false,
+    Callback = function()
+if _G.StopBot then
+    _G.StopBot()
+    print("Бот остановлен")
+else
+    print("Бот не запущен")
+end
+    end
+})
+
+local Section = Tab:Section({ 
+    Title = "Настройки бота!",
+    TextXAlignment = "Left",
+    TextSize = 21, 
+})
+
+local Paragraph = Tab:Paragraph({
+    Title = "Настройка бота",
+    Color = "Orange",
+    Locked = true,
+    Buttons = {
+        {
+            Icon = "meh",
+            Title = "Ресет каждые 5 минут",
+            Callback = function() print("1 Button") end,
+        },
+        {
+            Icon = "inspection-panel",
+            Title = "Невидимые стены!",
+            Callback = function() print("1 Button") end,
+        }
+    }
+})

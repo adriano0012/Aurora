@@ -1,0 +1,1 @@
+# ADR-0006 Release Channels`n`nDecisão: produtos com distribuição devem prever canais Stable, Beta e Dev separados da pasta-fonte.
