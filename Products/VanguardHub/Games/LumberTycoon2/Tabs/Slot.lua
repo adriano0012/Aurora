@@ -4,12 +4,18 @@
 
 return function(UI, Config, Utils)
     local Tab = UI:Tab(Utils._("slot_title"), "6034333276")
+    local slotConfig = type(Config.Slot) == "table" and Config.Slot or nil
+    local slotNumber = slotConfig and slotConfig.Number or Config.Slot or 1
+    local fastLoad = slotConfig and slotConfig.FastLoad or Config.FastLoad or false
     
     local Slots = Tab:Section(Utils._("slot_slots"), true)
     local Land = Tab:Section(Utils._("slot_land"), true)
     
     -- Slots
-    Slots:Slider(Utils._("slot_number"), "Slot", Config.Slot or 1, 1, 6, false, function(v)
+    Slots:Slider(Utils._("slot_number"), "Slot", slotNumber, 1, 6, false, function(v)
+        if slotConfig then
+            slotConfig.Number = v
+        end
         Config.Slot = v
     end)
     
@@ -25,7 +31,10 @@ return function(UI, Config, Utils)
         Utils.Notify("Slot", "Sobrescrevendo slot " .. Config.Slot .. "...", 3)
     end)
     
-    Slots:Toggle(Utils._("slot_fast_load"), "FastLoad", Config.FastLoad or false, function(v)
+    Slots:Toggle(Utils._("slot_fast_load"), "FastLoad", fastLoad, function(v)
+        if slotConfig then
+            slotConfig.FastLoad = v
+        end
         Config.FastLoad = v
     end)
     
