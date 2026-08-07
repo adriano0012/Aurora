@@ -326,9 +326,9 @@ function Library:new(name)
     lib.FlagControls = {}
     lib.ThemeBindings = {}
 
-    local BASE_WIDTH = 1619
-    local BASE_HEIGHT = 780
-    local MAX_UI_SCALE = 0.64
+    local BASE_WIDTH = 1100
+    local BASE_HEIGHT = 890
+    local MAX_UI_SCALE = 1
     
     -- Main Frame
     local Main = CreateInstance("Frame", {
@@ -875,14 +875,14 @@ function Library:new(name)
     
     ConnectToggleKey()
     
-    local sidebarWidth = 320
+    local sidebarWidth = 255
 
     -- Tab Background
     local TabBG = CreateInstance("Frame", {
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(sidebarWidth, 500),
+        Size = UDim2.fromOffset(sidebarWidth, 590),
         Position = UDim2.fromOffset(17, 102),
         ZIndex = 10
     })
@@ -939,8 +939,8 @@ function Library:new(name)
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Position = UDim2.fromOffset(17, 608),
-        Size = UDim2.fromOffset(300, 165),
+        Position = UDim2.fromOffset(17, 705),
+        Size = UDim2.fromOffset(255, 150),
         ZIndex = 10
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Credits})
@@ -1001,8 +1001,8 @@ function Library:new(name)
     local ContentArea = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(1250, 640),
-        Position = UDim2.fromOffset(346, 102),
+        Size = UDim2.fromOffset(815, 710),
+        Position = UDim2.fromOffset(275, 102),
         ClipsDescendants = true,
         ZIndex = 10
     })
@@ -1011,8 +1011,8 @@ function Library:new(name)
     local Footer = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(346, 736),
-        Size = UDim2.fromOffset(1276, 34),
+        Position = UDim2.fromOffset(275, 840),
+        Size = UDim2.fromOffset(810, 34),
         ZIndex = 15
     })
 
@@ -1064,7 +1064,7 @@ function Library:new(name)
         return button
     end
 
-    CreateFooterButton("Discord", "", 1130, 110, CopyDiscord)
+    CreateFooterButton("Discord", "", 690, 110, CopyDiscord)
 
     -- ============================================================
     -- TAB SYSTEM
