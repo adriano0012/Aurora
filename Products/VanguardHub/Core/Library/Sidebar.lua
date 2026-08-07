@@ -2,128 +2,216 @@ local Registry = rawget(_G, "__VanguardModuleRegistry") or {}
 local Utils = Registry["Core/Library/Utils"]
 local Tween = Registry["Core/Library/Tween"]
 
-print("[Vanguard] Sidebar loaded")
-
 local Sidebar = {}
+
+local function tween(library, instance, properties, duration)
+    if Tween then
+        Tween.Play(library, instance, properties, duration or 0.2)
+        return
+    end
+    for property, value in pairs(properties) do
+        instance[property] = value
+    end
+end
 
 function Sidebar.Build(context)
     local library = context.Library
     local main = context.Main
 
-    local sidebar = Utils.CreateInstance("Frame", {
-        Name = "Sidebar",
+    local root = Utils.CreateInstance("Frame", {
         Parent = main,
-        BackgroundColor3 = library.Theme.Secondary,
-        BorderSizePixel = 0,
-        Position = UDim2.fromOffset(22, 118),
-        Size = UDim2.fromOffset(252, 804)
+        BackgroundColor3 = library.Theme.Glass,
+        BackgroundTransparency = 0.04,
+        Size = UDim2.fromOffset(311, 706),
+        Position = UDim2.fromOffset(17, 112)
     })
-    Utils.CreateInstance("UICorner", {Parent = sidebar, CornerRadius = UDim.new(0, 14)})
-    Utils.CreateInstance("UIPadding", {
-        Parent = sidebar,
-        PaddingTop = UDim.new(0, 14),
-        PaddingLeft = UDim.new(0, 14),
-        PaddingRight = UDim.new(0, 14),
-        PaddingBottom = UDim.new(0, 14)
-    })
-    local stroke = Utils.CreateInstance("UIStroke", {
-        Parent = sidebar,
+    Utils.CreateInstance("UICorner", {Parent = root, CornerRadius = UDim.new(0, 10)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = root,
         Color = library.Theme.CardBorder,
-        Transparency = 0.15
+        Thickness = 1,
+        Transparency = 0.12
     })
-    library:BindTheme(stroke, "Color", "CardBorder")
-    library:TrackInstance(sidebar)
 
     local title = Utils.CreateInstance("TextLabel", {
-        Parent = sidebar,
+        Parent = root,
         BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        Size = UDim2.new(1, 0, 0, 26),
-        Text = "Navigation",
-        TextColor3 = library.Theme.Text,
-        TextSize = 16,
+        Size = UDim2.new(1, -36, 0, 30),
+        Position = UDim2.fromOffset(19, 8),
+        Font = Enum.Font.GothamMedium,
+        Text = "CATEGORIES",
+        TextColor3 = library.Theme.Accent,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    library:BindTheme(title, "TextColor3", "Text")
+    library:BindTheme(title, "TextColor3", "Accent")
 
-    local listHost = Utils.CreateInstance("ScrollingFrame", {
-        Name = "List",
-        Parent = sidebar,
+    local list = Utils.CreateInstance("ScrollingFrame", {
+        Parent = root,
         BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.fromOffset(0, 40),
-        Size = UDim2.new(1, 0, 1, -40),
-        CanvasSize = UDim2.new(),
+        Size = UDim2.fromOffset(286, 656),
+        Position = UDim2.fromOffset(7, 40),
+        ScrollBarThickness = 0,
         ScrollBarImageTransparency = 1,
+        CanvasSize = UDim2.new(),
         ScrollingDirection = Enum.ScrollingDirection.Y
     })
     local layout = Utils.CreateInstance("UIListLayout", {
-        Parent = listHost,
-        Padding = UDim.new(0, 8),
-        SortOrder = Enum.SortOrder.LayoutOrder
+        Parent = list,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 3)
     })
     library:AddConnection(layout, "AbsoluteContentSize", function()
-        listHost.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 8)
+        list.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 8)
     end)
 
+    local credits = Utils.CreateInstance("Frame", {
+        Parent = main,
+        BackgroundColor3 = library.Theme.Glass,
+        BackgroundTransparency = 0.04,
+        Position = UDim2.fromOffset(17, 830),
+        Size = UDim2.fromOffset(311, 126)
+    })
+    Utils.CreateInstance("UICorner", {Parent = credits, CornerRadius = UDim.new(0, 10)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = credits,
+        Color = library.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 0.12
+    })
+    local creditsTitle = Utils.CreateInstance("TextLabel", {
+        Parent = credits,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamMedium,
+        Position = UDim2.fromOffset(18, 7),
+        Size = UDim2.fromOffset(275, 23),
+        Text = "CREDITS",
+        TextColor3 = library.Theme.Accent,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    library:BindTheme(creditsTitle, "TextColor3", "Accent")
+
+    local creditRows = {
+        {"Developer:", "Vanguard"},
+        {"UI Design:", "Vanguard Team"},
+        {"Special Thanks:", "Nightfall Team"},
+        {"Version:", "v2.5.0"}
+    }
+    for index, row in ipairs(creditRows) do
+        Utils.CreateInstance("TextLabel", {
+            Parent = credits,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(18, 29 + ((index - 1) * 22)),
+            Size = UDim2.fromOffset(105, 21),
+            Text = row[1],
+            TextColor3 = library.Theme.TextDim,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+        local valueLabel = Utils.CreateInstance("TextLabel", {
+            Parent = credits,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(111, 29 + ((index - 1) * 22)),
+            Size = UDim2.fromOffset(180, 21),
+            Text = row[2],
+            TextColor3 = library.Theme.Accent,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+        library:BindTheme(valueLabel, "TextColor3", "Accent")
+    end
+
     context.Sidebar = {
-        Root = sidebar,
-        List = listHost,
+        Root = root,
+        List = list,
+        Credits = credits,
         Buttons = {}
     }
 end
 
 function Sidebar.AddTabButton(context, record)
     local library = context.Library
-    local sidebar = context.Sidebar
 
     local button = Utils.CreateInstance("TextButton", {
-        Parent = sidebar.List,
+        Parent = context.Sidebar.List,
         AutoButtonColor = false,
         BackgroundColor3 = library.Theme.Main,
-        BackgroundTransparency = 0.25,
+        BackgroundTransparency = 0.82,
         BorderSizePixel = 0,
         LayoutOrder = record.Order,
         Size = UDim2.new(1, 0, 0, 44),
-        Text = ""
+        Text = "",
+        ClipsDescendants = true
     })
-    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 10)})
+    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 8)})
     local stroke = Utils.CreateInstance("UIStroke", {
+        Name = "TabStroke",
         Parent = button,
-        Color = library.Theme.Border,
-        Transparency = 0.3
+        Color = library.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 1
     })
-    library:BindTheme(stroke, "Color", "Border")
+    local indicator = Utils.CreateInstance("Frame", {
+        Name = "Indicator",
+        Parent = button,
+        BackgroundColor3 = library.Theme.Accent,
+        Size = UDim2.new(0, 3, 1, -10),
+        Position = UDim2.new(0, 0, 0, 5),
+        BackgroundTransparency = 1
+    })
+    library:BindTheme(indicator, "BackgroundColor3", "Accent")
 
-    local iconLabel = Utils.CreateInstance("TextLabel", {
-        Parent = button,
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.fromOffset(28, 44),
-        Text = record.Icon ~= "" and "•" or "•",
-        TextColor3 = library.Theme.TextDim,
-        TextSize = 18
-    })
+    local textOffset = 14
+    local iconImage
+    if tonumber(record.Icon) then
+        iconImage = Utils.CreateInstance("ImageLabel", {
+            Parent = button,
+            BackgroundTransparency = 1,
+            Size = UDim2.fromOffset(25, 25),
+            Position = UDim2.new(0, 14, 0.5, -12),
+            Image = "rbxassetid://" .. tostring(record.Icon),
+            ImageColor3 = library.Theme.TextDim,
+            ScaleType = Enum.ScaleType.Fit
+        })
+        textOffset = 56
+    else
+        Utils.CreateInstance("TextLabel", {
+            Parent = button,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(14, 0),
+            Size = UDim2.fromOffset(34, 44),
+            Text = "*",
+            TextColor3 = library.Theme.TextDim,
+            TextSize = 23
+        })
+        textOffset = 56
+    end
+
     local label = Utils.CreateInstance("TextLabel", {
+        Name = "TabText",
         Parent = button,
         BackgroundTransparency = 1,
-        Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(38, 0),
-        Size = UDim2.new(1, -46, 1, 0),
+        Position = UDim2.fromOffset(textOffset, 0),
+        Size = UDim2.new(1, -(textOffset + 8), 1, 0),
+        Font = Enum.Font.Gotham,
         Text = record.DisplayName,
         TextColor3 = library.Theme.Text,
-        TextSize = 14,
+        TextSize = 17,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    library:BindTheme(label, "TextColor3", "Text")
 
     library:AddConnection(button, "MouseEnter", function()
-        Tween.Play(library, button, {BackgroundColor3 = library.Theme.Hover}, 0.15)
+        if not record.Selected then
+            tween(library, button, {BackgroundTransparency = 0.64}, 0.15)
+        end
     end)
     library:AddConnection(button, "MouseLeave", function()
         if not record.Selected then
-            Tween.Play(library, button, {BackgroundColor3 = library.Theme.Main}, 0.15)
+            tween(library, button, {BackgroundTransparency = 0.82}, 0.15)
         end
     end)
     library:AddConnection(button, "MouseButton1Click", function()
@@ -132,9 +220,10 @@ function Sidebar.AddTabButton(context, record)
 
     record.SidebarButton = button
     record.SidebarStroke = stroke
-    record.SidebarIcon = iconLabel
+    record.SidebarIndicator = indicator
+    record.SidebarIcon = iconImage
     record.SidebarLabel = label
-    sidebar.Buttons[record.Id] = record
+    context.Sidebar.Buttons[record.Id] = record
 end
 
 function Sidebar.SetSelected(context, selectedRecord)
@@ -142,18 +231,25 @@ function Sidebar.SetSelected(context, selectedRecord)
     for _, record in pairs(context.Sidebar.Buttons) do
         local active = record == selectedRecord
         record.Selected = active
-        Tween.Play(library, record.SidebarButton, {
-            BackgroundColor3 = active and library.Theme.Selected or library.Theme.Main
-        }, 0.15)
-        Tween.Play(library, record.SidebarStroke, {
-            Color = active and library.Theme.Accent or library.Theme.Border
-        }, 0.15)
-        Tween.Play(library, record.SidebarIcon, {
-            TextColor3 = active and library.Theme.Accent or library.Theme.TextDim
-        }, 0.15)
-        Tween.Play(library, record.SidebarLabel, {
-            TextColor3 = active and library.Theme.Accent or library.Theme.Text
-        }, 0.15)
+        tween(library, record.SidebarButton, {
+            BackgroundColor3 = active and library.Theme.Selected or library.Theme.Main,
+            BackgroundTransparency = active and 0 or 0.82
+        }, 0.2)
+        tween(library, record.SidebarIndicator, {
+            BackgroundTransparency = active and 0 or 1
+        }, 0.2)
+        tween(library, record.SidebarStroke, {
+            Color = active and library.Theme.Accent or library.Theme.CardBorder,
+            Transparency = active and 0.08 or 1
+        }, 0.2)
+        if record.SidebarIcon then
+            tween(library, record.SidebarIcon, {
+                ImageColor3 = active and library.Theme.Accent or library.Theme.TextDim
+            }, 0.2)
+        end
+        tween(library, record.SidebarLabel, {
+            TextColor3 = active and library.Theme.Text or library.Theme.Text
+        }, 0.2)
     end
 end
 

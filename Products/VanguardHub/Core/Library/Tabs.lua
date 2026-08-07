@@ -6,6 +6,28 @@ local Utils = Registry["Core/Library/Utils"]
 
 local Tabs = {}
 
+local sidebarOrder = {
+    home = 1,
+    player = 2,
+    world = 3,
+    teleports = 4,
+    wood = 5,
+    dupe = 6,
+    build = 7,
+    vehicle = 8,
+    item = 9,
+    slot = 10,
+    autobuy = 11,
+    sorter = 12,
+    troll = 13,
+    fun = 14
+}
+
+local sidebarLabels = {
+    wood = "Wood / Mod Wood",
+    build = "Auto Build"
+}
+
 local function resolveConfigValue(config, flag)
     if type(config) ~= "table" or flag == nil then
         return nil, false
@@ -29,48 +51,24 @@ function Tabs.Attach(ui, context)
         local id = string.lower(tostring(options.id or name))
         local page = Utils.CreateInstance("ScrollingFrame", {
             Parent = context.PageHost,
-            Active = true,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
             BackgroundTransparency = 1,
-            BorderSizePixel = 0,
+            Size = UDim2.fromScale(1, 1),
             CanvasSize = UDim2.new(),
-            ScrollBarImageTransparency = 1,
-            Size = UDim2.new(1, 0, 1, 0),
-            Visible = false
+            ScrollBarThickness = 4,
+            ScrollBarImageColor3 = library.Theme.Accent,
+            ScrollBarImageTransparency = 0.28,
+            Visible = false,
+            BorderSizePixel = 0,
+            ScrollingDirection = Enum.ScrollingDirection.Y
         })
-        local columns = Utils.CreateInstance("Frame", {
+        local layout = Utils.CreateInstance("UIListLayout", {
             Parent = page,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, -8, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 12)
         })
-        local left = Utils.CreateInstance("ScrollingFrame", {
-            Parent = columns,
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Position = UDim2.fromOffset(0, 0),
-            Size = UDim2.new(0.5, -6, 1, 0),
-            CanvasSize = UDim2.new(),
-            ScrollBarImageTransparency = 1,
-            AutomaticCanvasSize = Enum.AutomaticSize.None
-        })
-        local right = Utils.CreateInstance("ScrollingFrame", {
-            Parent = columns,
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Position = UDim2.new(0.5, 6, 0, 0),
-            Size = UDim2.new(0.5, -6, 1, 0),
-            CanvasSize = UDim2.new(),
-            ScrollBarImageTransparency = 1,
-            AutomaticCanvasSize = Enum.AutomaticSize.None
-        })
-        for _, column in ipairs({left, right}) do
-            Utils.CreateInstance("UIListLayout", {
-                Parent = column,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 10)
-            })
-        end
+        library:AddConnection(layout, "AbsoluteContentSize", function()
+            page.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 20)
+        end)
 
         local tabObject = {
             Page = page
@@ -78,15 +76,31 @@ function Tabs.Attach(ui, context)
 
         function tabObject:Canvas(height)
             local canvas = Utils.CreateInstance("Frame", {
+                Name = "DashboardCanvas",
                 Parent = page,
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, height or 600)
+                Size = UDim2.new(1, 0, 0, height or 770)
             })
+            page.ScrollBarThickness = 0
+            page.ScrollingEnabled = false
+            page.CanvasPosition = Vector2.new()
             return canvas
         end
 
         function tabObject:Title(text)
-            return text
+            local title = Utils.CreateInstance("TextLabel", {
+                Parent = page,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 34),
+                Font = Enum.Font.GothamBold,
+                Text = text,
+                TextColor3 = library.Theme.Text,
+                TextSize = 21,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Bottom
+            })
+            library:TrackInstance(title)
+            return title
         end
 
         function tabObject:GetContainer()
@@ -94,24 +108,23 @@ function Tabs.Attach(ui, context)
         end
 
         function tabObject:Section(sectionName, defaultOpen)
-            local section = Sections.Create({
+            return Sections.Create({
                 Library = library,
                 UI = ui,
                 TabObject = tabObject,
-                LeftColumn = defaultOpen ~= false and left or right,
-                RightColumn = right
+                Container = page
             }, sectionName, defaultOpen)
-            return section
         end
 
         local record = {
             Id = id,
             Name = name,
-            DisplayName = options.displayName or name,
+            DisplayName = options.displayName or sidebarLabels[id] or name,
             Icon = tostring(icon or ""),
             Page = page,
-            Order = #context.TabList + 1
+            Order = sidebarOrder[id] or (#context.TabList + 100)
         }
+
         record.Activate = function()
             for _, other in ipairs(context.TabList) do
                 other.Page.Visible = false
@@ -119,13 +132,17 @@ function Tabs.Attach(ui, context)
             page.Visible = true
             context.CurrentTab = record
             context.LastMainTab = id ~= "settings" and record or context.LastMainTab
+            if context.ThemePanel then
+                context.ThemePanel.Visible = false
+            end
             Sidebar.SetSelected(context, record)
             Topbar.SetSelected(context, id == "settings" and "Settings" or "Main")
         end
 
         context.TabRegistry[id] = record
         table.insert(context.TabList, record)
-        if options.sidebar ~= false then
+
+        if options.sidebar ~= false and id ~= "settings" then
             Sidebar.AddTabButton(context, record)
         end
 
@@ -225,9 +242,7 @@ function Tabs.Attach(ui, context)
         if not library:ApplyThemeByName(normalized) then
             return false
         end
-        if context.CurrentTab then
-            context.CurrentTab.Activate()
-        end
+        ui.Theme = library.Theme
         return true
     end
 

@@ -8,33 +8,43 @@ function Keybind.Create(tabContext, section, text, flag, default, callback)
     local button = Utils.CreateInstance("TextButton", {
         Parent = section.Body,
         AutoButtonColor = false,
-        BackgroundColor3 = library.Theme.Tertiary,
+        BackgroundColor3 = library.Theme.Main,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 34),
+        Size = UDim2.new(1, 0, 0, 40),
         Text = ""
     })
-    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 8)})
+    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 6)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = button,
+        Color = library.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 0.35
+    })
     local label = Utils.CreateInstance("TextLabel", {
         Parent = button,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.new(1, -90, 1, 0),
-        Font = Enum.Font.Gotham,
-        Text = text,
+        Position = UDim2.new(0.02, 0, 0, 2),
+        Size = UDim2.new(0.5, 0, 0, 20),
+        Font = Enum.Font.GothamMedium,
+        Text = tostring(text or ""),
         TextColor3 = library.Theme.Text,
         TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    local keyLabel = Utils.CreateInstance("TextLabel", {
+    local keyLabel = Utils.CreateInstance("TextButton", {
         Parent = button,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -72, 0, 0),
-        Size = UDim2.fromOffset(60, 34),
-        Font = Enum.Font.GothamBold,
+        BackgroundColor3 = library.Theme.Tertiary,
+        Position = UDim2.new(0.7, 0, 0.5, -13),
+        Size = UDim2.fromOffset(70, 26),
+        Font = Enum.Font.GothamMedium,
         Text = default or "None",
-        TextColor3 = library.Theme.Accent,
-        TextSize = 12
+        TextColor3 = library.Theme.Text,
+        TextSize = 11,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        TextTruncate = Enum.TextTruncate.AtEnd
     })
+    Utils.CreateInstance("UICorner", {Parent = keyLabel, CornerRadius = UDim.new(0, 4)})
 
     local current = default or "None"
     local listening = false
@@ -52,7 +62,7 @@ function Keybind.Create(tabContext, section, text, flag, default, callback)
         end
     end
 
-    library:AddConnection(button, "MouseButton1Click", function()
+    library:AddConnection(keyLabel, "MouseButton1Click", function()
         listening = true
         keyLabel.Text = "..."
     end)

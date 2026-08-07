@@ -18,19 +18,25 @@ function ColorPicker.Create(tabContext, section, text, flag, default, callback)
     local button = Utils.CreateInstance("TextButton", {
         Parent = section.Body,
         AutoButtonColor = false,
-        BackgroundColor3 = library.Theme.Tertiary,
+        BackgroundColor3 = library.Theme.Main,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 34),
+        Size = UDim2.new(1, 0, 0, 40),
         Text = ""
     })
-    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 8)})
+    Utils.CreateInstance("UICorner", {Parent = button, CornerRadius = UDim.new(0, 6)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = button,
+        Color = library.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 0.35
+    })
     Utils.CreateInstance("TextLabel", {
         Parent = button,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.new(1, -56, 1, 0),
-        Font = Enum.Font.Gotham,
-        Text = text,
+        Position = UDim2.new(0.02, 0, 0, 2),
+        Size = UDim2.new(0.6, 0, 0, 20),
+        Font = Enum.Font.GothamMedium,
+        Text = tostring(text or ""),
         TextColor3 = library.Theme.Text,
         TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left
@@ -39,10 +45,15 @@ function ColorPicker.Create(tabContext, section, text, flag, default, callback)
         Parent = button,
         BackgroundColor3 = default or colors[1],
         BorderSizePixel = 0,
-        Position = UDim2.new(1, -36, 0.5, -10),
-        Size = UDim2.fromOffset(20, 20)
+        Position = UDim2.new(0.85, 0, 0.5, -13),
+        Size = UDim2.fromOffset(30, 26)
     })
-    Utils.CreateInstance("UICorner", {Parent = swatch, CornerRadius = UDim.new(0, 6)})
+    Utils.CreateInstance("UICorner", {Parent = swatch, CornerRadius = UDim.new(0, 4)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = swatch,
+        Color = library.Theme.Border,
+        Thickness = 1
+    })
 
     local current = default or colors[1]
     local controller = {}

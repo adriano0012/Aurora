@@ -1,12 +1,12 @@
 local Registry = rawget(_G, "__VanguardModuleRegistry") or {}
 local Utils = Registry["Core/Library/Utils"]
+local Tween = Registry["Core/Library/Tween"]
 local Sidebar = Registry["Core/Library/Sidebar"]
 local Topbar = Registry["Core/Library/Topbar"]
 local Tabs = Registry["Core/Library/Tabs"]
 
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-
-print("[Vanguard] Window AddConnection v2")
 
 local Library = {
     Flags = {},
@@ -150,6 +150,9 @@ function Library:ApplyThemeByName(themeName)
         return false
     end
     self.Theme = Utils.DeepCopy(theme)
+    if self.UIProxy then
+        self.UIProxy.Theme = self.Theme
+    end
     self.ActiveThemeName = themeName
     self:SetFlag("Theme", themeName)
     self:ApplyThemeBindings()
@@ -195,6 +198,7 @@ function Library:new(name, options)
     local screenGui = Utils.CreateInstance("ScreenGui", {
         Name = "VanguardHub",
         Parent = guiParent,
+        DisplayOrder = 999,
         IgnoreGuiInset = true,
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -202,34 +206,120 @@ function Library:new(name, options)
     Utils.ProtectGui(screenGui)
     self.ScreenGui = screenGui
 
+    local baseWidth = 1619
+    local baseHeight = 972
+
     local main = Utils.CreateInstance("Frame", {
         Parent = screenGui,
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = self.Theme.Main,
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.fromOffset(1420, 860)
+        Size = UDim2.fromOffset(baseWidth, baseHeight),
+        ClipsDescendants = true
     })
     Utils.CreateInstance("UICorner", {Parent = main, CornerRadius = UDim.new(0, 18)})
+    local mainStroke = Utils.CreateInstance("UIStroke", {
+        Parent = main,
+        Color = self.Theme.Border,
+        Thickness = 1,
+        Transparency = 0.5
+    })
+    self:BindTheme(mainStroke, "Color", "Border")
+    local mainScale = Utils.CreateInstance("UIScale", {
+        Parent = main,
+        Scale = 1
+    })
     self:TrackInstance(main)
+    self.MainScale = mainScale
+
+    local function updateScale()
+        local camera = workspace.CurrentCamera
+        if not camera then
+            return
+        end
+
+        local viewport = camera.ViewportSize
+        local scale = math.min(
+            (viewport.X - 16) / baseWidth,
+            (viewport.Y - 16) / baseHeight
+        )
+
+        mainScale.Scale = math.clamp(scale, 0.25, 1)
+    end
+
+    local viewportConnection
+    local function connectViewport(camera)
+        if viewportConnection then
+            self:RemoveConnection(viewportConnection)
+            viewportConnection = nil
+        end
+        if camera then
+            viewportConnection = self:AddPropertyConnection(camera, "ViewportSize", updateScale)
+        end
+        updateScale()
+    end
+
+    connectViewport(workspace.CurrentCamera)
+    self:AddPropertyConnection(workspace, "CurrentCamera", function()
+        connectViewport(workspace.CurrentCamera)
+    end)
 
     local background = Utils.CreateInstance("ImageLabel", {
         Parent = main,
-        BackgroundTransparency = 1,
+        Name = "LT2Backdrop",
+        BackgroundColor3 = self.Theme.Main,
+        BackgroundTransparency = 0,
         Image = self.Assets.Background or "",
-        ImageTransparency = 0.1,
-        Position = UDim2.fromOffset(280, 0),
-        Size = UDim2.new(1, -280, 0, 320),
-        ScaleType = Enum.ScaleType.Crop,
-        Visible = self.Assets.Background ~= nil and self.Assets.Background ~= ""
+        ImageColor3 = Color3.fromRGB(178, 192, 185),
+        ImageTransparency = 0.08,
+        Position = UDim2.fromOffset(300, 0),
+        Size = UDim2.fromOffset(1100, 520),
+        ScaleType = Enum.ScaleType.Crop
     })
     self.BackgroundFrame = background
+    self:TrackInstance(background)
+
+    local horizontalShade = Utils.CreateInstance("Frame", {
+        Parent = main,
+        BackgroundColor3 = Color3.fromRGB(0, 4, 5),
+        BorderSizePixel = 0,
+        Size = UDim2.fromScale(1, 1)
+    })
+    Utils.CreateInstance("UIGradient", {
+        Parent = horizontalShade,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.02),
+            NumberSequenceKeypoint.new(0.22, 0.18),
+            NumberSequenceKeypoint.new(0.47, 0.74),
+            NumberSequenceKeypoint.new(0.76, 0.36),
+            NumberSequenceKeypoint.new(1, 0.06)
+        })
+    })
+
+    local verticalShade = Utils.CreateInstance("Frame", {
+        Parent = main,
+        BackgroundColor3 = Color3.fromRGB(0, 5, 6),
+        BorderSizePixel = 0,
+        Size = UDim2.fromScale(1, 1)
+    })
+    Utils.CreateInstance("UIGradient", {
+        Parent = verticalShade,
+        Rotation = 90,
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.62),
+            NumberSequenceKeypoint.new(0.34, 0.68),
+            NumberSequenceKeypoint.new(0.52, 0.22),
+            NumberSequenceKeypoint.new(1, 0.02)
+        })
+    })
 
     local content = Utils.CreateInstance("Frame", {
         Parent = main,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(286, 118),
-        Size = UDim2.new(1, -308, 1, -140)
+        Position = UDim2.fromOffset(354, 116),
+        Size = UDim2.fromOffset(1246, 770),
+        ClipsDescendants = true
     })
     local pageHost = Utils.CreateInstance("Frame", {
         Parent = content,
@@ -238,6 +328,8 @@ function Library:new(name, options)
     })
 
     local ui = {}
+    self.UIProxy = ui
+    ui.Theme = self.Theme
     local context = {
         Library = self,
         UI = ui,
@@ -245,20 +337,129 @@ function Library:new(name, options)
         Main = main,
         Content = content,
         PageHost = pageHost,
-        Minimized = false
+        Minimized = false,
+        BaseHeight = baseHeight
     }
 
     context.ToggleMinimize = function()
+        local previousScale = mainScale.Scale
+        local positionDelta = ((baseHeight - 105) * previousScale) / 2
+        local currentPosition = main.Position
         context.Minimized = not context.Minimized
         content.Visible = not context.Minimized
         if context.Sidebar then
             context.Sidebar.Root.Visible = not context.Minimized
+            if context.Sidebar.Credits then
+                context.Sidebar.Credits.Visible = not context.Minimized
+            end
         end
+        if context.Footer then
+            context.Footer.Visible = not context.Minimized
+        end
+        if context.ThemePanel then
+            context.ThemePanel.Visible = false
+        end
+        if Tween then
+            Tween.Play(self, main, {
+                Position = UDim2.new(
+                    currentPosition.X.Scale,
+                    currentPosition.X.Offset,
+                    currentPosition.Y.Scale,
+                    currentPosition.Y.Offset + (context.Minimized and -positionDelta or positionDelta)
+                ),
+                Size = UDim2.fromOffset(baseWidth, context.Minimized and 105 or baseHeight)
+            }, 0.22, Enum.EasingStyle.Quart)
+        else
+            main.Position = UDim2.new(
+                currentPosition.X.Scale,
+                currentPosition.X.Offset,
+                currentPosition.Y.Scale,
+                currentPosition.Y.Offset + (context.Minimized and -positionDelta or positionDelta)
+            )
+            main.Size = UDim2.fromOffset(baseWidth, context.Minimized and 105 or baseHeight)
+        end
+        return context.Minimized
     end
 
     Sidebar.Build(context)
     Topbar.Build(context)
     Tabs.Attach(ui, context)
+
+    local footer = Utils.CreateInstance("Frame", {
+        Parent = main,
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(354, 904),
+        Size = UDim2.fromOffset(1212, 52)
+    })
+    context.Footer = footer
+    Utils.CreateInstance("Frame", {
+        Parent = footer,
+        BackgroundColor3 = self.Theme.Success,
+        BorderSizePixel = 0,
+        Position = UDim2.fromOffset(0, 20),
+        Size = UDim2.fromOffset(12, 12)
+    })
+    local statusDot = footer:FindFirstChildOfClass("Frame")
+    if statusDot then
+        Utils.CreateInstance("UICorner", {Parent = statusDot, CornerRadius = UDim.new(1, 0)})
+        self:BindTheme(statusDot, "BackgroundColor3", "Success")
+    end
+    Utils.CreateInstance("TextLabel", {
+        Parent = footer,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(22, 0),
+        RichText = true,
+        Size = UDim2.fromOffset(180, 52),
+        Text = 'Status: <font color="#3FB61D">Attached</font>',
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    local timeLabel = Utils.CreateInstance("TextLabel", {
+        Parent = footer,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(204, 0),
+        Size = UDim2.fromOffset(150, 52),
+        Text = "Time:  00:00:00",
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    local fpsLabel = Utils.CreateInstance("TextLabel", {
+        Parent = footer,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(363, 0),
+        Size = UDim2.fromOffset(130, 52),
+        Text = "FPS:  --",
+        TextColor3 = self.Theme.TextDim,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    local footerFrames = 0
+    local footerLastUpdate = os.clock()
+    local footerStartedAt = os.time()
+    self:AddConnection(RunService, "RenderStepped", function()
+        footerFrames = footerFrames + 1
+        local now = os.clock()
+        if now - footerLastUpdate < 1 then
+            return
+        end
+
+        local fps = math.floor((footerFrames / (now - footerLastUpdate)) + 0.5)
+        footerFrames = 0
+        footerLastUpdate = now
+
+        local elapsed = math.max(0, os.time() - footerStartedAt)
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = elapsed % 60
+        timeLabel.Text = string.format("Time:  %02d:%02d:%02d", hours, minutes, seconds)
+        fpsLabel.Visible = self.Flags.FPSOverlay ~= false
+        fpsLabel.Text = "FPS:  " .. tostring(fps)
+    end)
 
     context.SelectPreferredMainTab = function()
         if context.LastMainTab then
@@ -274,11 +475,18 @@ function Library:new(name, options)
         end
     end
 
+    local dragTarget = context.DragHandle or main
     local dragging = false
     local dragStart
     local startPosition
-    self:AddConnection(main, "InputBegan", function(input)
+    self:AddConnection(dragTarget, "InputBegan", function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if dragTarget ~= main then
+                local relativeX = input.Position.X - dragTarget.AbsolutePosition.X
+                if relativeX > (360 * mainScale.Scale) then
+                    return
+                end
+            end
             dragging = true
             dragStart = input.Position
             startPosition = main.Position
@@ -314,6 +522,30 @@ function Library:new(name, options)
 
     function ui:BindTheme(instance, property, themeKey)
         return Library:BindTheme(instance, property, themeKey)
+    end
+    function ui:SetTheme(themeName)
+        return Library:ApplyThemeByName(themeName)
+    end
+    function ui:SetFlag(flag, value)
+        return Library:SetFlag(flag, value)
+    end
+    function ui:GetFlag(flag)
+        return Library:GetFlag(flag)
+    end
+    function ui:LoadFlags(flags)
+        return Library:LoadFlags(flags)
+    end
+    function ui:RegisterFlagControl(flag, controller)
+        return Library:RegisterFlagControl(flag, controller)
+    end
+    function ui:BroadcastFlag(flag, value, source, triggerCallbacks)
+        return Library:BroadcastFlag(flag, value, source, triggerCallbacks)
+    end
+    function ui:SetBackground(image)
+        return Library:SetBackground(image)
+    end
+    function ui:SetSubtitle(text)
+        return Library:SetSubtitle(text)
     end
     function ui:Destroy()
         return Library:Destroy()

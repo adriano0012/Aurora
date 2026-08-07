@@ -9,29 +9,35 @@ function Toggle.Create(tabContext, section, text, flag, default, callback)
     local row = Utils.CreateInstance("TextButton", {
         Parent = section.Body,
         AutoButtonColor = false,
-        BackgroundColor3 = library.Theme.Tertiary,
+        BackgroundColor3 = library.Theme.Main,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 34),
+        Size = UDim2.new(1, 0, 0, 36),
         Text = ""
     })
-    Utils.CreateInstance("UICorner", {Parent = row, CornerRadius = UDim.new(0, 8)})
+    Utils.CreateInstance("UICorner", {Parent = row, CornerRadius = UDim.new(0, 6)})
+    Utils.CreateInstance("UIStroke", {
+        Parent = row,
+        Color = library.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 0.35
+    })
     Utils.CreateInstance("TextLabel", {
         Parent = row,
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(12, 0),
-        Size = UDim2.new(1, -72, 1, 0),
-        Font = Enum.Font.Gotham,
-        Text = text,
+        Size = UDim2.new(1, -60, 1, 0),
+        Font = Enum.Font.GothamMedium,
+        Text = "  " .. tostring(text or ""),
         TextColor3 = library.Theme.Text,
-        TextSize = 12,
+        TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left
     })
     local track = Utils.CreateInstance("Frame", {
         Parent = row,
-        BackgroundColor3 = library.Theme.Main,
+        BackgroundColor3 = library.Theme.Tertiary,
         BorderSizePixel = 0,
-        Position = UDim2.new(1, -52, 0.5, -10),
-        Size = UDim2.fromOffset(40, 20)
+        Position = UDim2.new(1, -42, 0.5, -10),
+        Size = UDim2.fromOffset(38, 20)
     })
     Utils.CreateInstance("UICorner", {Parent = track, CornerRadius = UDim.new(1, 0)})
     local knob = Utils.CreateInstance("Frame", {
@@ -49,8 +55,8 @@ function Toggle.Create(tabContext, section, text, flag, default, callback)
     local function apply(value, skipCallback, skipBroadcast)
         state = value == true
         library:SetFlag(flag, state)
-        Tween.Play(library, track, {BackgroundColor3 = state and library.Theme.Accent or library.Theme.Main}, 0.15)
-        Tween.Play(library, knob, {Position = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2)}, 0.15)
+        Tween.Play(library, track, {BackgroundColor3 = state and library.Theme.Accent or library.Theme.Tertiary}, 0.2)
+        Tween.Play(library, knob, {Position = state and UDim2.fromOffset(20, 2) or UDim2.fromOffset(2, 2)}, 0.2)
         if not skipCallback then
             Utils.SafeCallback(callback, state)
         end

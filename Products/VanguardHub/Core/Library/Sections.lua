@@ -16,93 +16,96 @@ local SectionElements = {
 
 local Sections = {}
 
-local function updateCanvas(column)
-    local holder = column.Parent
-    if holder:IsA("ScrollingFrame") then
-        local layout = column:FindFirstChildOfClass("UIListLayout")
-        if layout then
-            holder.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 24)
-        end
+local function tween(library, instance, properties, duration)
+    if Tween then
+        Tween.Play(library, instance, properties, duration or 0.3)
+        return
+    end
+    for property, value in pairs(properties) do
+        instance[property] = value
     end
 end
 
-function Sections.Create(tabContext, name, leftSide)
+function Sections.Create(tabContext, name, defaultOpen)
     local library = tabContext.Library
-    local parentColumn = leftSide ~= false and tabContext.LeftColumn or tabContext.RightColumn
+    local parent = tabContext.Container
 
     local sectionFrame = Utils.CreateInstance("Frame", {
-        Parent = parentColumn,
+        Parent = parent,
         BackgroundColor3 = library.Theme.Secondary,
-        BorderSizePixel = 0,
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, 0, 0, 0)
+        Size = UDim2.new(1, 0, 0, 42),
+        ClipsDescendants = true
     })
-    Utils.CreateInstance("UICorner", {Parent = sectionFrame, CornerRadius = UDim.new(0, 12)})
-    local stroke = Utils.CreateInstance("UIStroke", {
+    Utils.CreateInstance("UICorner", {Parent = sectionFrame, CornerRadius = UDim.new(0, 10)})
+    Utils.CreateInstance("UIStroke", {
         Parent = sectionFrame,
         Color = library.Theme.CardBorder,
-        Transparency = 0.18
+        Thickness = 1,
+        Transparency = 0.08
     })
-    library:BindTheme(stroke, "Color", "CardBorder")
 
     local header = Utils.CreateInstance("TextButton", {
         Parent = sectionFrame,
-        AutoButtonColor = false,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 38),
-        Text = ""
-    })
-    local title = Utils.CreateInstance("TextLabel", {
-        Parent = header,
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(14, 0),
-        Size = UDim2.new(1, -40, 1, 0),
+        Size = UDim2.new(1, 0, 0, 42),
         Font = Enum.Font.GothamBold,
-        Text = name,
+        Text = "   " .. tostring(name or "Section"),
         TextColor3 = library.Theme.Text,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        BorderSizePixel = 0,
+        AutoButtonColor = false
     })
-    library:BindTheme(title, "TextColor3", "Text")
-    local chevron = Utils.CreateInstance("TextLabel", {
+    local arrow = Utils.CreateInstance("TextLabel", {
         Parent = header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(1, -28, 0, 0),
-        Size = UDim2.fromOffset(20, 38),
+        Size = UDim2.fromOffset(22, 22),
+        Position = UDim2.new(1, -32, 0, 10),
         Font = Enum.Font.GothamBold,
-        Text = "v",
+        Text = ">",
         TextColor3 = library.Theme.TextDim,
-        TextSize = 14
+        TextSize = 13
     })
-    library:BindTheme(chevron, "TextColor3", "TextDim")
-
     local body = Utils.CreateInstance("Frame", {
         Parent = sectionFrame,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(12, 40),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Size = UDim2.new(1, -24, 0, 0)
+        Name = "SectionContent",
+        Size = UDim2.new(1, -24, 0, 0),
+        Position = UDim2.new(0, 12, 0, 46)
     })
     local layout = Utils.CreateInstance("UIListLayout", {
         Parent = body,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 8)
     })
-    library:AddConnection(layout, "AbsoluteContentSize", function()
-        body.Size = UDim2.new(1, -24, 0, layout.AbsoluteContentSize.Y)
-        updateCanvas(parentColumn)
-    end)
 
     local open = true
-    local function setOpen(value)
-        open = value == true
-        body.Visible = open
-        chevron.Text = open and "v" or ">"
-        updateCanvas(parentColumn)
+
+    local function updateSize()
+        if open then
+            local contentSize = layout.AbsoluteContentSize.Y
+            tween(library, sectionFrame, {Size = UDim2.new(1, 0, 0, 46 + contentSize + 14)}, 0.3)
+            arrow.Text = "v"
+        else
+            tween(library, sectionFrame, {Size = UDim2.new(1, 0, 0, 42)}, 0.3)
+            arrow.Text = ">"
+        end
     end
 
+    library:AddConnection(layout, "AbsoluteContentSize", function()
+        if open then
+            updateSize()
+        end
+    end)
+    library:AddConnection(header, "MouseEnter", function()
+        tween(library, header, {TextColor3 = library.Theme.Accent}, 0.15)
+    end)
+    library:AddConnection(header, "MouseLeave", function()
+        tween(library, header, {TextColor3 = library.Theme.Text}, 0.15)
+    end)
     library:AddConnection(header, "MouseButton1Click", function()
-        setOpen(not open)
+        open = not open
+        updateSize()
     end)
 
     local section = {
@@ -112,17 +115,21 @@ function Sections.Create(tabContext, name, leftSide)
         Tab = tabContext.TabObject
     }
 
-    function section:Title(text)
-        title.Text = text
-        return title
+    function section:SetOpen(value)
+        open = value == true
+        updateSize()
+    end
+
+    function section:IsOpen()
+        return open
+    end
+
+    function section:GetSection()
+        return sectionFrame
     end
 
     function section:GetContainer()
         return body
-    end
-
-    function section:SetOpen(value)
-        setOpen(value)
     end
 
     function section:Label(...)
@@ -163,7 +170,7 @@ function Sections.Create(tabContext, name, leftSide)
         return SectionElements.Paragraph.Create(tabContext, self, ...)
     end
 
-    setOpen(true)
+    updateSize()
     return section
 end
 

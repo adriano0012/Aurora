@@ -3,14 +3,6 @@
 -- ============================================================
 
 return function(UI, Config, Utils)
-    print("[Vanguard] Home connect helper")
-
-    if UI.Theme == nil then
-        local registry = rawget(_G, "__VanguardModuleRegistry") or {}
-        local library = registry["Core/Library/Window"]
-        UI.Theme = library and library.Theme or {}
-    end
-
     local Players = game:GetService("Players")
     local Stats = game:GetService("Stats")
     local RunService = game:GetService("RunService")
