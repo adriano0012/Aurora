@@ -22,7 +22,7 @@ function Sidebar.Build(context)
         Parent = main,
         BackgroundColor3 = library.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(311, 706),
+        Size = UDim2.fromOffset(325, 706),
         Position = UDim2.fromOffset(17, 112)
     })
     Utils.CreateInstance("UICorner", {Parent = root, CornerRadius = UDim.new(0, 10)})
@@ -49,7 +49,7 @@ function Sidebar.Build(context)
     local list = Utils.CreateInstance("ScrollingFrame", {
         Parent = root,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(286, 656),
+        Size = UDim2.fromOffset(300, 656),
         Position = UDim2.fromOffset(7, 40),
         ScrollBarThickness = 0,
         ScrollBarImageTransparency = 1,
@@ -69,8 +69,8 @@ function Sidebar.Build(context)
         Parent = main,
         BackgroundColor3 = library.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Position = UDim2.fromOffset(17, 830),
-        Size = UDim2.fromOffset(311, 104)
+        Position = UDim2.fromOffset(17, 814),
+        Size = UDim2.fromOffset(325, 128)
     })
     Utils.CreateInstance("UICorner", {Parent = credits, CornerRadius = UDim.new(0, 10)})
     Utils.CreateInstance("UIStroke", {
@@ -106,7 +106,7 @@ function Sidebar.Build(context)
             Size = UDim2.fromOffset(130, 21),
             Text = row[1],
             TextColor3 = library.Theme.TextDim,
-            TextSize = 12,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left
         })
         local valueLabel = Utils.CreateInstance("TextLabel", {
@@ -117,7 +117,7 @@ function Sidebar.Build(context)
             Size = UDim2.fromOffset(143, 21),
             Text = row[2],
             TextColor3 = library.Theme.Accent,
-            TextSize = 12,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left
         })
         library:BindTheme(valueLabel, "TextColor3", "Accent")
@@ -141,7 +141,7 @@ function Sidebar.AddTabButton(context, record)
         BackgroundTransparency = 0.82,
         BorderSizePixel = 0,
         LayoutOrder = record.Order,
-        Size = UDim2.new(1, 0, 0, 44),
+        Size = UDim2.new(1, 0, 0, 50),
         Text = "",
         ClipsDescendants = true
     })
@@ -169,8 +169,8 @@ function Sidebar.AddTabButton(context, record)
         iconImage = Utils.CreateInstance("ImageLabel", {
             Parent = button,
             BackgroundTransparency = 1,
-            Size = UDim2.fromOffset(25, 25),
-            Position = UDim2.new(0, 14, 0.5, -12),
+            Size = UDim2.fromOffset(28, 28),
+            Position = UDim2.new(0, 14, 0.5, -14),
             Image = "rbxassetid://" .. tostring(record.Icon),
             ImageColor3 = library.Theme.TextDim,
             ScaleType = Enum.ScaleType.Fit
@@ -199,7 +199,7 @@ function Sidebar.AddTabButton(context, record)
         Font = Enum.Font.Gotham,
         Text = record.DisplayName,
         TextColor3 = library.Theme.Text,
-        TextSize = 17,
+        TextSize = 18,
         TextXAlignment = Enum.TextXAlignment.Left
     })
 

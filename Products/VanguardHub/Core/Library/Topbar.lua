@@ -180,8 +180,8 @@ function Topbar.Build(context)
         Parent = root,
         BackgroundColor3 = library.Theme.Glass,
         BackgroundTransparency = 0.05,
-        Position = UDim2.fromOffset(1240, 21),
-        Size = UDim2.fromOffset(359, 79)
+        Position = UDim2.fromOffset(1266, 18),
+        Size = UDim2.fromOffset(330, 72)
     })
     Utils.CreateInstance("UICorner", {Parent = profile, CornerRadius = UDim.new(0, 10)})
     Utils.CreateInstance("UIStroke", {
@@ -212,7 +212,7 @@ function Topbar.Build(context)
         Parent = profile,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(87, 10),
+        Position = UDim2.fromOffset(87, 22),
         Size = UDim2.fromOffset(145, 28),
         Text = localPlayer and localPlayer.DisplayName or "VanguardHub",
         TextColor3 = library.Theme.Text,
@@ -224,9 +224,9 @@ function Topbar.Build(context)
         Parent = profile,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(87, 39),
-        Size = UDim2.fromOffset(145, 25),
-        Text = "v1.0",
+        Position = UDim2.fromOffset(-1000, -1000),
+        Size = UDim2.fromOffset(1, 1),
+        Text = "",
         TextColor3 = library.Theme.Accent,
         TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left

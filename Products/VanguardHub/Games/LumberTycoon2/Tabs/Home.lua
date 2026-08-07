@@ -19,7 +19,7 @@ return function(UI, Config, Utils)
         return
     end
 
-    local canvas = tab:Canvas(530)
+    local canvas = tab:Canvas(500)
     local connections = {}
 
     local function connect(object, eventName, callback)
@@ -287,8 +287,8 @@ return function(UI, Config, Utils)
         end)
     end
 
-    -- Home v3: dashboard intentionally starts lower to preserve the background artwork.\n    -- The empty upper area replaces the old hero without covering the image.
-    local information = makeCard("Information", 0, 170, 310, 158)
+    -- Home v4: refined spacing.
+    local information = makeCard("Information", 0, 145, 310, 158)
     makeTitle(information, "INFORMACOES")
 
     local executorName = "Unknown"
@@ -338,7 +338,7 @@ return function(UI, Config, Utils)
         bindTheme(valueLabel, "TextColor3", "Accent")
     end
 
-    local quickStatus = makeCard("QuickStatus", 326, 170, 894, 158)
+    local quickStatus = makeCard("QuickStatus", 326, 145, 894, 158)
     makeTitle(quickStatus, "QUICK TOGGLES")
 
     local function makeHomeToggle(x, y, text, flag, default, callback)
@@ -368,7 +368,7 @@ return function(UI, Config, Utils)
         Config.NoFog = value
     end)
 
-    local quickSettings = makeCard("QuickSettings", 0, 344, 1220, 170)
+    local quickSettings = makeCard("QuickSettings", 0, 319, 1220, 170)
     makeTitle(quickSettings, "CONFIGURACOES RAPIDAS")
 
     local function makeWideSlider(parent, y, text, flag, default, minimum, maximum, callback)
