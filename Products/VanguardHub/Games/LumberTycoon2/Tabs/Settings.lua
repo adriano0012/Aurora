@@ -139,13 +139,14 @@ return function(UI, Config, Utils)
     end
 
     local function GetExecutorName()
-        local registry = rawget(_G, "__VanguardModuleRegistry") or {}
-        local environment = registry["Core/Environment/Environment"]
-        if environment and type(environment.Get) == "function" then
-            local current = environment.Get()
-            if current and current.Executor then
-                return tostring(current.Executor)
-            end
+        if rawget(_G, "syn") then
+            return "Synapse X"
+        end
+        if rawget(_G, "krnl") then
+            return "KRNL"
+        end
+        if rawget(_G, "fluxus") then
+            return "Fluxus"
         end
         return "Unknown"
     end
@@ -168,26 +169,21 @@ return function(UI, Config, Utils)
     end)
 
     local themeIds = {
-        ["Dark"] = "Dark",
-        ["Purple"] = "Purple",
-        ["Blue"] = "Blue",
-        ["Green"] = "Green",
-        ["Gold"] = "Gold",
-        ["Light"] = "Light"
+        ["Dark Roxo"] = "dark_purple",
+        ["Dark Blue"] = "dark_blue",
+        ["Dark Red"] = "dark_red",
+        ["Dark Green"] = "dark_green",
+        ["Dark Gold"] = "dark_gold"
     }
     local themeLabels = {
-        Dark = "Dark",
-        Purple = "Purple",
-        Blue = "Blue",
-        Green = "Green",
-        Gold = "Gold",
-        Light = "Light",
-        dark_purple = "Purple",
-        dark_blue = "Blue",
-        dark_green = "Green",
-        dark_gold = "Gold"
+        dark_purple = "Dark Roxo",
+        dark_blue = "Dark Blue",
+        dark_red = "Dark Red",
+        dark_green = "Dark Green",
+        dark_gold = "Dark Gold",
+        light = "Dark Roxo"
     }
-    local themeOptions = {"Dark", "Purple", "Blue", "Green", "Gold", "Light"}
+    local themeOptions = {"Dark Roxo", "Dark Blue", "Dark Red", "Dark Green", "Dark Gold"}
     local currentThemeLabel = themeLabels[Config.Theme]
     if currentThemeLabel then
         themeOptions = PrioritizeOption(themeOptions, currentThemeLabel)
@@ -295,15 +291,14 @@ return function(UI, Config, Utils)
     end)
 
     Configuration:Button(Utils._("settings_import"), function()
-        local registry = rawget(_G, "__VanguardModuleRegistry") or {}
-        local clipboard = registry["Core/Services/Clipboard"]
-        if not clipboard or type(clipboard.Paste) ~= "function" then
+        local clipboardReader = rawget(_G, "getclipboard") or getclipboard
+        if type(clipboardReader) ~= "function" then
             Utils.Notify("Settings", "Importacao indisponivel: o executor nao permite ler a area de transferencia.", 3)
             return
         end
 
-        local json = clipboard.Paste()
-        if type(json) ~= "string" or json == "" then
+        local clipboardSuccess, json = pcall(clipboardReader)
+        if not clipboardSuccess or type(json) ~= "string" or json == "" then
             Utils.Notify("Settings", "Nao foi possivel ler uma configuracao da area de transferencia.", 3)
             return
         end
@@ -426,14 +421,13 @@ return function(UI, Config, Utils)
     Info:Label(Utils._("settings_creators"))
 
     Info:Button(Utils._("settings_discord"), function()
-        local registry = rawget(_G, "__VanguardModuleRegistry") or {}
-        local clipboard = registry["Core/Services/Clipboard"]
-        if not clipboard or type(clipboard.Copy) ~= "function" then
+        local clipboardWriter = rawget(_G, "setclipboard") or setclipboard
+        if type(clipboardWriter) ~= "function" then
             Utils.Notify("Settings", Utils._("home_discord_link"), 4)
             return
         end
 
-        local success, err = clipboard.Copy(Utils._("home_discord_link"))
+        local success, err = pcall(clipboardWriter, Utils._("home_discord_link"))
         if success then
             Utils.Notify("Settings", "Discord copiado!", 2)
         else

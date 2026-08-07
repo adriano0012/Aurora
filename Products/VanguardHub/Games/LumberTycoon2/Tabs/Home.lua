@@ -1,5 +1,5 @@
 -- ============================================================
--- VANGUARD HUB - HOME DASHBOARD (CLEAN)
+-- VANGUARD HUB - HOME DASHBOARD
 -- ============================================================
 
 return function(UI, Config, Utils)
@@ -104,6 +104,64 @@ return function(UI, Config, Utils)
         })
         bindTheme(label, "TextColor3", "Accent")
         return label
+    end
+
+    local function makeActionButton(parent, text, icon, iconColor, x, y, width, height, callback)
+        local button = create("TextButton", {
+            Parent = parent,
+            AutoButtonColor = false,
+            BackgroundColor3 = UI.Theme.Glass,
+            BackgroundTransparency = 0.06,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(x, y),
+            Size = UDim2.fromOffset(width, height),
+            Text = "",
+            ZIndex = 15
+        })
+        round(button, 8)
+        stroke(button, 0.2)
+
+        create("TextLabel", {
+            Parent = button,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            Position = UDim2.fromOffset(10, 0),
+            Size = UDim2.fromOffset(38, height),
+            Text = icon,
+            TextColor3 = iconColor,
+            TextSize = 26,
+            ZIndex = 16
+        })
+        create("TextLabel", {
+            Parent = button,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(50, 0),
+            Size = UDim2.new(1, -56, 1, 0),
+            Text = text,
+            TextColor3 = UI.Theme.Text,
+            TextSize = 14,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 16
+        })
+
+        connect(button, "MouseEnter", function()
+            game:GetService("TweenService"):Create(
+                button,
+                TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = UI.Theme.Hover}
+            ):Play()
+        end)
+        connect(button, "MouseLeave", function()
+            game:GetService("TweenService"):Create(
+                button,
+                TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {BackgroundColor3 = UI.Theme.Glass}
+            ):Play()
+        end)
+        connect(button, "MouseButton1Click", callback)
+        return button
     end
 
     local function makeToggle(parent, y, text, flag, default, callback)
@@ -353,14 +411,16 @@ return function(UI, Config, Utils)
     end
 
     local function getExecutorName()
-        local registry = rawget(_G, "__VanguardModuleRegistry") or {}
-        local environment = registry["Core/Environment/Environment"]
-        if environment and type(environment.Get) == "function" then
-            local current = environment.Get()
-            if current and current.Executor then
-                return tostring(current.Executor)
+        local identify = rawget(_G, "identifyexecutor") or rawget(_G, "getexecutorname")
+        if type(identify) == "function" then
+            local success, result = pcall(identify)
+            if success and result then
+                return tostring(result)
             end
         end
+        if rawget(_G, "syn") then return "Synapse X" end
+        if rawget(_G, "krnl") then return "KRNL" end
+        if rawget(_G, "fluxus") then return "Fluxus" end
         return "Unknown"
     end
 
@@ -377,8 +437,8 @@ return function(UI, Config, Utils)
         return ping
     end
 
-    -- Hero (Reduzido) --------------------------------------------
-    local Hero = makeCard("Hero", 0, 0, 754, 200, 0.48)
+    -- Hero -------------------------------------------------------
+    local Hero = makeCard("Hero", 0, 0, 754, 271, 0.48)
     create("UIGradient", {
         Parent = Hero,
         Color = ColorSequence.new({
@@ -421,18 +481,32 @@ return function(UI, Config, Utils)
         BackgroundTransparency = 1,
         Font = Enum.Font.Gotham,
         Position = UDim2.fromOffset(28, 133),
-        Size = UDim2.fromOffset(698, 48),
-        Text = "O hub mais completo e otimizado para Lumber Tycoon 2.",
+        Size = UDim2.fromOffset(475, 62),
+        Text = "O hub mais completo e otimizado\npara Lumber Tycoon 2.",
         TextColor3 = UI.Theme.Text,
-        TextSize = 18,
+        TextSize = 20,
         TextWrapped = true,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top,
         ZIndex = 15
     })
+    local PremiumButton = makeActionButton(
+        Hero,
+        "Premium Ativo",
+        "♛",
+        UI.Theme.Accent,
+        28,
+        209,
+        169,
+        42,
+        function()
+            notify("VanguardHub", "Premium ativo.")
+        end
+    )
+    bindTheme(PremiumButton:FindFirstChildOfClass("TextLabel"), "TextColor3", "Accent")
 
-    -- Information & Quick Status (Lado a lado) ------------------
-    local Information = makeCard("Information", 0, 212, 348, 260)
+    -- Information ------------------------------------------------
+    local Information = makeCard("Information", 0, 282, 348, 260)
     makeTitle(Information, "INFORMAÇÕES")
     local informationRows = {
         {"Executor:", getExecutorName(), UI.Theme.Accent},
@@ -477,7 +551,8 @@ return function(UI, Config, Utils)
         end
     end
 
-    local QuickStatus = makeCard("QuickStatus", 361, 212, 393, 260)
+    -- Quick status -----------------------------------------------
+    local QuickStatus = makeCard("QuickStatus", 361, 282, 378, 260)
     makeTitle(QuickStatus, "STATUS RÁPIDO")
     makeToggle(QuickStatus, 45, "Infinite Yield", "HomeInfiniteYield", Config.HomeInfiniteYield ~= false, function(value)
         Config.HomeInfiniteYield = value
@@ -499,8 +574,136 @@ return function(UI, Config, Utils)
         Config.NoFog = value
     end)
 
-    -- News & Quick Settings (Lado a lado) ------------------------
-    local News = makeCard("News", 0, 484, 348, 286)
+    -- Quick access -----------------------------------------------
+    local QuickAccess = makeCard("QuickAccess", 0, 554, 739, 216)
+    makeTitle(QuickAccess, "ACESSO RÁPIDO")
+    local quickButtons = {
+        {"Bring Tree", "♠", Color3.fromRGB(72, 194, 43), "Wood"},
+        {"Bring Logs", "◒", Color3.fromRGB(206, 126, 69), "Wood"},
+        {"Sell Logs", "$", Color3.fromRGB(63, 201, 44), "Wood"},
+        {"Autofarm", "◆", Color3.fromRGB(198, 132, 83), "Wood"},
+        {"Dupe", "◇", UI.Theme.Accent, "Dupe"},
+        {"Auto Build", "⌂", Color3.fromRGB(239, 90, 75), "Build"},
+        {"Vehicle Spawner", "▰", UI.Theme.TextDim, "Vehicle"},
+        {"Teleport Menu", "●", Color3.fromRGB(245, 76, 87), "Teleports"}
+    }
+    for index, item in ipairs(quickButtons) do
+        local column = (index - 1) % 4
+        local row = math.floor((index - 1) / 4)
+        local button = makeActionButton(
+            QuickAccess,
+            item[1],
+            item[2],
+            item[3],
+            20 + (column * 174),
+            43 + (row * 62),
+            165,
+            53,
+            function()
+                if type(UI.SelectTab) ~= "function" or not UI:SelectTab(item[4]) then
+                    notify(item[1], "Abra a categoria " .. item[4] .. ".")
+                end
+            end
+        )
+        if index == 5 then
+            local iconLabel = button:FindFirstChildOfClass("TextLabel")
+            if iconLabel then bindTheme(iconLabel, "TextColor3", "Accent") end
+        end
+    end
+    create("TextLabel", {
+        Parent = QuickAccess,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(22, 171),
+        RichText = true,
+        Size = UDim2.fromOffset(695, 32),
+        Text = '<font color="#FFC400">◉  Dica:</font>  Passe o mouse sobre qualquer opção para ver mais informações.',
+        TextColor3 = UI.Theme.TextDim,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 15
+    })
+
+    -- Performance ------------------------------------------------
+    local Performance = makeCard("Performance", 753, 0, 493, 204)
+    makeTitle(Performance, "PERFORMANCE")
+
+    local function makeGauge(parent, x, color, caption, initialText, initialPercent)
+        local gauge = create("Frame", {
+            Parent = parent,
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(x, 49),
+            Size = UDim2.fromOffset(105, 128),
+            ZIndex = 15
+        })
+        local segments = {}
+        local segmentCount = 42
+        local radius = 40
+        local centerX = 52
+        local centerY = 48
+        for index = 1, segmentCount do
+            local ratio = (index - 1) / (segmentCount - 1)
+            local angle = -225 + (270 * ratio)
+            local radians = math.rad(angle)
+            local segment = create("Frame", {
+                Parent = gauge,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundColor3 = UI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Position = UDim2.fromOffset(
+                    centerX + (math.cos(radians) * radius),
+                    centerY + (math.sin(radians) * radius)
+                ),
+                Rotation = angle,
+                Size = UDim2.fromOffset(4, 10),
+                ZIndex = 16
+            })
+            round(segment, 2)
+            segments[index] = segment
+        end
+        local valueLabel = create("TextLabel", {
+            Parent = gauge,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            Position = UDim2.fromOffset(7, 28),
+            Size = UDim2.fromOffset(90, 30),
+            Text = initialText,
+            TextColor3 = UI.Theme.Text,
+            TextSize = 22,
+            ZIndex = 17
+        })
+        create("TextLabel", {
+            Parent = gauge,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(7, 57),
+            Size = UDim2.fromOffset(90, 24),
+            Text = caption,
+            TextColor3 = UI.Theme.TextDim,
+            TextSize = 12,
+            ZIndex = 17
+        })
+
+        local function update(percent, text)
+            percent = math.clamp(percent or 0, 0, 1)
+            local activeCount = math.floor((segmentCount * percent) + 0.5)
+            for index, segment in ipairs(segments) do
+                segment.BackgroundColor3 = index <= activeCount and color or UI.Theme.Tertiary
+            end
+            valueLabel.Text = text
+        end
+        update(initialPercent, initialText)
+        return update
+    end
+
+    local updateCPU = makeGauge(Performance, 5, UI.Theme.Accent, "CPU", "47%", 0.47)
+    local updateMemory = makeGauge(Performance, 125, UI.Theme.Info, "MEM", "36%", 0.36)
+    local updateFPS = makeGauge(Performance, 245, Color3.fromRGB(67, 190, 39), "FPS", "60", 0.5)
+    local updatePing = makeGauge(Performance, 365, UI.Theme.Accent, "PING", "18ms", 0.82)
+    bindTheme(Performance, "BackgroundColor3", "Secondary")
+
+    -- News -------------------------------------------------------
+    local News = makeCard("News", 753, 218, 493, 284)
     makeTitle(News, "NOTÍCIAS")
     local newsRows = {
         {"Nova atualização v2.5.0", "24/05", UI.Theme.Success},
@@ -526,7 +729,7 @@ return function(UI, Config, Utils)
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
             Position = UDim2.fromOffset(40, y),
-            Size = UDim2.fromOffset(200, 28),
+            Size = UDim2.fromOffset(330, 28),
             Text = row[1],
             TextColor3 = UI.Theme.Text,
             TextSize = 15,
@@ -537,7 +740,7 @@ return function(UI, Config, Utils)
             Parent = News,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(245, y),
+            Position = UDim2.fromOffset(390, y),
             Size = UDim2.fromOffset(80, 28),
             Text = row[2],
             TextColor3 = row[3],
@@ -553,7 +756,7 @@ return function(UI, Config, Utils)
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Font = Enum.Font.Gotham,
-        Position = UDim2.fromOffset(21, 240),
+        Position = UDim2.fromOffset(21, 238),
         Size = UDim2.fromOffset(120, 30),
         Text = "Ver todas",
         TextColor3 = UI.Theme.Accent,
@@ -566,7 +769,8 @@ return function(UI, Config, Utils)
         notify("Notícias", "Você já está na versão mais recente do painel.")
     end)
 
-    local QuickSettings = makeCard("QuickSettings", 361, 484, 393, 286)
+    -- Quick settings --------------------------------------------
+    local QuickSettings = makeCard("QuickSettings", 753, 515, 493, 255)
     makeTitle(QuickSettings, "CONFIGURAÇÕES RÁPIDAS")
     makeSlider(QuickSettings, 48, "WalkSpeed", "WalkSpeed", Config.WalkSpeed or 120, 16, 1000, function(value)
         Config.WalkSpeed = value
@@ -617,7 +821,7 @@ return function(UI, Config, Utils)
         BorderSizePixel = 0,
         Font = Enum.Font.Gotham,
         Position = UDim2.fromOffset(20, 205),
-        Size = UDim2.fromOffset(353, 40),
+        Size = UDim2.fromOffset(453, 40),
         Text = "Configurar Teclas",
         TextColor3 = UI.Theme.Text,
         TextSize = 15,
@@ -647,7 +851,7 @@ return function(UI, Config, Utils)
         end
     end)
 
-    -- Shared live statistics (apenas Info card) -----------------
+    -- Shared live statistics ------------------------------------
     local renderedFrames = 0
     local lastPerformanceUpdate = os.clock()
     connect(RunService, "RenderStepped", function()
@@ -660,9 +864,18 @@ return function(UI, Config, Utils)
         lastPerformanceUpdate = now
 
         local ping = getPing()
+        local memoryMb = 0
+        pcall(function()
+            memoryMb = Stats:GetTotalMemoryUsageMb()
+        end)
+        local memoryPercent = math.clamp(math.floor((memoryMb / 2048) * 100 + 0.5), 1, 99)
 
         infoValueLabels[5].Text = tostring(ping) .. " ms"
         infoValueLabels[6].Text = tostring(fps)
+        updateCPU(0.47, "47%")
+        updateMemory(memoryPercent / 100, tostring(memoryPercent) .. "%")
+        updateFPS(math.clamp(fps / 120, 0, 1), tostring(fps))
+        updatePing(math.clamp(1 - (ping / 120), 0.08, 1), tostring(ping) .. "ms")
     end)
 
     return function()
