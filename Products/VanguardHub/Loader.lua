@@ -1,6 +1,7 @@
 local Vanguard = {
     Version = "2.0.0",
     Branch = "main",
+    CacheToken = nil,
     State = "idle",
     Debug = true,
     Modules = {},
@@ -89,9 +90,10 @@ local httpGet = buildHttpClient()
 
 function Vanguard:GetModuleUrl(modulePath)
     return string.format(
-        "https://raw.githubusercontent.com/adriano0012/Aurora/%s/Products/VanguardHub/%s.lua",
+        "https://raw.githubusercontent.com/adriano0012/Aurora/%s/Products/VanguardHub/%s.lua?v=%s",
         self.Branch,
-        modulePath
+        modulePath,
+        self.CacheToken or self.Version
     )
 end
 
@@ -265,6 +267,7 @@ function Vanguard:Init()
     _G.__VanguardModuleRegistry = {}
 
     self.State = "loading"
+    self.CacheToken = tostring(math.floor(((tick and tick()) or os.clock()) * 1000))
     self.FailedTabs = {}
     self.Tabs = {}
 
