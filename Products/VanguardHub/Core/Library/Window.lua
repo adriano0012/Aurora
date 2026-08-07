@@ -327,7 +327,7 @@ function Library:new(name)
     lib.ThemeBindings = {}
 
     local BASE_WIDTH = 1619
-    local BASE_HEIGHT = 972
+    local BASE_HEIGHT = 820
     local MAX_UI_SCALE = 0.64
     
     -- Main Frame
@@ -400,7 +400,7 @@ function Library:new(name)
         ImageTransparency = 0.08,
         ScaleType = Enum.ScaleType.Crop,
         Position = UDim2.fromOffset(300, 0),
-        Size = UDim2.fromOffset(1100, 520),
+        Size = UDim2.fromOffset(1100, 500),
         ZIndex = 0
     })
     lib:TrackInstance(Backdrop)
@@ -875,14 +875,14 @@ function Library:new(name)
     
     ConnectToggleKey()
     
-    local sidebarWidth = 248
+    local sidebarWidth = 300
 
     -- Tab Background
     local TabBG = CreateInstance("Frame", {
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(sidebarWidth, 520),
+        Size = UDim2.fromOffset(sidebarWidth, 500),
         Position = UDim2.fromOffset(17, 102),
         ZIndex = 10
     })
@@ -914,7 +914,7 @@ function Library:new(name)
     local TabHolder = CreateInstance("ScrollingFrame", {
         Parent = TabBG,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(228, 476),
+        Size = UDim2.fromOffset(280, 456),
         Position = UDim2.fromOffset(10, 34),
         ScrollBarThickness = 0,
         ScrollBarImageColor3 = lib.Theme.Accent,
@@ -939,8 +939,8 @@ function Library:new(name)
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Position = UDim2.fromOffset(17, 635),
-        Size = UDim2.fromOffset(248, 138),
+        Position = UDim2.fromOffset(17, 615),
+        Size = UDim2.fromOffset(300, 165),
         ZIndex = 10
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Credits})
@@ -955,10 +955,10 @@ function Library:new(name)
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
         Position = UDim2.fromOffset(18, 10),
-        Size = UDim2.fromOffset(210, 26),
+        Size = UDim2.fromOffset(264, 28),
         Text = "CREDITS",
         TextColor3 = lib.Theme.Accent,
-        TextSize = 16,
+        TextSize = 17,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 11
     })
@@ -974,11 +974,11 @@ function Library:new(name)
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(18, 42 + ((index - 1) * 28)),
-            Size = UDim2.fromOffset(102, 22),
+            Position = UDim2.fromOffset(18, 48 + ((index - 1) * 32)),
+            Size = UDim2.fromOffset(128, 24),
             Text = row[1],
             TextColor3 = lib.Theme.TextDim,
-            TextSize = 14,
+            TextSize = 15,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 11
         })
@@ -986,11 +986,11 @@ function Library:new(name)
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(122, 42 + ((index - 1) * 28)),
-            Size = UDim2.fromOffset(108, 22),
+            Position = UDim2.fromOffset(150, 48 + ((index - 1) * 32)),
+            Size = UDim2.fromOffset(132, 24),
             Text = row[2],
             TextColor3 = lib.Theme.Accent,
-            TextSize = 14,
+            TextSize = 15,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 11
         })
@@ -1001,8 +1001,8 @@ function Library:new(name)
     local ContentArea = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(1328, 660),
-        Position = UDim2.fromOffset(274, 102),
+        Size = UDim2.fromOffset(1276, 660),
+        Position = UDim2.fromOffset(326, 102),
         ClipsDescendants = true,
         ZIndex = 10
     })
@@ -1011,8 +1011,8 @@ function Library:new(name)
     local Footer = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(274, 776),
-        Size = UDim2.fromOffset(1328, 34),
+        Position = UDim2.fromOffset(326, 772),
+        Size = UDim2.fromOffset(1276, 34),
         ZIndex = 15
     })
 
@@ -1064,7 +1064,7 @@ function Library:new(name)
         return button
     end
 
-    CreateFooterButton("Discord", "", 1208, 110, CopyDiscord)
+    CreateFooterButton("Discord", "", 1156, 110, CopyDiscord)
 
     -- ============================================================
     -- TAB SYSTEM
