@@ -262,6 +262,8 @@ function Vanguard:Init()
         return
     end
 
+    _G.__VanguardModuleRegistry = {}
+
     self.State = "loading"
     self.FailedTabs = {}
     self.Tabs = {}
