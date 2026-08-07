@@ -1,0 +1,248 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- Настройки
+local SETTINGS = {
+    TeleportDelay = 2,
+    MaxAttempts = 5,
+    TeleportOffset = Vector3.new(0, 2.5, 0),
+    UpdateInterval = 0.5,
+    RespawnWaitTime = 5
+}
+
+-- Состояние
+local State = {
+    Active = false,
+    TargetName = nil,
+    Objects = {},
+    VisitedCounts = {},
+    CurrentIndex = 1,
+    Connections = {},
+    LastUpdate = 0,
+    WaitingRespawn = false
+}
+
+-- Обновление персонажа
+local function UpdateCharacter()
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart") or Character:WaitForChild("HumanoidRootPart", 2)
+    if not HumanoidRootPart then
+        warn("HumanoidRootPart не найден!")
+    end
+end
+
+-- Обновление объектов
+local function UpdateObjects()
+    if not State.TargetName then return false end
+    
+    local newObjects = {}
+    local playerPos = HumanoidRootPart and HumanoidRootPart.Position or Vector3.new()
+    
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name == State.TargetName and (obj:IsA("BasePart") or obj:IsA("Model")) then
+            local part = obj:IsA("BasePart") and obj or obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            if part then
+                table.insert(newObjects, {
+                    Object = obj,
+                    Part = part,
+                    Distance = (part.Position - playerPos).Magnitude
+                })
+            end
+        end
+    end
+    
+    table.sort(newObjects, function(a, b)
+        return a.Distance < b.Distance
+    end)
+    
+    State.Objects = newObjects
+    State.LastUpdate = os.clock()
+    
+    if State.CurrentIndex > #newObjects then
+        State.CurrentIndex = 1
+    end
+    
+    return #newObjects > 0
+end
+
+-- Ожидание возрождения
+local function WaitForRespawn()
+    if State.WaitingRespawn then return end
+    State.WaitingRespawn = true
+    
+    local startTime = os.clock()
+    while os.clock() - startTime < SETTINGS.RespawnWaitTime and State.Active do
+        if LocalPlayer.Character then
+            UpdateCharacter()
+            break
+        end
+        task.wait(0.3)
+    end
+    
+    State.WaitingRespawn = false
+end
+
+-- Телепортация
+local function TeleportToTarget()
+    if #State.Objects == 0 then return false end
+    
+    local target = State.Objects[State.CurrentIndex]
+    if not target or not target.Part or not target.Part.Parent then
+        return false
+    end
+    
+    if not Character or not Character.Parent or not HumanoidRootPart then
+        WaitForRespawn()
+        return false
+    end
+    
+    State.VisitedCounts[target.Object] = (State.VisitedCounts[target.Object] or 0) + 1
+    
+    local success, err = pcall(function()
+        Character:PivotTo(CFrame.new(target.Part.Position + SETTINGS.TeleportOffset))
+    end)
+    
+    if success then
+        State.CurrentIndex = State.CurrentIndex % #State.Objects + 1
+        return true
+    else
+        warn("Ошибка телепортации: "..tostring(err))
+        return false
+    end
+end
+
+-- Основной цикл
+local function TeleportLoop()
+    while State.Active do
+        local shouldContinue = false
+        
+        if not Character or not Character.Parent or not HumanoidRootPart then
+            WaitForRespawn()
+            shouldContinue = true
+        end
+        
+        if not shouldContinue then
+            if os.clock() - State.LastUpdate > SETTINGS.UpdateInterval then
+                UpdateObjects()
+            end
+            
+            if #State.Objects > 0 then
+                if not TeleportToTarget() then
+                    task.wait(0.5)
+                end
+            else
+                task.wait(1)
+            end
+        end
+        
+        task.wait(SETTINGS.TeleportDelay)
+    end
+end
+
+-- Настройка отслеживания
+local function SetupTracking()
+    for _, conn in pairs(State.Connections) do
+        conn:Disconnect()
+    end
+    
+    State.Connections = {
+        Workspace.DescendantAdded:Connect(function(desc)
+            if State.Active and desc.Name == State.TargetName then
+                UpdateObjects()
+            end
+        end),
+        
+        Workspace.DescendantRemoving:Connect(function(desc)
+            if State.Active then
+                for i, obj in ipairs(State.Objects) do
+                    if obj.Object == desc or obj.Part == desc then
+                        UpdateObjects()
+                        break
+                    end
+                end
+            end
+        end),
+        
+        LocalPlayer.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            UpdateCharacter()
+            State.WaitingRespawn = false
+        end),
+        
+        -- Обработка закрытия игры для клиента
+        game:GetService("UserInputService").WindowFocusReleased:Connect(function()
+            if State.Active then
+                State.Active = false
+                print("Окно игры потеряло фокус - телепортация остановлена")
+            end
+        end)
+    }
+end
+
+-- Команда запуска
+getgenv().TPTO = function(objectName)
+    if type(objectName) ~= "string" then
+        return warn("Используйте: TPTO(\"имя_объекта\")")
+    end
+    
+    if State.Active then
+        State.Active = false
+        task.wait(0.2)
+    end
+    
+    UpdateCharacter()
+    State.TargetName = objectName
+    State.Objects = {}
+    State.VisitedCounts = {}
+    State.CurrentIndex = 1
+    State.WaitingRespawn = false
+    
+    SetupTracking()
+    UpdateObjects()
+    
+    State.Active = true
+    task.spawn(TeleportLoop)
+    
+    print("Телепортация к "..objectName.." активирована")
+end
+
+-- Команда остановки
+getgenv().UNTPTO = function()
+    State.Active = false
+    State.WaitingRespawn = false
+    print("Телепортация остановлена")
+end
+
+-- Альтернатива BindToClose для клиента
+local function Cleanup()
+    State.Active = false
+    for _, conn in pairs(State.Connections) do
+        conn:Disconnect()
+    end
+end
+
+-- Обработка выхода (для клиента)
+local function SetupExitHandler()
+    local ui = game:GetService("UserInputService")
+    
+    ui.WindowFocusReleased:Connect(function()
+        if State.Active then
+            Cleanup()
+            print("Телепортация остановлена (потеря фокуса)")
+        end
+    end)
+    
+    -- Дополнительные обработчики при необходимости
+end
+
+SetupExitHandler()
+
+print("✅ Скрипт TPTO успешно загружен!")
+print("Команды:")
+print("TPTO(\"имя_объекта\") - начать телепортацию")
+print("UNTPTO() - остановить телепортацию")

@@ -1,0 +1,801 @@
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+player.CharacterAdded:Connect(function(char)
+    character = char
+end)
+
+if player.PlayerGui:FindFirstChild("AutoFarmHub") then
+    player.PlayerGui.AutoFarmHub:Destroy()
+end
+
+local Settings = {
+    BoxFarmEnabled = false,
+    CollectWeaponParts = true,
+    CollectMaterials = true,
+    CollectMedical = true,
+    AutoUseBox = true,
+    BoxFarmDelay = 0.5,
+    
+    BankRobberyEnabled = false,
+    AutoReturnPosition = true,
+    BankSpamDelay = 0.05,
+    
+    NotificationsEnabled = true,
+}
+
+local Stats = {
+    RobberiesCount = 0,
+    TotalEarned = 0,
+    BoxesCollected = 0,
+}
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoFarmHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 520, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(88, 101, 242)
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.3
+MainStroke.Parent = MainFrame
+
+local MainGradient = Instance.new("UIGradient")
+MainGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 22))
+}
+MainGradient.Rotation = 45
+MainGradient.Parent = MainFrame
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+TopBar.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 12)
+TopCorner.Parent = TopBar
+
+local TopFix = Instance.new("Frame")
+TopFix.Size = UDim2.new(1, 0, 0, 15)
+TopFix.Position = UDim2.new(0, 0, 1, -15)
+TopFix.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+TopFix.BorderSizePixel = 0
+TopFix.Parent = TopBar
+
+local IconLabel = Instance.new("TextLabel")
+IconLabel.Size = UDim2.new(0, 40, 0, 40)
+IconLabel.Position = UDim2.new(0, 10, 0, 2)
+IconLabel.BackgroundTransparency = 1
+IconLabel.Text = "⚡"
+IconLabel.TextColor3 = Color3.fromRGB(88, 101, 242)
+IconLabel.TextSize = 28
+IconLabel.Font = Enum.Font.GothamBold
+IconLabel.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 200, 1, 0)
+Title.Position = UDim2.new(0, 50, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "AUTO FARM 1QLUA"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Size = UDim2.new(0, 200, 0, 15)
+SubTitle.Position = UDim2.new(0, 50, 0, 25)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "v1.0 | by 1qlua"
+SubTitle.TextColor3 = Color3.fromRGB(150, 150, 170)
+SubTitle.TextSize = 11
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.TextXAlignment = Enum.TextXAlignment.Left
+SubTitle.Parent = TopBar
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 7)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TopBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -75, 0, 7)
+MinBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+MinBtn.Text = "−"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 20
+MinBtn.Visible = false
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.BorderSizePixel = 0
+MinBtn.Parent = TopBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinBtn
+
+local SideBar = Instance.new("Frame")
+SideBar.Name = "SideBar"
+SideBar.Size = UDim2.new(0, 130, 1, -55)
+SideBar.Position = UDim2.new(0, 10, 0, 50)
+SideBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+SideBar.BorderSizePixel = 0
+SideBar.Parent = MainFrame
+
+local SideCorner = Instance.new("UICorner")
+SideCorner.CornerRadius = UDim.new(0, 8)
+SideCorner.Parent = SideBar
+
+local SideLayout = Instance.new("UIListLayout")
+SideLayout.Padding = UDim.new(0, 5)
+SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SideLayout.Parent = SideBar
+
+local SidePadding = Instance.new("UIPadding")
+SidePadding.PaddingTop = UDim.new(0, 8)
+SidePadding.PaddingLeft = UDim.new(0, 8)
+SidePadding.PaddingRight = UDim.new(0, 8)
+SidePadding.Parent = SideBar
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, -155, 1, -55)
+ContentFrame.Position = UDim2.new(0, 145, 0, 50)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
+
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 8)
+ContentCorner.Parent = ContentFrame
+
+local Tabs = {}
+local TabPages = {}
+local CurrentTab = nil
+
+local function CreateTab(name, icon, order)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Name = name
+    TabBtn.Size = UDim2.new(1, 0, 0, 35)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+    TabBtn.Text = "  " .. icon .. "  " .. name
+    TabBtn.TextColor3 = Color3.fromRGB(180, 180, 200)
+    TabBtn.TextSize = 13
+    TabBtn.Font = Enum.Font.GothamMedium
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TabBtn.BorderSizePixel = 0
+    TabBtn.LayoutOrder = order
+    TabBtn.AutoButtonColor = false
+    TabBtn.Parent = SideBar
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = TabBtn
+    
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name .. "Page"
+    Page.Size = UDim2.new(1, -10, 1, -10)
+    Page.Position = UDim2.new(0, 5, 0, 5)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 4
+    Page.ScrollBarImageColor3 = Color3.fromRGB(88, 101, 242)
+    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Page.Visible = false
+    Page.Parent = ContentFrame
+    
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Padding = UDim.new(0, 8)
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PageLayout.Parent = Page
+    
+    local PagePadding = Instance.new("UIPadding")
+    PagePadding.PaddingTop = UDim.new(0, 5)
+    PagePadding.PaddingLeft = UDim.new(0, 5)
+    PagePadding.PaddingRight = UDim.new(0, 5)
+    PagePadding.Parent = Page
+    
+    Tabs[name] = TabBtn
+    TabPages[name] = Page
+    
+    TabBtn.MouseEnter:Connect(function()
+        if CurrentTab ~= name then
+            TweenService:Create(TabBtn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(40, 40, 55),
+                TextColor3 = Color3.fromRGB(220, 220, 240)
+            }):Play()
+        end
+    end)
+    
+    TabBtn.MouseLeave:Connect(function()
+        if CurrentTab ~= name then
+            TweenService:Create(TabBtn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(30, 30, 42),
+                TextColor3 = Color3.fromRGB(180, 180, 200)
+            }):Play()
+        end
+    end)
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for tName, tBtn in pairs(Tabs) do
+            TweenService:Create(tBtn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(30, 30, 42),
+                TextColor3 = Color3.fromRGB(180, 180, 200)
+            }):Play()
+            TabPages[tName].Visible = false
+        end
+        
+        TweenService:Create(TabBtn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(88, 101, 242),
+            TextColor3 = Color3.fromRGB(255, 255, 255)
+        }):Play()
+        Page.Visible = true
+        CurrentTab = name
+    end)
+    
+    return Page
+end
+
+local function CreateSection(parent, title)
+    local Section = Instance.new("Frame")
+    Section.Size = UDim2.new(1, -10, 0, 30)
+    Section.BackgroundTransparency = 1
+    Section.Parent = parent
+    
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, 0, 1, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = "> " .. title
+    Label.TextColor3 = Color3.fromRGB(88, 101, 242)
+    Label.TextSize = 13
+    Label.Font = Enum.Font.GothamBold
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Section
+    
+    return Section
+end
+
+local function CreateToggle(parent, name, default, callback)
+    local Toggle = Instance.new("Frame")
+    Toggle.Size = UDim2.new(1, -10, 0, 38)
+    Toggle.BackgroundColor3 = Color3.fromRGB(32, 32, 45)
+    Toggle.BorderSizePixel = 0
+    Toggle.Parent = parent
+    
+    local TCorner = Instance.new("UICorner")
+    TCorner.CornerRadius = UDim.new(0, 6)
+    TCorner.Parent = Toggle
+    
+    local TLabel = Instance.new("TextLabel")
+    TLabel.Size = UDim2.new(1, -60, 1, 0)
+    TLabel.Position = UDim2.new(0, 12, 0, 0)
+    TLabel.BackgroundTransparency = 1
+    TLabel.Text = name
+    TLabel.TextColor3 = Color3.fromRGB(220, 220, 235)
+    TLabel.TextSize = 13
+    TLabel.Font = Enum.Font.GothamMedium
+    TLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TLabel.Parent = Toggle
+    
+    local SwitchBg = Instance.new("TextButton")
+    SwitchBg.Size = UDim2.new(0, 40, 0, 20)
+    SwitchBg.Position = UDim2.new(1, -50, 0.5, -10)
+    SwitchBg.BackgroundColor3 = default and Color3.fromRGB(88, 101, 242) or Color3.fromRGB(60, 60, 75)
+    SwitchBg.Text = ""
+    SwitchBg.BorderSizePixel = 0
+    SwitchBg.AutoButtonColor = false
+    SwitchBg.Parent = Toggle
+    
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(1, 0)
+    SwitchCorner.Parent = SwitchBg
+    
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 16, 0, 16)
+    Knob.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+    Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Knob.BorderSizePixel = 0
+    Knob.Parent = SwitchBg
+    
+    local KnobCorner = Instance.new("UICorner")
+    KnobCorner.CornerRadius = UDim.new(1, 0)
+    KnobCorner.Parent = Knob
+    
+    local state = default
+    
+    SwitchBg.MouseButton1Click:Connect(function()
+        state = not state
+        local goalPos = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+        local goalColor = state and Color3.fromRGB(88, 101, 242) or Color3.fromRGB(60, 60, 75)
+        
+        TweenService:Create(Knob, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Position = goalPos}):Play()
+        TweenService:Create(SwitchBg, TweenInfo.new(0.25), {BackgroundColor3 = goalColor}):Play()
+        
+        if callback then callback(state) end
+    end)
+    
+    return Toggle
+end
+
+local function CreateSlider(parent, name, min, max, default, callback)
+    local Slider = Instance.new("Frame")
+    Slider.Size = UDim2.new(1, -10, 0, 55)
+    Slider.BackgroundColor3 = Color3.fromRGB(32, 32, 45)
+    Slider.BorderSizePixel = 0
+    Slider.Parent = parent
+    
+    local SCorner = Instance.new("UICorner")
+    SCorner.CornerRadius = UDim.new(0, 6)
+    SCorner.Parent = Slider
+    
+    local SLabel = Instance.new("TextLabel")
+    SLabel.Size = UDim2.new(1, -20, 0, 20)
+    SLabel.Position = UDim2.new(0, 12, 0, 6)
+    SLabel.BackgroundTransparency = 1
+    SLabel.Text = name
+    SLabel.TextColor3 = Color3.fromRGB(220, 220, 235)
+    SLabel.TextSize = 13
+    SLabel.Font = Enum.Font.GothamMedium
+    SLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SLabel.Parent = Slider
+    
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Size = UDim2.new(0, 60, 0, 20)
+    ValueLabel.Position = UDim2.new(1, -70, 0, 6)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.Text = tostring(default)
+    ValueLabel.TextColor3 = Color3.fromRGB(88, 101, 242)
+    ValueLabel.TextSize = 12
+    ValueLabel.Font = Enum.Font.GothamBold
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = Slider
+    
+    local Track = Instance.new("Frame")
+    Track.Size = UDim2.new(1, -24, 0, 6)
+    Track.Position = UDim2.new(0, 12, 0, 35)
+    Track.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+    Track.BorderSizePixel = 0
+    Track.Parent = Slider
+    
+    local TrackCorner = Instance.new("UICorner")
+    TrackCorner.CornerRadius = UDim.new(1, 0)
+    TrackCorner.Parent = Track
+    
+    local Fill = Instance.new("Frame")
+    Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    Fill.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    Fill.BorderSizePixel = 0
+    Fill.Parent = Track
+    
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.CornerRadius = UDim.new(1, 0)
+    FillCorner.Parent = Fill
+    
+    local Drag = Instance.new("TextButton")
+    Drag.Size = UDim2.new(1, 0, 1, 0)
+    Drag.BackgroundTransparency = 1
+    Drag.Text = ""
+    Drag.Parent = Track
+    
+    local dragging = false
+    
+    Drag.MouseButton1Down:Connect(function() dragging = true end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouseX = input.Position.X
+            local trackPos = Track.AbsolutePosition.X
+            local trackSize = Track.AbsoluteSize.X
+            local relative = math.clamp((mouseX - trackPos) / trackSize, 0, 1)
+            local value = min + (max - min) * relative
+            value = math.floor(value * 100) / 100
+            
+            Fill.Size = UDim2.new(relative, 0, 1, 0)
+            ValueLabel.Text = tostring(value)
+            
+            if callback then callback(value) end
+        end
+    end)
+    
+    return Slider
+end
+
+local function CreateStatLabel(parent, text)
+    local Stat = Instance.new("Frame")
+    Stat.Size = UDim2.new(1, -10, 0, 32)
+    Stat.BackgroundColor3 = Color3.fromRGB(32, 32, 45)
+    Stat.BorderSizePixel = 0
+    Stat.Parent = parent
+    
+    local StCorner = Instance.new("UICorner")
+    StCorner.CornerRadius = UDim.new(0, 6)
+    StCorner.Parent = Stat
+    
+    local StLabel = Instance.new("TextLabel")
+    StLabel.Size = UDim2.new(1, -20, 1, 0)
+    StLabel.Position = UDim2.new(0, 12, 0, 0)
+    StLabel.BackgroundTransparency = 1
+    StLabel.Text = text
+    StLabel.TextColor3 = Color3.fromRGB(46, 204, 113)
+    StLabel.TextSize = 13
+    StLabel.Font = Enum.Font.GothamBold
+    StLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StLabel.Parent = Stat
+    
+    return StLabel
+end
+
+local function CreateButton(parent, name, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 36)
+    Btn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    Btn.Text = name
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 13
+    Btn.Font = Enum.Font.GothamBold
+    Btn.BorderSizePixel = 0
+    Btn.AutoButtonColor = false
+    Btn.Parent = parent
+    
+    local BCorner = Instance.new("UICorner")
+    BCorner.CornerRadius = UDim.new(0, 6)
+    BCorner.Parent = Btn
+    
+    Btn.MouseEnter:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(108, 121, 255)}):Play()
+    end)
+    Btn.MouseLeave:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(88, 101, 242)}):Play()
+    end)
+    
+    Btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    
+    return Btn
+end
+
+local BoxPage = CreateTab("Boxes", "📦", 1)
+local BankPage = CreateTab("Bank", "💰", 2)
+local StatsPage = CreateTab("Stats", "📊", 3)
+
+CreateSection(BoxPage, "Основные настройки")
+CreateToggle(BoxPage, "Авто-сбор боксов", false, function(state)
+    Settings.BoxFarmEnabled = state
+end)
+CreateToggle(BoxPage, "Авто-использование Component Box", true, function(state)
+    Settings.AutoUseBox = state
+end)
+
+CreateSection(BoxPage, "Что собирать")
+CreateToggle(BoxPage, "Weapon Parts", true, function(state)
+    Settings.CollectWeaponParts = state
+end)
+CreateToggle(BoxPage, "Materials", true, function(state)
+    Settings.CollectMaterials = state
+end)
+CreateToggle(BoxPage, "Scrap", true, function(state)
+    Settings.CollectScrap = state
+end)
+CreateToggle(BoxPage, "Electronics", true, function(state)
+    Settings.CollectElectronics = state
+end)
+CreateToggle(BoxPage, "Medical Supplies", true, function(state)
+    Settings.CollectMedical = state
+end)
+
+CreateSection(BoxPage, "Тайминги")
+CreateSlider(BoxPage, "Задержка между проверками (сек)", 0.1, 2, 0.5, function(value)
+    Settings.BoxFarmDelay = value
+end)
+
+CreateSection(BankPage, "Основные настройки")
+CreateToggle(BankPage, "Авто-ограбление банка", false, function(state)
+    Settings.BankRobberyEnabled = state
+end)
+CreateToggle(BankPage, "Возвращаться на исходную позицию", true, function(state)
+    Settings.AutoReturnPosition = state
+end)
+
+CreateSection(BankPage, "Тайминги")
+CreateSlider(BankPage, "Скорость спама E (сек)", 0.01, 0.5, 0.05, function(value)
+    Settings.BankSpamDelay = value
+end)
+
+CreateSection(StatsPage, "Статистика ограблений")
+local RobberyCountLabel = CreateStatLabel(StatsPage, "🏦 Ограблено раз: 0")
+
+CreateSection(StatsPage, "Статистика боксов")
+local BoxesCountLabel = CreateStatLabel(StatsPage, "📦 Собрано боксов: 0")
+
+CreateButton(StatsPage, "🔄 Сбросить статистику", function()
+    Stats.RobberiesCount = 0
+    Stats.TotalEarned = 0
+    Stats.BoxesCollected = 0
+    RobberyCountLabel.Text = "🏦 Ограблено раз: 0"
+    BoxesCountLabel.Text = "📦 Собрано боксов: 0"
+end)
+
+
+
+local InfoCorner = Instance.new("UICorner")
+InfoCorner.CornerRadius = UDim.new(0, 6)
+InfoCorner.Parent = InfoLabel
+
+Tabs["Boxes"]:GetPropertyChangedSignal("AbsolutePosition"):Wait()
+TabPages["Boxes"].Visible = true
+CurrentTab = "Boxes"
+TweenService:Create(Tabs["Boxes"], TweenInfo.new(0.2), {
+    BackgroundColor3 = Color3.fromRGB(88, 101, 242),
+    TextColor3 = Color3.fromRGB(255, 255, 255)
+}):Play()
+
+local minimized = false
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 520, 0, 45)
+        }):Play()
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 520, 0, 380)
+        }):Play()
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    task.wait(0.3)
+    ScreenGui:Destroy()
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+MainFrame.Size = UDim2.new(0, 0, 0, 0)
+TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, 520, 0, 380)
+}):Play()
+
+local function findTargetItem()
+    local gameFolder = workspace:FindFirstChild("Game")
+    local entities = gameFolder and gameFolder:FindFirstChild("Entities")
+    local itemPickup = entities and entities:FindFirstChild("ItemPickup")
+    if not itemPickup then return nil, nil end
+    
+    local targetMap = {}
+    if Settings.CollectWeaponParts then targetMap["Weapon Parts"] = true end
+    if Settings.CollectMaterials then targetMap["Materials"] = true end
+    if Settings.CollectScrap then targetMap["Scrap"] = true end
+    if Settings.CollectElectronics then targetMap["Electronics "] = true end
+    if Settings.CollectMedical then targetMap["Medical Supplies"] = true end
+    
+    for _, model in ipairs(itemPickup:GetChildren()) do
+        if model:IsA("Model") then
+            for _, part in ipairs(model:GetChildren()) do
+                if part:IsA("BasePart") then
+                    local prompt = part:FindFirstChildOfClass("ProximityPrompt")
+                    if prompt and targetMap[prompt.ObjectText] then
+                        return part, prompt
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+local COMPONENT_BOX_NAME = "Component Box"
+local function getComponentBoxButton()
+    local playerGui = player:FindFirstChild("PlayerGui")
+    local backpack = playerGui and playerGui:FindFirstChild("Backpack")
+    local holder = backpack and backpack:FindFirstChild("Holder")
+    local bpFrame = holder and holder:FindFirstChild("Backpack")
+    local mainFrame = bpFrame and bpFrame:FindFirstChild("Frame")
+    if not mainFrame then return nil end
+    
+    for _, itemButton in ipairs(mainFrame:GetChildren()) do
+        if itemButton.Name == "ItemButton" then
+            local outsideRing = itemButton:FindFirstChild("OutsideRing")
+            local viewport = outsideRing and outsideRing:FindFirstChild("ViewportFrame")
+            if viewport then
+                local itemModel = viewport:FindFirstChild(COMPONENT_BOX_NAME) or viewport:FindFirstChildOfClass("Model")
+                if itemModel and (itemModel.Name == COMPONENT_BOX_NAME or string.find(itemModel.Name, "Component")) then
+                    return itemButton
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function pressSlotKey(layoutOrder)
+    local keyCode
+    local numbers = {"One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"}
+    if numbers[layoutOrder] then
+        keyCode = Enum.KeyCode[numbers[layoutOrder]]
+    end
+    if keyCode then
+        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+    end
+end
+
+local function rightClickScreen()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    local x = viewportSize.X / 2
+    local y = viewportSize.Y / 2
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(Settings.BoxFarmDelay)
+        if not Settings.BoxFarmEnabled then continue end
+        
+        character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then continue end
+        
+        local targetPart, prompt = findTargetItem()
+        if targetPart and prompt then
+            local oldCFrame = hrp.CFrame
+            
+            local fixPosition
+            fixPosition = RunService.Heartbeat:Connect(function()
+                if hrp and targetPart:IsDescendantOf(workspace) then
+                    hrp.CFrame = targetPart.CFrame * CFrame.new(0, 2, 0)
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+            
+            task.wait(0.2)
+            if fireproximityprompt then
+                fireproximityprompt(prompt, 1)
+            else
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(0.05)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            end
+            
+            task.wait(0.5)
+            fixPosition:Disconnect()
+            
+            hrp.CFrame = oldCFrame
+            task.wait(0.3)
+            
+            Stats.BoxesCollected = Stats.BoxesCollected + 1
+            BoxesCountLabel.Text = "📦 Собрано боксов: " .. Stats.BoxesCollected
+            
+            if Settings.AutoUseBox then
+                local itemButton = getComponentBoxButton()
+                if itemButton then
+                    local order = itemButton.LayoutOrder
+                    pressSlotKey(order)
+                    task.wait(0.3)
+                    rightClickScreen()
+                    task.wait(0.5)
+                end
+            end
+        end
+    end
+end)
+
+local isRobbing = false
+
+local function checkMoney()
+    local bankRobbery = workspace:FindFirstChild("BankRobbery")
+    local bankCash = bankRobbery and bankRobbery:FindFirstChild("BankCash")
+    local main = bankCash and bankCash:FindFirstChild("Main")
+    local cashBillboard = main and main:FindFirstChild("CashBillboard")
+    local moneyLabel = cashBillboard and cashBillboard:FindFirstChild("MoneyLabel")
+    if moneyLabel and moneyLabel:IsA("TextLabel") and moneyLabel.Visible and moneyLabel.Text ~= "" and moneyLabel.Text ~= "0" then
+        return moneyLabel, bankCash
+    end
+    return nil, nil
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if not Settings.BankRobberyEnabled then continue end
+        
+        local moneyLabel, bankCash = checkMoney()
+        if moneyLabel and bankCash and not isRobbing then
+            isRobbing = true
+            
+            local moneyText = moneyLabel.Text
+            local earnedThisTime = tonumber(moneyText:gsub("%D", "")) or 0
+            
+            local originalCFrame = nil
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                originalCFrame = character.HumanoidRootPart.CFrame
+            end
+            
+            local teleportLock
+            teleportLock = RunService.Heartbeat:Connect(function()
+                if character and character:FindFirstChild("HumanoidRootPart") and bankCash and Settings.BankRobberyEnabled then
+                    character.HumanoidRootPart.CFrame = bankCash:GetPivot() * CFrame.new(0, 2, 0)
+                    character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                end
+            end)
+            
+            while checkMoney() and Settings.BankRobberyEnabled do
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(Settings.BankSpamDelay)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                task.wait(Settings.BankSpamDelay)
+            end
+            
+            if teleportLock then teleportLock:Disconnect() end
+            
+            Stats.RobberiesCount = Stats.RobberiesCount + 1
+            Stats.TotalEarned = Stats.TotalEarned + earnedThisTime
+            RobberyCountLabel.Text = "🏦 Ограблено раз: " .. Stats.RobberiesCount
+            
+            if Settings.AutoReturnPosition and originalCFrame and character and character:FindFirstChild("HumanoidRootPart") then
+                character.HumanoidRootPart.CFrame = originalCFrame
+            end
+            
+            isRobbing = false
+        end
+    end
+end)

@@ -1,0 +1,2785 @@
+local awaitRef = {}
+local objects = {}
+local coroutines = {}
+
+local item = {
+	id = 0;
+	type = "Model";
+	children = {
+		[1] = {
+			id = 1;
+			type = "Model";
+			children = {
+				[1] = {
+					id = 2;
+					type = "Model";
+					children = {
+						[1] = {
+							id = 3;
+							type = "Model";
+							children = {
+								[1] = {
+									id = 4;
+									type = "Model";
+									children = {
+										[1] = {
+											id = 5;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -60, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1011";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-237.8405, 64.2788467, -52.793087, 0.500000119, 0, -0.866025627, 0, 1, 0, 0.866025627, 0, 0.500000119);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 16.50640869140625);
+											};
+										};
+										[2] = {
+											id = 6;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 40.880001068115234, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1012";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-169.948685, 64.2788391, 38.1953888, -0.756079733, 0, 0.65447998, 0, 1, 0, -0.65447998, 0, -0.756079733);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[3] = {
+											id = 7;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 25, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1013";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-161.64006, 64.2788391, 26.5351048, -0.906308055, 0, 0.422618449, 0, 1, 0, -0.422618449, 0, -0.906308055);
+												Size = Vector3.new(0.800000011920929, 144.9844970703125, 12.400468826293945);
+											};
+										};
+										[4] = {
+											id = 8;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 4;
+												};
+												Rotation = Vector3.new(180, 15, 180);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.5333548784255981, 144.65635681152344, 9.875890731811523);
+												Name = "Part1014";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-156.417068, 64.2788391, 13.0253582, -0.965926051, 0, 0.258819193, 0, 1, 0, -0.258819193, 0, -0.965926051);
+												PivotOffset = CFrame.new(0, 0.328178287, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[5] = {
+											id = 9;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 0, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1015";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-155.38385, 64.2788391, -6.84707975, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+												Size = Vector3.new(0.800000011920929, 144.9844970703125, 6.514422416687012);
+											};
+										};
+										[6] = {
+											id = 10;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -15, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1016";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-156.980713, 64.2788391, -12.5787878, -0.96592617, 0, -0.258819073, 0, 1, 0, 0.258819073, 0, -0.96592617);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[7] = {
+											id = 11;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -30, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1017";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-164.03511, 64.2788391, -29.0283566, -0.866025627, 0, -0.500000119, 0, 1, 0, 0.500000119, 0, -0.866025627);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[8] = {
+											id = 12;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -50, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1018";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-175.592789, 64.2788391, -43.0443573, -0.642787933, 0, -0.766044676, 0, 1, 0, 0.766044676, 0, -0.642787933);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[9] = {
+											id = 13;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -65, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1019";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-189.92865, 64.2788467, -52.5606689, -0.422618449, 0, -0.906308055, 0, 1, 0, 0.906308055, 0, -0.422618449);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 17.206369400024414);
+											};
+										};
+										[10] = {
+											id = 14;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -80, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1020";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-204.030151, 64.2788467, -57.3398323, -0.173648238, 0, -0.984807611, 0, 1, 0, 0.984807611, 0, -0.173648238);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 13.084400177001953);
+											};
+										};
+										[11] = {
+											id = 15;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -74.9990005493164, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1021";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-227.964523, 64.2788467, -56.3425102, 0.258818209, 0, -0.965922832, 0, 1, 0, 0.965922832, 0, 0.258818209);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 16.50640869140625);
+											};
+										};
+										[12] = {
+											id = 16;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -89.9260025024414, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1022";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-215.082748, 64.2788467, -58.3549156, 0, 0, -0.999999166, 0, 1, 0, 0.999999166, 0, 0);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 9.811484336853027);
+											};
+										};
+										[13] = {
+											id = 17;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -40, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1023";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-257.846191, 64.2788467, -37.5030594, 0.766044676, 0, -0.642787874, 0, 1, 0, 0.642787874, 0, 0.766044676);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 19.005483627319336);
+											};
+										};
+										[14] = {
+											id = 18;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 40, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1024";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-169.502838, 64.2788467, 37.8162155, -0.766044557, 0, 0.642787755, 0, 1, 0, -0.642787755, 0, -0.766044557);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 19.005483627319336);
+											};
+										};
+										[15] = {
+											id = 19;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 60, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1025";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-183.640106, 64.2788467, 49.766304, -0.500000119, 0, 0.866025627, 0, 1, 0, -0.866025627, 0, -0.500000119);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 19.005483627319336);
+											};
+										};
+										[16] = {
+											id = 20;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 89.9209976196289, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1026";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-212.266281, 64.2788467, 58.6680717, 5.96046448e-08, 0, 0.999999046, 0, 1, 0, -0.999999046, 0, 5.96046448e-08);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 9.811484336853027);
+											};
+										};
+										[17] = {
+											id = 21;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 80, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1027";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-223.318878, 64.2788467, 57.6529884, 0.173648208, 0, 0.984807551, 0, 1, 0, -0.984807551, 0, 0.173648208);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 13.084400177001953);
+											};
+										};
+										[18] = {
+											id = 22;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 65, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1028";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-237.42038, 64.2788467, 52.8738251, 0.422618359, 0, 0.906307817, 0, 1, 0, -0.906307817, 0, 0.422618359);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 17.206369400024414);
+											};
+										};
+										[19] = {
+											id = 23;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 74.9990005493164, 180);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1029";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-199.384491, 64.2788467, 56.6556664, -0.258818209, 0, 0.965922654, 0, 1, 0, -0.965922654, 0, -0.258818209);
+												Size = Vector3.new(0.8431152105331421, 144.9844970703125, 16.50640869140625);
+											};
+										};
+										[20] = {
+											id = 24;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 50, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1030";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-251.756226, 64.2788391, 43.3575134, 0.642787814, 0, 0.766044617, 0, 1, 0, -0.766044617, 0, 0.642787814);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[21] = {
+											id = 25;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 30, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1031";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-263.313904, 64.2788391, 29.3415127, 0.866025507, 0, 0.50000006, 0, 1, 0, -0.50000006, 0, 0.866025507);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[22] = {
+											id = 26;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 15, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1032";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-270.368286, 64.2788391, 12.8919592, 0.965925992, 0, 0.258819044, 0, 1, 0, -0.258819044, 0, 0.965925992);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[23] = {
+											id = 27;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 4;
+												};
+												BrickColor = BrickColor.new("Cyan");
+												TopSurface = Enum.SurfaceType.Smooth;
+												Name = "Part1033";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-271.965149, 64.2788391, 0.827792764, 1.00000012, 0, -2.98023224e-08, 0, 1, 0, 2.98023224e-08, 0, 1.00000012);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+										[24] = {
+											id = 28;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 4;
+												};
+												Rotation = Vector3.new(0, -15, 0);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+												Name = "Part1034";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-270.858032, 64.2788391, -12.9880981, 0.965925932, 0, -0.258819193, 0, 1, 0, 0.258819193, 0, 0.965925932);
+												PivotOffset = CFrame.new(0, 0.492247581, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[25] = {
+											id = 29;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -25, 0);
+												Parent = {
+													[1] = 4;
+												};
+												Name = "Part1035";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-267.141388, 64.2788391, -23.1500778, 0.906307817, 0, -0.422618359, 0, 1, 0, 0.422618359, 0, 0.906307817);
+												Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+											};
+										};
+									};
+									properties = {
+										WorldPivot = CFrame.new(-213.67453, -7.72115755, 0.156585693, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+										Name = "Model1008";
+										Parent = {
+											[1] = 3;
+										};
+									};
+								};
+								[2] = {
+									id = 30;
+									type = "Part";
+									children = {};
+									properties = {
+										BottomSurface = Enum.SurfaceType.Smooth;
+										Color = Color3.new(0.0156863, 0.686275, 0.92549);
+										Anchored = true;
+										Rotation = Vector3.new(0, -40.880001068115234, 0);
+										Parent = {
+											[1] = 3;
+										};
+										Name = "Part1009";
+										TopSurface = Enum.SurfaceType.Smooth;
+										BrickColor = BrickColor.new("Cyan");
+										Material = Enum.Material.ForceField;
+										CFrame = CFrame.new(-257.40033, 64.2788391, -37.8822021, 0.756079674, 0, -0.654479921, 0, 1, 0, 0.654479921, 0, 0.756079674);
+										Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+									};
+								};
+								[3] = {
+									id = 31;
+									type = "Part";
+									children = {};
+									properties = {
+										BottomSurface = Enum.SurfaceType.Smooth;
+										Color = Color3.new(0.0156863, 0.686275, 0.92549);
+										Anchored = true;
+										Rotation = Vector3.new(0, -55.880001068115234, 0);
+										Parent = {
+											[1] = 3;
+										};
+										Name = "Part1010";
+										TopSurface = Enum.SurfaceType.Smooth;
+										BrickColor = BrickColor.new("Cyan");
+										Material = Enum.Material.ForceField;
+										CFrame = CFrame.new(-248.855255, 64.2788391, -45.6265793, 0.560924828, 0, -0.827866614, 0, 1, 0, 0.827866614, 0, 0.560924828);
+										Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+									};
+								};
+							};
+							properties = {
+								WorldPivot = CFrame.new(-213.67453, -7.72115755, 0.156585693, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+								Name = "Model1006";
+								Parent = {
+									[1] = 2;
+								};
+							};
+						};
+						[2] = {
+							id = 32;
+							type = "Part";
+							children = {};
+							properties = {
+								BottomSurface = Enum.SurfaceType.Smooth;
+								Color = Color3.new(0.0156863, 0.686275, 0.92549);
+								Anchored = true;
+								Rotation = Vector3.new(0, -15, 0);
+								Parent = {
+									[1] = 2;
+								};
+								Name = "Part1007";
+								TopSurface = Enum.SurfaceType.Smooth;
+								BrickColor = BrickColor.new("Cyan");
+								Material = Enum.Material.ForceField;
+								CFrame = CFrame.new(-270.858032, 64.2788391, -12.9880981, 0.965925932, 0, -0.258819193, 0, 1, 0, 0.258819193, 0, 0.965925932);
+								Size = Vector3.new(0.8003429174423218, 144.9844970703125, 19.179330825805664);
+							};
+						};
+					};
+					properties = {
+						WorldPivot = CFrame.new(-213.67453, -7.72115755, 0.156585693, -1, 0, 0, 0, 1, 0, 0, 0, -1);
+						Name = "Model959";
+						Parent = {
+							[1] = 1;
+						};
+					};
+				};
+				[2] = {
+					id = 33;
+					type = "Model";
+					children = {
+						[1] = {
+							id = 34;
+							type = "Model";
+							children = {
+								[1] = {
+									id = 35;
+									type = "Model";
+									children = {
+										[1] = {
+											id = 36;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 80.87999725341797, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1040";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(4.29735565, 64.4327087, 268.667084, -0.158499137, 0, 0.987359285, 0, 1, 0, -0.987359285, 0, -0.158499137);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[2] = {
+											id = 37;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 65, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1041";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(21.4957256, 64.4327164, 263.563904, -0.42261833, 0, 0.906307876, 0, 1, 0, -0.906307876, 0, -0.42261833);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[3] = {
+											id = 38;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 35;
+												};
+												Rotation = Vector3.new(180, 55, 180);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+												Name = "Part1042";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(31.0225334, 64.4327164, 258.083405, -0.57357651, 0, 0.819152176, 0, 1, 0, -0.819152176, 0, -0.57357651);
+												PivotOffset = CFrame.new(0, 0.5, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[4] = {
+											id = 39;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 40, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1043";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(40.9045372, 64.4327164, 248.056015, -0.766044617, 0, 0.642787635, 0, 1, 0, -0.642787635, 0, -0.766044617);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[5] = {
+											id = 40;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 25, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1044";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(47.5388298, 64.4327164, 237.62616, -0.906307936, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, -0.906307936);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[6] = {
+											id = 41;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 10, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1045";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(52.789856, 64.4327164, 220.220718, -0.984807849, 0, 0.173648134, 0, 1, 0, -0.173648134, 0, -0.984807849);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[7] = {
+											id = 42;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -10, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1046";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(52.9479218, 64.4327164, 201.768616, -0.984807968, 0, -0.173648223, 0, 1, 0, 0.173648223, 0, -0.984807968);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[8] = {
+											id = 43;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -25, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1047";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(48.0063629, 64.4327164, 185.00386, -0.906307876, 0, -0.42261833, 0, 1, 0, 0.42261833, 0, -0.906307876);
+												Size = Vector3.new(0.8129475116729736, 145, 17.477352142333984);
+											};
+										};
+										[9] = {
+											id = 44;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -40, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1048";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(40.1542282, 64.4327164, 172.078125, -0.766044259, 0, -0.642787457, 0, 1, 0, 0.642787457, 0, -0.766044259);
+												Size = Vector3.new(0.8563934564590454, 145, 13.29046630859375);
+											};
+										};
+										[10] = {
+											id = 45;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -65, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1049";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(20.8795128, 64.4327164, 157.227142, -0.42261681, 0, -0.906304836, 0, 1, 0, 0.906304836, 0, -0.42261681);
+												Size = Vector3.new(0.8563934564590454, 145, 16.766368865966797);
+											};
+										};
+										[11] = {
+											id = 46;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -50, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1050";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(32.2168655, 64.4327164, 164.07193, -0.64278692, 0, -0.766043723, 0, 1, 0, 0.766043723, 0, -0.64278692);
+												Size = Vector3.new(0.8563934564590454, 145, 9.966005325317383);
+											};
+										};
+										[12] = {
+											id = 47;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -80, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1051";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-14.6721649, 64.4327164, 152.376221, 0.173648253, 0, -0.984807909, 0, 1, 0, 0.984807909, 0, 0.173648253);
+												Size = Vector3.new(0.8563934564590454, 145, 19.30480194091797);
+											};
+										};
+										[13] = {
+											id = 48;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 80, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1052";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(4.8918376, 64.4327164, 268.663147, -0.173648238, 0, 0.984807789, 0, 1, 0, -0.984807789, 0, -0.173648238);
+												Size = Vector3.new(0.8563934564590454, 145, 19.30480194091797);
+											};
+										};
+										[14] = {
+											id = 49;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 80, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1053";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-13.9108458, 64.4327164, 268.731232, 0.173648104, 0, 0.984807849, 0, 1, 0, -0.984807849, 0, 0.173648104);
+												Size = Vector3.new(0.8563934564590454, 145, 19.30480194091797);
+											};
+										};
+										[15] = {
+											id = 50;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 50, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1054";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-41.9971886, 64.4327164, 256.967438, 0.64278686, 0, 0.766043603, 0, 1, 0, -0.766043603, 0, 0.64278686);
+												Size = Vector3.new(0.8563934564590454, 145, 9.966005325317383);
+											};
+										};
+										[16] = {
+											id = 51;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 40, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1055";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-49.9345474, 64.4327164, 248.961243, 0.76604414, 0, 0.642787397, 0, 1, 0, -0.642787397, 0, 0.76604414);
+												Size = Vector3.new(0.8563934564590454, 145, 13.29046630859375);
+											};
+										};
+										[17] = {
+											id = 52;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 25, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1056";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-57.7866821, 64.4327164, 236.035507, 0.906307757, 0, 0.42261827, 0, 1, 0, -0.42261827, 0, 0.906307757);
+												Size = Vector3.new(0.8129475116729736, 145, 17.477352142333984);
+											};
+										};
+										[18] = {
+											id = 53;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 65, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1057";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-30.6598358, 64.4327164, 263.812225, 0.42261675, 0, 0.906304717, 0, 1, 0, -0.906304717, 0, 0.42261675);
+												Size = Vector3.new(0.8563934564590454, 145, 16.766368865966797);
+											};
+										};
+										[19] = {
+											id = 54;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 10, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1058";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-62.728241, 64.4327164, 219.270752, 0.984807849, 0, 0.173648208, 0, 1, 0, -0.173648208, 0, 0.984807849);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[20] = {
+											id = 55;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -10, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1059";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-62.5701752, 64.4327164, 200.818649, 0.98480773, 0, -0.173648119, 0, 1, 0, 0.173648119, 0, 0.98480773);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[21] = {
+											id = 56;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -25, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1060";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-57.319149, 64.4327164, 183.413223, 0.906307817, 0, -0.42261821, 0, 1, 0, 0.42261821, 0, 0.906307817);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[22] = {
+											id = 57;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -40, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1061";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-50.6848564, 64.4327164, 172.983368, 0.766044497, 0, -0.642787576, 0, 1, 0, 0.642787576, 0, 0.766044497);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[23] = {
+											id = 58;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 35;
+												};
+												Rotation = Vector3.new(0, -55, 0);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+												Name = "Part1062";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-40.8028564, 64.4327164, 162.955963, 0.57357645, 0, -0.819152057, 0, 1, 0, 0.819152057, 0, 0.57357645);
+												PivotOffset = CFrame.new(0, 0.5, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[24] = {
+											id = 59;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -65, 0);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1063";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-31.2760487, 64.4327164, 157.475479, 0.42261827, 0, -0.906307757, 0, 1, 0, 0.906307757, 0, 0.42261827);
+												Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+											};
+										};
+										[25] = {
+											id = 60;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -80, 180);
+												Parent = {
+													[1] = 35;
+												};
+												Name = "Part1064";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(10.8774786, 64.4327164, 153.540848, -0.173648104, 0, -0.984807849, 0, 1, 0, 0.984807849, 0, -0.173648104);
+												Size = Vector3.new(0.8563934564590454, 145, 16.766368865966797);
+											};
+										};
+									};
+									properties = {
+										WorldPivot = CFrame.new(-4.89017868, -7.56728601, 210.519684, -0.766044617, 0, 0.642787635, 0, 1, 0, -0.642787635, 0, -0.766044617);
+										Name = "Model1038";
+										Parent = {
+											[1] = 34;
+										};
+									};
+								};
+								[2] = {
+									id = 61;
+									type = "Part";
+									children = {};
+									properties = {
+										BottomSurface = Enum.SurfaceType.Smooth;
+										Color = Color3.new(0.0156863, 0.686275, 0.92549);
+										Anchored = true;
+										Rotation = Vector3.new(0, -80.87999725341797, 0);
+										Parent = {
+											[1] = 34;
+										};
+										Name = "Part1039";
+										TopSurface = Enum.SurfaceType.Smooth;
+										BrickColor = BrickColor.new("Cyan");
+										Material = Enum.Material.ForceField;
+										CFrame = CFrame.new(-14.0776825, 64.4327087, 152.372314, 0.158499122, 0, -0.987359166, 0, 1, 0, 0.987359166, 0, 0.158499122);
+										Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+									};
+								};
+							};
+							properties = {
+								WorldPivot = CFrame.new(-4.89017868, -7.56728601, 210.519684, -0.766044617, 0, 0.642787635, 0, 1, 0, -0.642787635, 0, -0.766044617);
+								Name = "Model1036";
+								Parent = {
+									[1] = 33;
+								};
+							};
+						};
+						[2] = {
+							id = 62;
+							type = "Part";
+							children = {};
+							properties = {
+								BottomSurface = Enum.SurfaceType.Smooth;
+								Color = Color3.new(0.0156863, 0.686275, 0.92549);
+								Anchored = true;
+								Rotation = Vector3.new(0, -55, 0);
+								Parent = {
+									[1] = 33;
+								};
+								Name = "Part1037";
+								TopSurface = Enum.SurfaceType.Smooth;
+								BrickColor = BrickColor.new("Cyan");
+								Material = Enum.Material.ForceField;
+								CFrame = CFrame.new(-40.8028564, 64.4327164, 162.955963, 0.57357645, 0, -0.819152057, 0, 1, 0, 0.819152057, 0, 0.57357645);
+								Size = Vector3.new(0.8129475116729736, 145, 19.481386184692383);
+							};
+						};
+					};
+					properties = {
+						WorldPivot = CFrame.new(-4.89017868, -7.56728601, 210.519684, -0.766044617, 0, 0.642787635, 0, 1, 0, -0.642787635, 0, -0.766044617);
+						Name = "Model960";
+						Parent = {
+							[1] = 1;
+						};
+					};
+				};
+				[3] = {
+					id = 63;
+					type = "Model";
+					children = {
+						[1] = {
+							id = 64;
+							type = "Model";
+							children = {
+								[1] = {
+									id = 65;
+									type = "Model";
+									children = {
+										[1] = {
+											id = 66;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -60, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1070";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-26.9676952, 64.3395844, -259.531647, 0.500000119, 0, -0.866025627, 0, 1, 0, 0.866025627, 0, 0.500000119);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 16.239906311035156);
+											};
+										};
+										[2] = {
+											id = 67;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 40.880001068115234, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1071";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(39.82798, 64.3395767, -170.012222, -0.756079733, 0, 0.65447998, 0, 1, 0, -0.65447998, 0, -0.756079733);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[3] = {
+											id = 68;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 25, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1072";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(48.8214264, 64.3395844, -183.24054, -0.906308055, 0, 0.422618449, 0, 1, 0, -0.422618449, 0, -0.906308055);
+												Size = Vector3.new(0.7870836853981018, 144.96859741210938, 16.07595443725586);
+											};
+										};
+										[4] = {
+											id = 69;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 65;
+												};
+												Rotation = Vector3.new(180, 15, 180);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.5247437357902527, 144.645751953125, 17.127779006958008);
+												Name = "Part1073";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(54.1002235, 64.3395844, -198.35527, -0.965926051, 0, 0.258819193, 0, 1, 0, -0.258819193, 0, -0.965926051);
+												PivotOffset = CFrame.new(0, 0.322879732, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[5] = {
+											id = 70;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 0, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1074";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(54.1576614, 64.3395844, -214.327469, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+												Size = Vector3.new(0.7870836853981018, 144.96859741210938, 6.409244537353516);
+											};
+										};
+										[6] = {
+											id = 71;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -15, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1075";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(53.451889, 64.3395844, -216.737244, -0.96592617, 0, -0.258819073, 0, 1, 0, 0.258819073, 0, -0.96592617);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 25.55626678466797);
+											};
+										};
+										[7] = {
+											id = 72;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -30, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1076";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(45.6460762, 64.3395844, -236.15062, -0.866025627, 0, -0.500000119, 0, 1, 0, 0.500000119, 0, -0.866025627);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[8] = {
+											id = 73;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -50, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1077";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(34.2750015, 64.3395844, -249.940323, -0.642787933, 0, -0.766044676, 0, 1, 0, 0.766044676, 0, -0.642787933);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[9] = {
+											id = 74;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -65, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1078";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(20.170599, 64.3395844, -259.302979, -0.422618449, 0, -0.906308055, 0, 1, 0, 0.906308055, 0, -0.422618449);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 16.928565979003906);
+											};
+										};
+										[10] = {
+											id = 75;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, -80, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1079";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(6.29677296, 64.3395844, -264.005005, -0.173648238, 0, -0.984807611, 0, 1, 0, 0.984807611, 0, -0.173648238);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 12.873147964477539);
+											};
+										};
+										[11] = {
+											id = 76;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -74.9990005493164, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1080";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-17.2511692, 64.3395844, -263.023773, 0.258818209, 0, -0.965922832, 0, 1, 0, 0.965922832, 0, 0.258818209);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 16.239906311035156);
+											};
+										};
+										[12] = {
+											id = 77;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -89.9260025024414, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1081";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-4.57737589, 64.3395844, -265.003693, 0, 0, -0.999999166, 0, 1, 0, 0.999999166, 0, 0);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 9.653074264526367);
+											};
+										};
+										[13] = {
+											id = 78;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -40, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1082";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-46.6503868, 64.3395844, -244.488495, 0.766044676, 0, -0.642787874, 0, 1, 0, 0.642787874, 0, 0.766044676);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 18.698633193969727);
+											};
+										};
+										[14] = {
+											id = 79;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 40, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1083";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(40.2666283, 64.3395844, -170.385269, -0.766044557, 0, 0.642787755, 0, 1, 0, -0.642787755, 0, -0.766044557);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 18.698633193969727);
+											};
+										};
+										[15] = {
+											id = 80;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 60, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1084";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(26.3576107, 64.3395844, -158.628128, -0.500000119, 0, 0.866025627, 0, 1, 0, -0.866025627, 0, -0.500000119);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 18.698633193969727);
+											};
+										};
+										[16] = {
+											id = 81;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 89.9209976196289, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1085";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(1.63493645, 64.3395844, -149.870087, 5.96046448e-08, 0, 0.999999046, 0, 1, 0, -0.999999046, 0, 5.96046448e-08);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 2.7704172134399414);
+											};
+										};
+										[17] = {
+											id = 82;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 80, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1086";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-12.3968954, 64.3395844, -150.818756, 0.173648208, 0, 0.984807551, 0, 1, 0, -0.984807551, 0, 0.173648208);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 13.44916820526123);
+											};
+										};
+										[18] = {
+											id = 83;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 65, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1087";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-26.5543575, 64.3395844, -155.57077, 0.422618359, 0, 0.906307817, 0, 1, 0, -0.906307817, 0, 0.422618359);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 16.928565979003906);
+											};
+										};
+										[19] = {
+											id = 84;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(180, 74.9990005493164, 180);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1088";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(10.8674278, 64.3395844, -151.849991, -0.258818209, 0, 0.965922654, 0, 1, 0, -0.965922654, 0, -0.258818209);
+												Size = Vector3.new(0.8295027613639832, 144.96859741210938, 16.239906311035156);
+											};
+										};
+										[20] = {
+											id = 85;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 50, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1089";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-40.6587448, 64.3395844, -164.933441, 0.642787814, 0, 0.766044617, 0, 1, 0, -0.766044617, 0, 0.642787814);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[21] = {
+											id = 86;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 30, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1090";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-52.0298195, 64.3395844, -178.723145, 0.866025507, 0, 0.50000006, 0, 1, 0, -0.50000006, 0, 0.866025507);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[22] = {
+											id = 87;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, 15, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1091";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-58.9703064, 64.3395844, -194.90712, 0.965925992, 0, 0.258819044, 0, 1, 0, -0.258819044, 0, 0.965925992);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[23] = {
+											id = 88;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 65;
+												};
+												BrickColor = BrickColor.new("Cyan");
+												TopSurface = Enum.SurfaceType.Smooth;
+												Name = "Part1092";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-60.5413895, 64.3395844, -206.776505, 1.00000012, 0, -2.98023224e-08, 0, 1, 0, 2.98023224e-08, 0, 1.00000012);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+										[24] = {
+											id = 89;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Parent = {
+													[1] = 65;
+												};
+												Rotation = Vector3.new(0, -15, 0);
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+												Name = "Part1093";
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-59.4521484, 64.3395844, -220.369339, 0.965925932, 0, -0.258819193, 0, 1, 0, 0.258819193, 0, 0.965925932);
+												PivotOffset = CFrame.new(0, 0.484300047, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+											};
+										};
+										[25] = {
+											id = 90;
+											type = "Part";
+											children = {};
+											properties = {
+												BottomSurface = Enum.SurfaceType.Smooth;
+												Color = Color3.new(0.0156863, 0.686275, 0.92549);
+												Anchored = true;
+												Rotation = Vector3.new(0, -25, 0);
+												Parent = {
+													[1] = 65;
+												};
+												Name = "Part1094";
+												TopSurface = Enum.SurfaceType.Smooth;
+												BrickColor = BrickColor.new("Cyan");
+												Material = Enum.Material.ForceField;
+												CFrame = CFrame.new(-55.7955093, 64.3395844, -230.367249, 0.906307817, 0, -0.422618359, 0, 1, 0, 0.422618359, 0, 0.906307817);
+												Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+											};
+										};
+									};
+									properties = {
+										WorldPivot = CFrame.new(-3.19189382, -7.6604166, -207.436874, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+										Name = "Model1067";
+										Parent = {
+											[1] = 64;
+										};
+									};
+								};
+								[2] = {
+									id = 91;
+									type = "Part";
+									children = {};
+									properties = {
+										BottomSurface = Enum.SurfaceType.Smooth;
+										Color = Color3.new(0.0156863, 0.686275, 0.92549);
+										Anchored = true;
+										Rotation = Vector3.new(0, -40.880001068115234, 0);
+										Parent = {
+											[1] = 64;
+										};
+										Name = "Part1068";
+										TopSurface = Enum.SurfaceType.Smooth;
+										BrickColor = BrickColor.new("Cyan");
+										Material = Enum.Material.ForceField;
+										CFrame = CFrame.new(-46.2117233, 64.3395767, -244.861511, 0.756079674, 0, -0.654479921, 0, 1, 0, 0.654479921, 0, 0.756079674);
+										Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+									};
+								};
+								[3] = {
+									id = 92;
+									type = "Part";
+									children = {};
+									properties = {
+										BottomSurface = Enum.SurfaceType.Smooth;
+										Color = Color3.new(0.0156863, 0.686275, 0.92549);
+										Anchored = true;
+										Rotation = Vector3.new(0, -55.880001068115234, 0);
+										Parent = {
+											[1] = 64;
+										};
+										Name = "Part1069";
+										TopSurface = Enum.SurfaceType.Smooth;
+										BrickColor = BrickColor.new("Cyan");
+										Material = Enum.Material.ForceField;
+										CFrame = CFrame.new(-37.804615, 64.3395767, -252.48085, 0.560924828, 0, -0.827866614, 0, 1, 0, 0.827866614, 0, 0.560924828);
+										Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+									};
+								};
+							};
+							properties = {
+								WorldPivot = CFrame.new(-3.19189382, -7.6604166, -207.436874, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024);
+								Name = "Model1065";
+								Parent = {
+									[1] = 63;
+								};
+							};
+						};
+						[2] = {
+							id = 93;
+							type = "Part";
+							children = {};
+							properties = {
+								BottomSurface = Enum.SurfaceType.Smooth;
+								Color = Color3.new(0.0156863, 0.686275, 0.92549);
+								Anchored = true;
+								Rotation = Vector3.new(0, -15, 0);
+								Parent = {
+									[1] = 63;
+								};
+								Name = "Part1066";
+								TopSurface = Enum.SurfaceType.Smooth;
+								BrickColor = BrickColor.new("Cyan");
+								Material = Enum.Material.ForceField;
+								CFrame = CFrame.new(-59.4521484, 64.3395844, -220.369339, 0.965925932, 0, -0.258819193, 0, 1, 0, 0.258819193, 0, 0.965925932);
+								Size = Vector3.new(0.7874211072921753, 144.96859741210938, 18.869672775268555);
+							};
+						};
+					};
+					properties = {
+						WorldPivot = CFrame.new(-3.19189382, -7.6604166, -207.436874, -1, 0, 0, 0, 1, 0, 0, 0, -1);
+						Name = "Model961";
+						Parent = {
+							[1] = 1;
+						};
+					};
+				};
+				[4] = {
+					id = 94;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-0.0020000000949949026, 40.00199890136719, -9.996999740600586);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part962";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-83.5755844, 63.3632164, 64.1773987, 0.754385889, 0.132984489, 0.642819643, -0.173624262, 0.984811962, 2.32977291e-05, -0.633053362, -0.111626662, 0.766017556);
+						Size = Vector3.new(0.8129475116729736, 145, 16.60999870300293);
+					};
+				};
+				[5] = {
+					id = 95;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-179.99899291992188, 25.00200080871582, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part963";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(83.7062378, 63.4294128, 52.1375961, -0.892523527, -0.157378882, 0.422650933, -0.173643798, 0.984808505, 1.6412072e-05, -0.416232824, -0.0733760446, -0.906292558);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[6] = {
+					id = 96;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Parent = {
+							[1] = 1;
+						};
+						BrickColor = BrickColor.new("Cyan");
+						TopSurface = Enum.SurfaceType.Smooth;
+						Name = "Part964";
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-136.299149, 65.0266266, -3.55187464, 1, 0, 0, 0, 1, 0, 0, 0, 1);
+						Size = Vector3.new(38.07277297973633, 145.39892578125, 0.8495498299598694);
+					};
+				};
+				[7] = {
+					id = 97;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -79.99800109863281, 169.99899291992188);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part965";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(10.9015617, 63.4776154, -98.164093, -0.17104049, -0.0301636253, -0.984802425, -0.173679829, 0.984802008, 0, 0.96984005, 0.17104046, -0.17367956);
+						Size = Vector3.new(0.8129475116729736, 145, 25.052509307861328);
+					};
+				};
+				[8] = {
+					id = 98;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -25.00200080871582, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part966";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-94.5155869, 63.402504, -42.4864655, 0.892524064, 0.157375529, -0.422651172, -0.173643842, 0.984808862, 0, 0.416231692, 0.0733834133, 0.906292677);
+						Size = Vector3.new(0.8129475116729736, 145, 31.60342025756836);
+					};
+				};
+				[9] = {
+					id = 99;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -85, 180);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part967";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-7.93955088, 64.8271027, -130.293701, -0.087155737, 0, -0.99619472, 0, 1, 0, 0.99619472, 0, -0.087155737);
+						Size = Vector3.new(37.489498138427734, 145, 0.9667243957519531);
+					};
+				};
+				[10] = {
+					id = 100;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -24.191999435424805, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part968";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-134.78302, 64.8271637, 27.7963524, 0.912180424, 0, -0.409788787, 0, 1, 0, 0.409788787, 0, 0.912180424);
+						Size = Vector3.new(51.06626510620117, 145, 1.003108263015747);
+					};
+				};
+				[11] = {
+					id = 101;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 64.99800109863281, 170.0019989013672);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part969";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(44.6033096, 63.3245316, 89.820343, -0.416230559, -0.073376134, 0.906293988, -0.173609674, 0.984814525, 0, -0.89253217, -0.157340959, -0.422647923);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[12] = {
+					id = 102;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -90, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part970";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(0.948322594, 64.8271027, -130.457794, -1.1920929e-07, 3.55271326e-15, -1, 1.49011612e-08, 1, 1.77635673e-15, 1, -1.49011594e-08, -1.1920929e-07);
+						Size = Vector3.new(37.489498138427734, 145, 0.9667243957519531);
+					};
+				};
+				[13] = {
+					id = 103;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-179.9980010986328, -79.99800109863281, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part971";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(21.4627571, 63.4630852, -96.2183228, -0.171040565, -0.0301584285, -0.984802365, -0.173678622, 0.984802425, 6.08243363e-06, 0.969835579, 0.171040133, -0.173679009);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[14] = {
+					id = 104;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -64.99800109863281, 170.0019989013672);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part972";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(29.966465, 63.4499969, -93.6729126, -0.416230053, -0.0733761713, -0.906294048, -0.17360957, 0.984814882, 0, 0.892531812, 0.157341033, -0.422648072);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[15] = {
+					id = 105;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -64.99800109863281, 170.0019989013672);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part973";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(45.2866516, 63.449192, -86.5230179, -0.416230232, -0.073376663, -0.906294286, -0.173609704, 0.984815359, 0, 0.892532349, 0.157340869, -0.422648072);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[16] = {
+					id = 106;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(179.99899291992188, -50.000999450683594, 169.99600219726562);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part974";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(58.1410179, 63.4592133, -79.0882034, -0.633009195, -0.111661009, -0.766050935, -0.173696086, 0.984800994, -1.47786959e-05, 0.754409075, 0.133049026, -0.642781019);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[17] = {
+					id = 107;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-179.9980010986328, -40.00199890136719, 170.0019989013672);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part975";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(74.0749664, 63.4802055, -63.1375198, -0.754388809, -0.132986069, -0.642820954, -0.173625201, 0.984815121, 2.53242069e-05, 0.633055925, 0.111625269, -0.76601851);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[18] = {
+					id = 108;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 79.99800109863281, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part976";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(18.5493279, 63.4065018, 99.6601334, -0.171042249, -0.0301606283, 0.984802723, -0.173680335, 0.984802723, 0, -0.969839156, -0.171040446, -0.173678562);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[19] = {
+					id = 109;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -4.999000072479248, 180);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part977";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-4.89301968, 63.7914047, 135.790527, -0.996197164, 0, -0.0871313959, 0, 1.00000012, 0, 0.0871313959, 0, -0.996197164);
+						Size = Vector3.new(0.8563934564590454, 145, 38.508995056152344);
+					};
+				};
+				[20] = {
+					id = 110;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(179.9969940185547, 79.99800109863281, 170.00100708007812);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part978";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(9.79833412, 63.3837967, 101.072456, -0.171043336, -0.0301559158, 0.984801948, -0.173679814, 0.984802186, -9.30510578e-06, -0.969834745, -0.171041802, -0.173681349);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[21] = {
+					id = 111;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -24.191999435424805, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part979";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-134.334534, 64.8271637, 32.095047, 0.912180424, -9.39864897e-09, -0.409788787, 6.98491931e-09, 1, -7.3870785e-09, 0.409788787, 3.87600707e-09, 0.912180424);
+						Size = Vector3.new(55.40757751464844, 145, 1.003108263015747);
+					};
+				};
+				[22] = {
+					id = 112;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 10.00100040435791, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part980";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-102.506378, 63.3402977, 19.3708057, 0.969842911, 0.171016678, 0.1736608, -0.173656091, 0.984806359, 4.66228494e-06, -0.171021476, -0.0301617794, 0.984805524);
+						Size = Vector3.new(0.8129475116729736, 145, 33.57234191894531);
+					};
+				};
+				[23] = {
+					id = 113;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0.0010000000474974513, 50.000999450683594, -10.003999710083008);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part981";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-68.1131821, 63.3822975, 80.0895081, 0.633008838, 0.11166098, 0.766050816, -0.173695907, 0.984800816, -1.4866524e-05, -0.754409075, -0.13304913, 0.6427809);
+						Size = Vector3.new(0.8129475116729736, 145, 33.55683898925781);
+					};
+				};
+				[24] = {
+					id = 114;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -79.99800109863281, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part982";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-22.3519058, 63.362793, -96.9522247, 0.171041146, 0.0301605761, -0.984802365, -0.173679605, 0.984802067, 0, 0.969837546, 0.171040773, 0.173679382);
+						Size = Vector3.new(0.8129475116729736, 145, 29.792375564575195);
+					};
+				};
+				[25] = {
+					id = 115;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(179.99899291992188, -25.00200080871582, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part983";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(85.3842545, 63.4485931, -45.350071, -0.892523885, -0.15737769, -0.422650546, -0.173644289, 0.984808505, -1.23335867e-05, 0.416231781, 0.073379837, -0.906292737);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[26] = {
+					id = 116;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -25.00200080871582, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part984";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(91.0201721, 63.4408646, -33.1602898, -0.892524242, -0.157375544, -0.422651201, -0.173643872, 0.984808862, 0, 0.4162319, 0.0733834058, -0.906292379);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[27] = {
+					id = 117;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -10.00100040435791, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part985";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(93.0335617, 63.4825249, -27.8888054, -0.969842613, -0.171018094, -0.17366074, -0.173656091, 0.984806359, -3.60255717e-06, 0.171022803, 0.0301537495, -0.984805584);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[28] = {
+					id = 118;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -10.00100040435791, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part986";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(95.7218323, 63.4235497, -10.7243996, -0.969842792, -0.171016648, -0.173660621, -0.173656061, 0.984806299, 0, 0.171021238, 0.0301617552, -0.984805584);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[29] = {
+					id = 119;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 25.00200080871582, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part987";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(89.9212952, 63.4720306, 39.3806343, -0.8925246, -0.157371819, 0.422651142, -0.173644006, 0.984808564, -1.10405995e-06, -0.416230202, -0.073391825, -0.906292558);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[30] = {
+					id = 120;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0.0020000000949949026, -40.00199890136719, -9.996999740600586);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part988";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-81.5334625, 63.3947868, -63.2249031, 0.754385889, 0.132984489, -0.642819643, -0.173624262, 0.984811902, -2.32877155e-05, 0.633053362, 0.11162667, 0.766017616);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[31] = {
+					id = 121;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(179.9980010986328, 40.00199890136719, 170.0030059814453);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part989";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(75.5489426, 63.3838882, 64.1952515, -0.754385889, -0.132984459, 0.642819881, -0.173624307, 0.984811902, -2.32541424e-05, -0.63305366, -0.111626655, -0.766017377);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[32] = {
+					id = 122;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 10.00100040435791, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part990";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(95.1028366, 63.4626579, 19.0284576, -0.969842017, -0.171016544, 0.17366083, -0.173655972, 0.984805942, 0, -0.171021327, -0.0301617496, -0.984805822);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[33] = {
+					id = 123;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 79.99800109863281, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part991";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-16.4913979, 63.4978447, 102.013199, 0.171040848, 0.0301595777, 0.984802306, -0.173679441, 0.984802365, 0, -0.969835341, -0.171040788, 0.173679471);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[34] = {
+					id = 124;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 64.99800109863281, -9.998000144958496);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part992";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-53.1929092, 63.3507843, 89.6939316, 0.416230202, 0.0733766258, 0.906294167, -0.173609644, 0.9848153, 0, -0.892532229, -0.157340914, 0.422648191);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[35] = {
+					id = 125;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-179.99899291992188, 50.000999450683594, 169.99600219726562);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part993";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(62.7450714, 63.425457, 78.0245514, -0.633008182, -0.111660078, 0.766050398, -0.173695698, 0.984799266, 1.58390776e-05, -0.754407883, -0.133049533, -0.642780542);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[36] = {
+					id = 126;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 10.00100040435791, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part994";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(92.7788467, 63.4471626, 31.6990643, -0.969841182, -0.17101562, 0.173660725, -0.173655838, 0.984805465, 0, -0.171020195, -0.0301662348, -0.98480612);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[37] = {
+					id = 127;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0.0010000000474974513, 25.00200080871582, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part995";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-92.3657532, 68.9282074, 48.9189568, 0.892523229, 0.157379761, 0.422651023, -0.173643842, 0.984808505, -1.83693392e-05, -0.416233152, -0.0733743533, 0.906292617);
+						Size = Vector3.new(0.8129475116729736, 156.1365966796875, 26.106460571289062);
+					};
+				};
+				[38] = {
+					id = 128;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 64.99800109863281, -9.998000144958496);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part996";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-44.9143295, 63.4411812, 94.1206818, 0.416230202, 0.0733761787, 0.906293929, -0.17360954, 0.984814823, 0, -0.892531633, -0.157341033, 0.422648251);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[39] = {
+					id = 129;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 64.99800109863281, 170.0019989013672);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part997";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(34.9390373, 63.3564453, 94.5268707, -0.416231096, -0.073376596, 0.906294227, -0.173609942, 0.984814763, 0, -0.892533123, -0.157340735, -0.422647685);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[40] = {
+					id = 130;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, 10.00100040435791, 170);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part998";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(98.1573181, 63.345005, -2.13427091, -0.969842434, -0.171017408, 0.173660576, -0.173656031, 0.98480618, 0, -0.171021983, -0.0301572103, -0.984805703);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[41] = {
+					id = 131;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0.0010000000474974513, -10.00100040435791, -10);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part999";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-102.766876, 63.4025764, -16.5883198, 0.96984303, 0.171015903, -0.1736608, -0.173656091, 0.984806418, -9.31031536e-06, 0.171020642, 0.0301662832, 0.984805584);
+						Size = Vector3.new(0.8129475116729736, 145, 31.60342025756836);
+					};
+				};
+				[42] = {
+					id = 132;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -4.999000072479248, 180);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1000";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(1.5486784, 63.7914047, 135.227112, -0.996197164, 0, -0.0871313959, 0, 1.00000012, 0, 0.0871313959, 0, -0.996197164);
+						Size = Vector3.new(0.8563934564590454, 145, 38.508995056152344);
+					};
+				};
+				[43] = {
+					id = 133;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-0.003000000026077032, 79.99800109863281, -9.998000144958496);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1001";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-26.6773148, 63.4937325, 100.193123, 0.171041593, 0.0301546063, 0.984802306, -0.173679456, 0.984802246, 1.02410095e-05, -0.969835222, -0.171041667, 0.173679382);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[44] = {
+					id = 134;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 4.769000053405762, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1002";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-136.228409, 64.6277008, 6.74900627, 0.996537685, 8.00520269e-26, 0.0831423327, 0, 1, -9.62832148e-25, -0.0831423327, 9.5949852e-25, 0.996537685);
+						Size = Vector3.new(38.07277297973633, 145.39892578125, 0.8495498299598694);
+					};
+				};
+				[45] = {
+					id = 135;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(-0.0010000000474974513, -50.000999450683594, -10.003999710083008);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1003";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-65.6255264, 63.4648438, -78.916687, 0.633008003, 0.111660093, -0.76605022, -0.173695594, 0.984799206, 1.58170769e-05, 0.754407644, 0.133049563, 0.642780662);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[46] = {
+					id = 136;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -64.99800109863281, -9.998000144958496);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1004";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-53.8946571, 63.4725418, -86.5015411, 0.416230023, 0.0733761564, -0.906293929, -0.17360951, 0.984814405, 0, 0.892531872, 0.157341048, 0.422647953);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[47] = {
+					id = 137;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -64.99800109863281, -9.998000144958496);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1005";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-40.4397621, 63.4719238, -92.7723083, 0.416230321, 0.0733766332, -0.906293929, -0.173609555, 0.984814405, 0, 0.892532408, 0.157340884, 0.422648013);
+						Size = Vector3.new(0.8129475116729736, 145, 25.097705841064453);
+					};
+				};
+				[48] = {
+					id = 138;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, -90, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part970";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-4.73787689, -7.6723938, -130.457794, -1.1920929e-07, 3.55271326e-15, -1, 1.49011612e-08, 1, 1.77635673e-15, 1, -1.49011594e-08, -1.1920929e-07);
+						Size = Vector3.new(37.489498138427734, 0.001007080078125, 12.339123725891113);
+					};
+				};
+				[49] = {
+					id = 139;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(180, -4.999000072479248, 180);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part977";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-1.53046346, -8.70811462, 135.496429, -0.996197164, 0, -0.0871313959, 0, 1.00000012, 0, 0.0871313959, 0, -0.996197164);
+						Size = Vector3.new(7.607198715209961, 0.001007080078125, 38.508995056152344);
+					};
+				};
+				[50] = {
+					id = 140;
+					type = "Part";
+					children = {};
+					properties = {
+						BottomSurface = Enum.SurfaceType.Smooth;
+						Color = Color3.new(0.0156863, 0.686275, 0.92549);
+						Anchored = true;
+						Rotation = Vector3.new(0, 4.769000053405762, 0);
+						Parent = {
+							[1] = 1;
+						};
+						Name = "Part1002";
+						TopSurface = Enum.SurfaceType.Smooth;
+						BrickColor = BrickColor.new("Cyan");
+						Material = Enum.Material.ForceField;
+						CFrame = CFrame.new(-136.58902, -8.07125854, 2.42666531, 0.996537685, 8.00520269e-26, 0.0831423327, 0, 1, -9.62832148e-25, -0.0831423327, 9.5949852e-25, 0.996537685);
+						Size = Vector3.new(38.07277297973633, 0.001007080078125, 9.524246215820312);
+					};
+				};
+			};
+			properties = {
+				WorldPivot = CFrame.new(36.9262543, -1.62164354, 21.1789932, 0.912180424, -9.39864897e-09, -0.409788787, 6.98491931e-09, 1, -7.3870785e-09, 0.409788787, 3.87600707e-09, 0.912180424);
+				Parent = {
+					[1] = 0;
+				};
+			};
+		};
+	};
+	properties = {
+		WorldPivot = CFrame.new(-2.44736481, -14031.957, 2.64895606, 0, 0, -1, 0, 1, 0, 1, 0, 0);
+		Name = "qlua";
+		Parent = game["Workspace"];
+	};
+}
+scan = function(objectData)
+	local object = Instance.new(objectData.type)
+	
+	objects[objectData.id] = object
+	
+	for property, value in pairs(objectData.properties) do
+		if type(value) == "table" then
+			awaitRef[object] = {
+				["v"] = value[1],
+				["k"] = property
+			}
+			
+			continue
+		end
+		
+		if property == "Source" then
+			table.insert(coroutines, coroutine.create(value))
+			
+			continue
+		end
+		
+		object[property] = value
+	end
+	
+	for _, child in pairs(objectData.children) do
+		scan(child)
+	end
+end
+
+scan(item) 
+
+for object, data in pairs(awaitRef) do
+	object[data.k] = objects[data.v]
+end
+
+for _, cCoroutine in pairs(coroutines) do
+	coroutine.resume(cCoroutine)
+end

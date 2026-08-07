@@ -1,0 +1,1052 @@
+-- Проверяем, существует ли уже GUI, чтобы избежать дублирования
+if game:GetService("CoreGui"):FindFirstChild("TeleporterGUI") then
+    game:GetService("CoreGui").TeleporterGUI:Destroy()
+end
+
+-- Создаем основные сервисы
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Локальные переменные
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local CopyMode = false
+local Teleporting = false
+local CurrentTeleportIndex = 1
+local FoundObjects = {}
+local ScriptEnabled = true
+local MoveMode = "Teleport" -- "Teleport" или "Fly"
+local GuiVisible = true
+local FlySpeed = 50 -- Скорость полета по умолчанию
+local TeleportDelay = 0.5 -- Задержка между телепортациями по умолчанию (в секундах)
+
+-- Основное окно GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleporterGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.DisplayOrder = 999999
+ScreenGui.ResetOnSpawn = false
+
+-- Основной фрейм
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 500, 0, 550)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+MainFrame.Draggable = false
+
+-- Закругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 5, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 42, 0.5, -8)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0, 200, 0, 40)
+Title.Position = UDim2.new(0.5, -100, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "TPpart Menu"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.SourceSansBold
+Title.TextStrokeTransparency = 0
+
+-- Кнопка свернуть
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -100, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+
+local MinimizeButtonCorner = Instance.new("UICorner")
+MinimizeButtonCorner.CornerRadius = UDim.new(0, 8)
+MinimizeButtonCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.Position = UDim2.new(0, 0, 0, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.TextSize = 25
+MinimizeText.Font = Enum.Font.SourceSansBold
+
+local MinimizeButtonClick = Instance.new("ImageButton")
+MinimizeButtonClick.Name = "MinimizeButtonClick"
+MinimizeButtonClick.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButtonClick.Position = UDim2.new(0, 0, 0, 0)
+MinimizeButtonClick.BackgroundTransparency = 1
+MinimizeButtonClick.Image = ""
+
+-- Кнопка скрыть/показать GUI
+local HideButton = Instance.new("Frame")
+HideButton.Name = "HideButton"
+HideButton.Size = UDim2.new(0, 0, 0, 0)
+HideButton.Position = UDim2.new(1, -65, 0.5, -15.5)
+HideButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+HideButton.BorderSizePixel = 0
+
+local HideButtonCorner = Instance.new("UICorner")
+HideButtonCorner.CornerRadius = UDim.new(0, 8)
+HideButtonCorner.Parent = HideButton
+
+local HideText = Instance.new("TextLabel")
+HideText.Name = "HideText"
+HideText.Size = UDim2.new(1, 0, 1, 0)
+HideText.Position = UDim2.new(0, 0, 0, 0)
+HideText.BackgroundTransparency = 0
+HideText.Text = ""
+HideText.TextColor3 = Color3.fromRGB(255, 255, 255)
+HideText.TextSize = 18
+
+local HideButtonClick = Instance.new("ImageButton")
+HideButtonClick.Name = "HideButtonClick"
+HideButtonClick.Size = UDim2.new(1, 0, 1, 0)
+HideButtonClick.Position = UDim2.new(0, 0, 0, 0)
+HideButtonClick.BackgroundTransparency = 0
+HideButtonClick.Image = ""
+
+-- Кнопка выхода
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 8)
+CloseButtonCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.Position = UDim2.new(0, 0, 0, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.TextSize = 20
+CloseText.Font = Enum.Font.SourceSansBold
+
+local CloseButtonClick = Instance.new("ImageButton")
+CloseButtonClick.Name = "CloseButtonClick"
+CloseButtonClick.Size = UDim2.new(1, 0, 1, 0)
+CloseButtonClick.Position = UDim2.new(0, 0, 0, 0)
+CloseButtonClick.BackgroundTransparency = 1
+CloseButtonClick.Image = ""
+
+-- Основная область контента
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, -20, 1, -70)
+ContentFrame.Position = UDim2.new(0, 10, 0, 60)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.ClipsDescendants = true
+
+-- Поле ввода названия объекта
+local InputLabel = Instance.new("TextLabel")
+InputLabel.Name = "InputLabel"
+InputLabel.Size = UDim2.new(0, 120, 0, 30)
+InputLabel.Position = UDim2.new(0, 0, 0, 10)
+InputLabel.BackgroundTransparency = 1
+InputLabel.Text = "Название объекта:"
+InputLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+InputLabel.TextSize = 18
+InputLabel.Font = Enum.Font.SourceSansBold
+InputLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local InputBox = Instance.new("TextBox")
+InputBox.Name = "InputBox"
+InputBox.Size = UDim2.new(1, 0, 0, 35)
+InputBox.Position = UDim2.new(0, 0, 0, 45)
+InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+InputBox.TextSize = 18
+InputBox.Font = Enum.Font.SourceSans
+InputBox.PlaceholderText = "Введите название объекта..."
+InputBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+InputBox.Text = ""
+
+local InputBoxCorner = Instance.new("UICorner")
+InputBoxCorner.CornerRadius = UDim.new(0, 5)
+InputBoxCorner.Parent = InputBox
+
+-- Выбор режима перемещения
+local ModeLabel = Instance.new("TextLabel")
+ModeLabel.Name = "ModeLabel"
+ModeLabel.Size = UDim2.new(0, 120, 0, 30)
+ModeLabel.Position = UDim2.new(0, 0, 0, 95)
+ModeLabel.BackgroundTransparency = 1
+ModeLabel.Text = "Режим перемещения:"
+ModeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ModeLabel.TextSize = 18
+ModeLabel.Font = Enum.Font.SourceSansBold
+ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Кнопки режимов
+local TeleportModeButton = Instance.new("TextButton")
+TeleportModeButton.Name = "TeleportModeButton"
+TeleportModeButton.Size = UDim2.new(0, 100, 0, 35)
+TeleportModeButton.Position = UDim2.new(0, 140, 0, 95)
+TeleportModeButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+TeleportModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TeleportModeButton.TextSize = 16
+TeleportModeButton.Font = Enum.Font.SourceSansBold
+TeleportModeButton.Text = "ТЕЛЕПОРТ"
+TeleportModeButton.AutoButtonColor = false
+
+local TeleportModeCorner = Instance.new("UICorner")
+TeleportModeCorner.CornerRadius = UDim.new(0, 5)
+TeleportModeCorner.Parent = TeleportModeButton
+
+local FlyModeButton = Instance.new("TextButton")
+FlyModeButton.Name = "FlyModeButton"
+FlyModeButton.Size = UDim2.new(0, 100, 0, 35)
+FlyModeButton.Position = UDim2.new(0, 250, 0, 95)
+FlyModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+FlyModeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyModeButton.TextSize = 16
+FlyModeButton.Font = Enum.Font.SourceSansBold
+FlyModeButton.Text = "ПОЛЕТ"
+FlyModeButton.AutoButtonColor = false
+
+local FlyModeCorner = Instance.new("UICorner")
+FlyModeCorner.CornerRadius = UDim.new(0, 5)
+FlyModeCorner.Parent = FlyModeButton
+
+-- Настройка скорости полета
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Name = "SpeedLabel"
+SpeedLabel.Size = UDim2.new(0, 120, 0, 30)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 140)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Скорость полета:"
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedLabel.TextSize = 16
+SpeedLabel.Font = Enum.Font.SourceSansBold
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedLabel.Visible = false
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Name = "SpeedBox"
+SpeedBox.Size = UDim2.new(0, 80, 0, 30)
+SpeedBox.Position = UDim2.new(0, 130, 0, 140)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.TextSize = 16
+SpeedBox.Font = Enum.Font.SourceSans
+SpeedBox.PlaceholderText = "50"
+SpeedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+SpeedBox.Text = "50"
+SpeedBox.Visible = false
+
+local SpeedBoxCorner = Instance.new("UICorner")
+SpeedBoxCorner.CornerRadius = UDim.new(0, 5)
+SpeedBoxCorner.Parent = SpeedBox
+
+-- Настройка задержки телепортации
+local DelayLabel = Instance.new("TextLabel")
+DelayLabel.Name = "DelayLabel"
+DelayLabel.Size = UDim2.new(0, 150, 0, 30)
+DelayLabel.Position = UDim2.new(0, 0, 0, 140)
+DelayLabel.BackgroundTransparency = 1
+DelayLabel.Text = "Задержка (сек):"
+DelayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+DelayLabel.TextSize = 16
+DelayLabel.Font = Enum.Font.SourceSansBold
+DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local DelayBox = Instance.new("TextBox")
+DelayBox.Name = "DelayBox"
+DelayBox.Size = UDim2.new(0, 80, 0, 30)
+DelayBox.Position = UDim2.new(0, 160, 0, 140)
+DelayBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+DelayBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+DelayBox.TextSize = 16
+DelayBox.Font = Enum.Font.SourceSans
+DelayBox.PlaceholderText = "0.5"
+DelayBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+DelayBox.Text = "0.5"
+
+local DelayBoxCorner = Instance.new("UICorner")
+DelayBoxCorner.CornerRadius = UDim.new(0, 5)
+DelayBoxCorner.Parent = DelayBox
+
+-- Кнопка телепортации/полета
+local MoveButton = Instance.new("TextButton")
+MoveButton.Name = "MoveButton"
+MoveButton.Size = UDim2.new(1, 0, 0, 40)
+MoveButton.Position = UDim2.new(0, 0, 0, 185)
+MoveButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MoveButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+MoveButton.TextSize = 20
+MoveButton.Font = Enum.Font.SourceSansBold
+MoveButton.Text = "ПЕРЕМЕСТИТЬСЯ"
+MoveButton.AutoButtonColor = false
+
+local MoveButtonCorner = Instance.new("UICorner")
+MoveButtonCorner.CornerRadius = UDim.new(0, 5)
+MoveButtonCorner.Parent = MoveButton
+
+-- Кнопка копирования названия
+local CopyButton = Instance.new("TextButton")
+CopyButton.Name = "CopyButton"
+CopyButton.Size = UDim2.new(1, 0, 0, 40)
+CopyButton.Position = UDim2.new(0, 0, 0, 235)
+CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+CopyButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+CopyButton.TextSize = 20
+CopyButton.Font = Enum.Font.SourceSansBold
+CopyButton.Text = "Копировать название"
+CopyButton.AutoButtonColor = false
+
+local CopyButtonCorner = Instance.new("UICorner")
+CopyButtonCorner.CornerRadius = UDim.new(0, 5)
+CopyButtonCorner.Parent = CopyButton
+
+-- Кнопка вкл/выкл скрипта
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0.48, 0, 0, 40)
+ToggleButton.Position = UDim2.new(0, 0, 0, 285)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 18
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.Text = "ВКЛ"
+ToggleButton.AutoButtonColor = false
+
+local ToggleButtonCorner = Instance.new("UICorner")
+ToggleButtonCorner.CornerRadius = UDim.new(0, 5)
+ToggleButtonCorner.Parent = ToggleButton
+
+-- Кнопка отключения GUI
+local DisableButton = Instance.new("TextButton")
+DisableButton.Name = "DisableButton"
+DisableButton.Size = UDim2.new(0.48, 0, 0, 40)
+DisableButton.Position = UDim2.new(0.52, 0, 0, 285)
+DisableButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+DisableButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DisableButton.TextSize = 18
+DisableButton.Font = Enum.Font.SourceSansBold
+DisableButton.Text = "ОТКЛЮЧИТЬ"
+DisableButton.AutoButtonColor = false
+
+local DisableButtonCorner = Instance.new("UICorner")
+DisableButtonCorner.CornerRadius = UDim.new(0, 5)
+DisableButtonCorner.Parent = DisableButton
+
+-- Статус текст
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Size = UDim2.new(1, 0, 0, 30)
+StatusLabel.Position = UDim2.new(0, 0, 0, 340)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Готово"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.TextSize = 16
+StatusLabel.Font = Enum.Font.SourceSans
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Собираем иерархию объектов
+MinimizeText.Parent = MinimizeButton
+MinimizeButtonClick.Parent = MinimizeButton
+HideText.Parent = HideButton
+HideButtonClick.Parent = HideButton
+CloseText.Parent = CloseButton
+CloseButtonClick.Parent = CloseButton
+
+Icon.Parent = TopBar
+DecorativeLine.Parent = TopBar
+Title.Parent = TopBar
+MinimizeButton.Parent = TopBar
+HideButton.Parent = TopBar
+CloseButton.Parent = TopBar
+
+InputLabel.Parent = ContentFrame
+InputBox.Parent = ContentFrame
+ModeLabel.Parent = ContentFrame
+TeleportModeButton.Parent = ContentFrame
+FlyModeButton.Parent = ContentFrame
+SpeedLabel.Parent = ContentFrame
+SpeedBox.Parent = ContentFrame
+DelayLabel.Parent = ContentFrame
+DelayBox.Parent = ContentFrame
+MoveButton.Parent = ContentFrame
+CopyButton.Parent = ContentFrame
+ToggleButton.Parent = ContentFrame
+DisableButton.Parent = ContentFrame
+StatusLabel.Parent = ContentFrame
+
+TopBar.Parent = MainFrame
+ContentFrame.Parent = MainFrame
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = CoreGui
+
+-- Переменные для перетаскивания
+local Dragging, DragInput, DragStart, StartPos
+
+-- Функция обновления статуса
+local function UpdateStatus(text, color)
+    StatusLabel.Text = text
+    if color then
+        StatusLabel.TextColor3 = color
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end
+
+-- Функция полета к объекту (оптимизированная)
+local function FlyToObject(targetCFrame)
+    local character = LocalPlayer.Character
+    if not character then return nil end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return nil end
+    
+    -- Получаем скорость из поля ввода
+    local speed = tonumber(SpeedBox.Text) or 50
+    if speed < 1 then speed = 1 end
+    if speed > 200 then speed = 200 end
+    
+    -- Останавливаем предыдущий полет
+    for _, v in pairs(humanoidRootPart:GetChildren()) do
+        if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+            v:Destroy()
+        end
+    end
+    
+    -- Создаем BodyVelocity для полета (оптимизированно)
+    local flyVelocity = Instance.new("BodyVelocity")
+    flyVelocity.Velocity = Vector3.new(0, 0, 0)
+    flyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+    flyVelocity.P = 1250
+    flyVelocity.Parent = humanoidRootPart
+    
+    local flyGyro = Instance.new("BodyGyro")
+    flyGyro.MaxTorque = Vector3.new(40000, 40000, 40000)
+    flyGyro.P = 3000
+    flyGyro.CFrame = humanoidRootPart.CFrame
+    flyGyro.Parent = humanoidRootPart
+    
+    -- Направление к цели
+    local direction = (targetCFrame.Position - humanoidRootPart.Position).Unit
+    
+    -- Создаем соединение для плавного полета
+    local flyConnection
+    local startTime = tick()
+    local maxFlyTime = 20 -- Максимальное время полета (секунды)
+    
+    -- Используем Heartbeat для плавного обновления
+    flyConnection = RunService.Heartbeat:Connect(function(deltaTime)
+        if not ScriptEnabled or not Teleporting then
+            flyConnection:Disconnect()
+            if flyVelocity and flyVelocity.Parent then flyVelocity:Destroy() end
+            if flyGyro and flyGyro.Parent then flyGyro:Destroy() end
+            return
+        end
+        
+        local currentTime = tick()
+        if currentTime - startTime > maxFlyTime then
+            flyConnection:Disconnect()
+            if flyVelocity and flyVelocity.Parent then flyVelocity:Destroy() end
+            if flyGyro and flyGyro.Parent then flyGyro:Destroy() end
+            humanoidRootPart.CFrame = targetCFrame
+            return
+        end
+        
+        -- Расчет расстояния
+        local distance = (targetCFrame.Position - humanoidRootPart.Position).Magnitude
+        
+        if distance < 5 then
+            flyConnection:Disconnect()
+            if flyVelocity and flyVelocity.Parent then flyVelocity:Destroy() end
+            if flyGyro and flyGyro.Parent then flyGyro:Destroy() end
+            humanoidRootPart.CFrame = targetCFrame
+        else
+            -- Динамическая скорость в зависимости от расстояния
+            local currentSpeed = math.min(speed, distance * 3)
+            flyVelocity.Velocity = direction * currentSpeed
+            
+            -- Плавный поворот к цели
+            local targetLook = CFrame.new(humanoidRootPart.Position, targetCFrame.Position)
+            flyGyro.CFrame = flyGyro.CFrame:Lerp(targetLook, 5 * deltaTime)
+        end
+    end)
+    
+    return flyConnection
+end
+
+-- Оптимизированная функция поиска объектов (без лагов)
+local function FindObjectsAsync(objectName)
+    local found = {}
+    local count = 0
+    
+    -- Используем workspace для поиска только в игровом мире
+    local function SearchInModel(model)
+        for _, child in pairs(model:GetChildren()) do
+            -- Проверяем, является ли объект BasePart
+            if child:IsA("BasePart") and child.Name:lower():find(objectName:lower(), 1, true) then
+                table.insert(found, child)
+                count = count + 1
+                
+                -- Делаем паузу каждые 50 объектов, чтобы не лагать
+                if count % 50 == 0 then
+                    RunService.Heartbeat:Wait()
+                    UpdateStatus("Поиск... Найдено: " .. count, Color3.fromRGB(255, 200, 100))
+                end
+            end
+            
+            -- Рекурсивно ищем в дочерних объектах
+            if #child:GetChildren() > 0 then
+                SearchInModel(child)
+            end
+        end
+    end
+    
+    -- Начинаем поиск с workspace
+    SearchInModel(game:GetService("Workspace"))
+    
+    return found
+end
+
+-- Оптимизированная функция перемещения к объекту (без лагов)
+local function MoveToObject()
+    if Teleporting or not ScriptEnabled then 
+        UpdateStatus("Уже перемещаемся или скрипт выключен", Color3.fromRGB(255, 100, 100))
+        return 
+    end
+    
+    local objectName = InputBox.Text
+    if objectName == "" then
+        UpdateStatus("Введите название объекта!", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    
+    local character = LocalPlayer.Character
+    if not character then
+        UpdateStatus("Персонаж не найден!", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then
+        UpdateStatus("Не найден HumanoidRootPart!", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    
+    -- Начинаем поиск объектов
+    UpdateStatus("Поиск объектов...", Color3.fromRGB(255, 200, 100))
+    Teleporting = true
+    
+    -- Запускаем поиск в отдельной корутине чтобы не лагать
+    local searchThread = coroutine.create(function()
+        FoundObjects = FindObjectsAsync(objectName)
+        
+        if #FoundObjects == 0 then
+            Teleporting = false
+            UpdateStatus("Объекты не найдены!", Color3.fromRGB(255, 100, 100))
+            return
+        end
+        
+        UpdateStatus("Найдено объектов: " .. #FoundObjects, Color3.fromRGB(100, 255, 100))
+        CurrentTeleportIndex = 1
+        
+        -- Получаем задержку из поля ввода
+        local delay = tonumber(DelayBox.Text) or 0.5
+        if delay < 0 then delay = 0 end
+        if delay > 10 then delay = 10 end
+        
+        -- Перемещаемся по порядку
+        while CurrentTeleportIndex <= #FoundObjects and Teleporting and ScriptEnabled do
+            local obj = FoundObjects[CurrentTeleportIndex]
+            if obj and obj.Parent then
+                local targetCFrame = obj.CFrame + Vector3.new(0, 3, 0) -- Немного выше объекта
+                
+                if MoveMode == "Teleport" then
+                    -- Мгновенная телепортация без твинов
+                    humanoidRootPart.CFrame = targetCFrame
+                    
+                    UpdateStatus("Телепортирован к объекту " .. CurrentTeleportIndex .. " из " .. #FoundObjects, 
+                               Color3.fromRGB(253, 104, 159))
+                    
+                    -- Задержка между телепортациями
+                    if delay > 0 then
+                        local startWait = tick()
+                        while tick() - startWait < delay and Teleporting and ScriptEnabled do
+                            RunService.Heartbeat:Wait()
+                        end
+                    end
+                    
+                elseif MoveMode == "Fly" then
+                    UpdateStatus("Полет к объекту " .. CurrentTeleportIndex .. " из " .. #FoundObjects, 
+                               Color3.fromRGB(100, 200, 255))
+                    
+                    -- Запускаем полет
+                    local flyConnection = FlyToObject(targetCFrame)
+                    
+                    -- Ждем достижения цели с таймаутом
+                    local startTime = tick()
+                    local reached = false
+                    
+                    while Teleporting and ScriptEnabled and tick() - startTime < 15 do
+                        local distance = (targetCFrame.Position - humanoidRootPart.Position).Magnitude
+                        if distance < 5 then
+                            reached = true
+                            break
+                        end
+                        RunService.Heartbeat:Wait()
+                    end
+                    
+                    -- Останавливаем полет
+                    if flyConnection then
+                        flyConnection:Disconnect()
+                    end
+                    
+                    -- Очищаем физику
+                    for _, v in pairs(humanoidRootPart:GetChildren()) do
+                        if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                            v:Destroy()
+                        end
+                    end
+                    
+                    -- Если не долетели, телепортируемся
+                    if not reached then
+                        humanoidRootPart.CFrame = targetCFrame
+                    end
+                    
+                    -- Задержка после полета
+                    if delay > 0 then
+                        local startWait = tick()
+                        while tick() - startWait < delay and Teleporting and ScriptEnabled do
+                            RunService.Heartbeat:Wait()
+                        end
+                    end
+                end
+                
+                CurrentTeleportIndex = CurrentTeleportIndex + 1
+            else
+                -- Объект удалился, пропускаем
+                CurrentTeleportIndex = CurrentTeleportIndex + 1
+            end
+            
+            -- Даем отдохнуть потоку
+            RunService.Heartbeat:Wait()
+        end
+        
+        Teleporting = false
+        
+        -- Очищаем физику полета
+        if character and humanoidRootPart then
+            for _, v in pairs(humanoidRootPart:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                    v:Destroy()
+                end
+            end
+        end
+        
+        UpdateStatus("Перемещение завершено!", Color3.fromRGB(100, 255, 100))
+    end)
+    
+    coroutine.resume(searchThread)
+end
+
+-- Функция для копирования названия объекта
+local function EnableCopyMode()
+    if not ScriptEnabled then return end
+    
+    CopyMode = true
+    UpdateStatus("Кликните на объект для копирования названия", Color3.fromRGB(253, 104, 159))
+    
+    local connection
+    connection = Mouse.Button1Down:Connect(function()
+        if CopyMode and Mouse.Target and ScriptEnabled then
+            local targetName = Mouse.Target.Name
+            InputBox.Text = targetName
+            CopyMode = false
+            UpdateStatus("Название скопировано: " .. targetName, Color3.fromRGB(100, 255, 100))
+            connection:Disconnect()
+        end
+    end)
+end
+
+-- Функция включения/выключения скрипта
+local function ToggleScript()
+    ScriptEnabled = not ScriptEnabled
+    
+    if ScriptEnabled then
+        ToggleButton.Text = "ВКЛ"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        UpdateStatus("Скрипт включен", Color3.fromRGB(100, 255, 100))
+    else
+        ToggleButton.Text = "ВЫКЛ"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+        UpdateStatus("Скрипт выключен", Color3.fromRGB(255, 100, 100))
+        Teleporting = false
+        
+        -- Очищаем физику полета при выключении
+        local character = LocalPlayer.Character
+        if character then
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                for _, v in pairs(humanoidRootPart:GetChildren()) do
+                    if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                        v:Destroy()
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Функция скрытия/показа GUI
+local function ToggleGuiVisibility()
+    GuiVisible = not GuiVisible
+    
+    if GuiVisible then
+        MainFrame.Visible = true
+        HideButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+        UpdateStatus("GUI показано", Color3.fromRGB(100, 255, 100))
+    else
+        MainFrame.Visible = false
+        HideButton.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+        UpdateStatus("GUI скрыто. Нажмите F9 для показа", Color3.fromRGB(255, 200, 100))
+    end
+end
+
+-- Функция отключения GUI
+local function DisableGUI()
+    -- Останавливаем телепортацию
+    Teleporting = false
+    
+    -- Очищаем физику полета перед отключением
+    local character = LocalPlayer.Character
+    if character then
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            for _, v in pairs(humanoidRootPart:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                    v:Destroy()
+                end
+            end
+        end
+    end
+    
+    ScreenGui:Destroy()
+    UpdateStatus("GUI отключено", Color3.fromRGB(213, 7, 69))
+end
+
+-- Функция обновления видимости настроек скорости
+local function UpdateSpeedVisibility()
+    if MoveMode == "Fly" then
+        SpeedLabel.Visible = true
+        SpeedBox.Visible = true
+        DelayLabel.Position = UDim2.new(0, 0, 0, 180)
+        DelayBox.Position = UDim2.new(0, 160, 0, 180)
+        MoveButton.Position = UDim2.new(0, 0, 0, 225)
+        CopyButton.Position = UDim2.new(0, 0, 0, 275)
+        ToggleButton.Position = UDim2.new(0, 0, 0, 325)
+        DisableButton.Position = UDim2.new(0.52, 0, 0, 325)
+        StatusLabel.Position = UDim2.new(0, 0, 0, 380)
+    else
+        SpeedLabel.Visible = false
+        SpeedBox.Visible = false
+        DelayLabel.Position = UDim2.new(0, 0, 0, 140)
+        DelayBox.Position = UDim2.new(0, 160, 0, 140)
+        MoveButton.Position = UDim2.new(0, 0, 0, 185)
+        CopyButton.Position = UDim2.new(0, 0, 0, 235)
+        ToggleButton.Position = UDim2.new(0, 0, 0, 285)
+        DisableButton.Position = UDim2.new(0.52, 0, 0, 285)
+        StatusLabel.Position = UDim2.new(0, 0, 0, 340)
+    end
+end
+
+-- Функция перетаскивания окна
+local function UpdateInput(input)
+    local Delta = input.Position - DragStart
+    MainFrame.Position = UDim2.new(
+        StartPos.X.Scale, 
+        StartPos.X.Offset + Delta.X, 
+        StartPos.Y.Scale, 
+        StartPos.Y.Offset + Delta.Y
+    )
+end
+
+-- Обработчики событий для кнопок
+MoveButton.MouseEnter:Connect(function()
+    MoveButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+end)
+
+MoveButton.MouseLeave:Connect(function()
+    MoveButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+-- Обработчик кнопки перемещения с защитой от спама
+local lastClickTime = 0
+MoveButton.MouseButton1Click:Connect(function()
+    local currentTime = tick()
+    if currentTime - lastClickTime < 0.5 then -- Защита от спама (0.5 секунды)
+        UpdateStatus("Подождите перед следующим нажатием", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    
+    lastClickTime = currentTime
+    
+    if ScriptEnabled then
+        MoveToObject()
+    end
+end)
+
+CopyButton.MouseEnter:Connect(function()
+    CopyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+end)
+
+CopyButton.MouseLeave:Connect(function()
+    CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+CopyButton.MouseButton1Click:Connect(function()
+    EnableCopyMode()
+end)
+
+ToggleButton.MouseEnter:Connect(function()
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 160, 60)
+end)
+
+ToggleButton.MouseLeave:Connect(function()
+    if ScriptEnabled then
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    else
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+    end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    ToggleScript()
+end)
+
+DisableButton.MouseEnter:Connect(function()
+    DisableButton.BackgroundColor3 = Color3.fromRGB(230, 30, 90)
+end)
+
+DisableButton.MouseLeave:Connect(function()
+    DisableButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+end)
+
+DisableButton.MouseButton1Click:Connect(function()
+    DisableGUI()
+end)
+
+TeleportModeButton.MouseEnter:Connect(function()
+    if MoveMode ~= "Teleport" then
+        TeleportModeButton.BackgroundColor3 = Color3.fromRGB(70, 170, 70)
+    end
+end)
+
+TeleportModeButton.MouseLeave:Connect(function()
+    if MoveMode == "Teleport" then
+        TeleportModeButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    else
+        TeleportModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+
+TeleportModeButton.MouseButton1Click:Connect(function()
+    MoveMode = "Teleport"
+    TeleportModeButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    FlyModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    MoveButton.Text = "ТЕЛЕПОРТИРОВАТЬСЯ"
+    UpdateSpeedVisibility()
+    UpdateStatus("Режим: Телепорт", Color3.fromRGB(100, 255, 100))
+end)
+
+FlyModeButton.MouseEnter:Connect(function()
+    if MoveMode ~= "Fly" then
+        FlyModeButton.BackgroundColor3 = Color3.fromRGB(70, 70, 170)
+    end
+end)
+
+FlyModeButton.MouseLeave:Connect(function()
+    if MoveMode == "Fly" then
+        FlyModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+    else
+        FlyModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
+end)
+
+FlyModeButton.MouseButton1Click:Connect(function()
+    MoveMode = "Fly"
+    FlyModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 150)
+    TeleportModeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    MoveButton.Text = "ЛЕТЕТЬ К ОБЪЕКТУ"
+    UpdateSpeedVisibility()
+    UpdateStatus("Режим: Полет", Color3.fromRGB(100, 200, 255))
+end)
+
+-- Валидация ввода скорости
+SpeedBox.FocusLost:Connect(function()
+    local speed = tonumber(SpeedBox.Text)
+    if speed then
+        if speed < 1 then
+            SpeedBox.Text = "1"
+        elseif speed > 200 then
+            SpeedBox.Text = "200"
+        end
+        UpdateStatus("Скорость полета: " .. SpeedBox.Text, Color3.fromRGB(100, 200, 255))
+    else
+        SpeedBox.Text = "50"
+        UpdateStatus("Скорость сброшена до 50", Color3.fromRGB(255, 100, 100))
+    end
+end)
+
+-- Валидация ввода задержки
+DelayBox.FocusLost:Connect(function()
+    local delay = tonumber(DelayBox.Text)
+    if delay then
+        if delay < 0 then
+            DelayBox.Text = "0"
+        elseif delay > 10 then
+            DelayBox.Text = "10"
+        end
+        UpdateStatus("Задержка: " .. DelayBox.Text .. " сек", Color3.fromRGB(100, 200, 255))
+    else
+        DelayBox.Text = "0.5"
+        UpdateStatus("Задержка сброшена до 0.5 сек", Color3.fromRGB(255, 100, 100))
+    end
+end)
+
+-- Функция сворачивания/разворачивания окна
+local Minimized = false
+MinimizeButtonClick.MouseButton1Click:Connect(function()
+    if Minimized then
+        -- Разворачиваем
+        MainFrame.Size = UDim2.new(0, 500, 0, 550)
+        ContentFrame.Visible = true
+        Minimized = false
+    else
+        -- Сворачиваем
+        MainFrame.Size = UDim2.new(0, 500, 0, 50)
+        ContentFrame.Visible = false
+        Minimized = true
+    end
+end)
+
+-- Кнопка скрыть/показать GUI
+HideButtonClick.MouseButton1Click:Connect(function()
+    ToggleGuiVisibility()
+end)
+
+-- Функция закрытия окна
+CloseButtonClick.MouseButton1Click:Connect(function()
+    DisableGUI()
+end)
+
+-- Функция перетаскивания окна
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        StartPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
+    end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        DragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == DragInput and Dragging then
+        UpdateInput(input)
+    end
+end)
+
+-- Добавляем обработчик клавиши Enter для телепортации
+InputBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed and ScriptEnabled then
+        MoveToObject()
+    end
+end)
+
+-- Горячая клавиша для показа/скрытия GUI (F9)
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F9 then
+        ToggleGuiVisibility()
+    end
+end)
+
+-- Горячая клавиша для остановки полета (F)
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F and ScriptEnabled then
+        Teleporting = false
+        
+        -- Очищаем физику полета
+        local character = LocalPlayer.Character
+        if character then
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                for _, v in pairs(humanoidRootPart:GetChildren()) do
+                    if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                        v:Destroy()
+                    end
+                end
+            end
+        end
+        
+        UpdateStatus("Полет остановлен", Color3.fromRGB(255, 100, 100))
+    end
+end)
+
+-- Инициализация
+UpdateStatus("GUI загружено. Готово к работе.")
+TeleportModeButton.MouseButton1Click:Fire() -- Устанавливаем режим телепорта по умолчанию
+UpdateSpeedVisibility()
+
+-- Добавляем подсказку о горячих клавишах
+wait(2)
+UpdateStatus("F9 - скрыть/показать GUI, F - остановить полет")

@@ -1,0 +1,27 @@
+local scripts = {
+    "https://raw.githubusercontent.com/Infinite-Store/Infinite-Store/main/main.lua",
+    "https://pastebin.com/raw/rz7uUmED",
+    "https://raw.githubusercontent.com/CorpseCMD/MyScripts/main/VoicechatBypass.lua",
+    "https://raw.githubusercontent.com/depthso/Sigma-Spy/main/Main.lua",
+    "https://pastebin.com/raw/9bNj1EcR",
+    "https://pastebin.com/raw/ct8Kq5F0",
+    "https://pastebin.com/raw/CTUaCKN1",
+    "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+        
+        if not success then
+            warn("Ошибка в скрипте "..i.." ("..url.."): "..err)
+        else
+            print("Скрипт "..i.." успешно запущен: "..url)
+        end
+    end)()
+end
+
+print("Все скрипты поставлены в очередь запуска!")

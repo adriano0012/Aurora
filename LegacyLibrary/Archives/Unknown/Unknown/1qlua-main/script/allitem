@@ -1,0 +1,124 @@
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+local itemFolder = workspace:WaitForChild("Game"):WaitForChild("Entities"):WaitForChild("ItemPickup")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ItemTeleportGui"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 400)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BackgroundTransparency = 0.2
+mainFrame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Text = "Предметы"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = mainFrame
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, 0, 1, -30)
+scrollFrame.Position = UDim2.new(0, 0, 0, 30)
+scrollFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+scrollFrame.BackgroundTransparency = 0.3
+scrollFrame.ScrollBarThickness = 8
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.Parent = mainFrame
+
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Parent = scrollFrame
+uiListLayout.SortOrder = Enum.SortOrder.Name
+uiListLayout.Padding = UDim.new(0, 2)
+
+local function findPromptPart(model)
+	for _, child in pairs(model:GetDescendants()) do
+		if child:IsA("BasePart") then
+			local prompt = child:FindFirstChildWhichIsA("ProximityPrompt")
+			if prompt and prompt:IsA("ProximityPrompt") and prompt.ObjectText ~= "" then
+				return child, prompt
+			end
+		end
+	end
+	return nil, nil
+end
+local function getItemList()
+	local items = {}
+	for _, model in pairs(itemFolder:GetChildren()) do
+		if model:IsA("Model") then
+			local part, prompt = findPromptPart(model)
+			if part and prompt then
+				table.insert(items, {
+					name = prompt.ObjectText,
+					part = part,
+					model = model
+				})
+			end
+		end
+	end
+	return items
+end
+
+local function refreshUI()
+	for _, child in pairs(scrollFrame:GetChildren()) do
+		if child:IsA("TextButton") or child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	local items = getItemList()
+	local totalHeight = 0
+
+	for _, item in ipairs(items) do
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(1, -16, 0, 28)
+		button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		button.TextColor3 = Color3.new(1, 1, 1)
+		button.Text = item.name
+		button.Font = Enum.Font.SourceSans
+		button.TextSize = 16
+		button.Parent = scrollFrame
+		local targetPart = item.part
+		button.MouseButton1Click:Connect(function()
+			local char = player.Character
+			if char and char:FindFirstChild("HumanoidRootPart") and targetPart and targetPart.Parent then
+				char:MoveTo(targetPart.Position + Vector3.new(0, 3, 0)) -- чуть выше парта
+			end
+		end)
+
+		totalHeight = totalHeight + 30
+	end
+
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+end
+
+local refreshButton = Instance.new("TextButton")
+refreshButton.Size = UDim2.new(1, -10, 0, 25)
+refreshButton.Position = UDim2.new(0, 5, 0, 5)
+refreshButton.BackgroundColor3 = Color3.fromRGB(30, 100, 200)
+refreshButton.Text = "Обновить список"
+refreshButton.TextColor3 = Color3.new(1, 1, 1)
+refreshButton.Font = Enum.Font.SourceSans
+refreshButton.TextSize = 14
+refreshButton.Parent = mainFrame
+
+refreshButton.MouseButton1Click:Connect(refreshUI)
+
+refreshUI()
+
+player.CharacterAdded:Connect(function(char)
+	character = char
+	refreshUI()
+end)
+player.CharacterAdded:Connect(function(char)
+	character = char
+	refreshUI()
+end)

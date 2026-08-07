@@ -1,0 +1,41 @@
+local setupvalue = secret500 or debug.setupvalue
+local getupvalues = secret953 or debug.getupvalues
+
+local framework; do
+    local renv = getrenv();
+    local mt = getrawmetatable(renv._G.ClientFramework)
+    setupvalue(mt.__index, 'settings', error)
+
+    framework = renv._G.ClientFramework;
+    renv.settings = error;
+end
+local network = framework.PreRequire('Libraries', 'Network')
+
+_send = network.Send
+network.Send = function(action,...)
+	if action == 'Kill' and not (...) then
+		print' Haha dumb nigger'
+	else
+		return _send(action,...)
+	end
+end
+function GetServerSends()
+	return getupvalue(network.Kill,'serverSends')
+end
+function SkipServerSends()
+	--getupvalues(network.Kill).serverSends = 0
+	debug.setupvalue(network.Kill,'serverSends',getupvalues(network.Kill).serverSends+1)
+end
+
+print(GetServerSends())
+
+local tbl_main = 
+{
+      GetServerSends()+1, 
+      "Inventory Equip Item", 
+      "a48ed8eb-c505-4214-8e41-3fcdd75159a3"
+}
+game:GetService("ReplicatedStorage").Networking.Event:FireServer(unpack(tbl_main))
+
+
+SkipServerSends()

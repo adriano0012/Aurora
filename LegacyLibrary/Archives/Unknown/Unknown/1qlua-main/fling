@@ -1,0 +1,280 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local isActive = false
+local returnCFrame = nil
+local originalGravity = nil
+local originalCameraType = nil
+local originalCameraCFrame = nil
+local originalCameraSubject = nil
+local noclipConnections = {}
+local cameraUpdateConnection = nil
+local penetrationDepth = 2
+local maxDistance = 2000
+local flingForce = 10000
+local function lockCameraInPlace()
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+    originalCameraType = camera.CameraType
+    originalCameraCFrame = camera.CFrame
+    originalCameraSubject = camera.CameraSubject
+    camera.CameraType = Enum.CameraType.Scriptable
+    camera.CameraSubject = nil
+    if cameraUpdateConnection then
+        cameraUpdateConnection:Disconnect()
+    end
+    cameraUpdateConnection = RunService.RenderStepped:Connect(function()
+        if camera and originalCameraCFrame then
+            camera.CFrame = originalCameraCFrame
+        end
+    end)
+end
+local function restoreCamera()
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+    if cameraUpdateConnection then
+        cameraUpdateConnection:Disconnect()
+        cameraUpdateConnection = nil
+    end
+    if originalCameraType then
+        camera.CameraType = originalCameraType
+    end
+    if originalCameraCFrame then
+        camera.CFrame = originalCameraCFrame
+    end
+    if originalCameraSubject then
+        camera.CameraSubject = originalCameraSubject
+    end
+    originalCameraType = nil
+    originalCameraCFrame = nil
+    originalCameraSubject = nil
+end
+local function getPositionUnderCursor()
+    local camera = Workspace.CurrentCamera
+    if not camera then return nil end
+    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+    local ray = camera:ScreenPointToRay(mousePos.X, mousePos.Y)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    if LocalPlayer.Character then
+        raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    end
+    raycastParams.IgnoreWater = true
+    local raycastResult = Workspace:Raycast(
+        ray.Origin,
+        ray.Direction * maxDistance,
+        raycastParams
+    )
+    if raycastResult then
+        local normal = raycastResult.Normal
+        local insidePosition = raycastResult.Position - (normal * penetrationDepth)
+        return insidePosition, raycastResult.Instance
+    end
+    local targetPosition = ray.Origin + ray.Direction * 500
+    return targetPosition, nil
+end
+local function disableGravity()
+    originalGravity = Workspace.Gravity
+    Workspace.Gravity = 0
+end
+local function enableGravity()
+    if originalGravity then
+        Workspace.Gravity = originalGravity
+        originalGravity = nil
+    end
+end
+local function enableNoclip()
+    local character = LocalPlayer.Character
+    if not character then return end
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+    local connection
+    connection = RunService.Stepped:Connect(function()
+        if character and isActive then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        else
+            connection:Disconnect()
+        end
+    end)
+    table.insert(noclipConnections, connection)
+end
+local function disableNoclip()
+    local character = LocalPlayer.Character
+    if character then
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    for _, connection in ipairs(noclipConnections) do
+        connection:Disconnect()
+    end
+    noclipConnections = {}
+end
+local function enableWalkFling()
+    if isActive then return end
+    local character = LocalPlayer.Character
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    returnCFrame = humanoidRootPart.CFrame
+
+    lockCameraInPlace()
+    disableGravity()
+    enableNoclip()
+    
+    isActive = true
+    task.spawn(function()
+        local RunService = game:GetService("RunService")
+        while isActive do
+            RunService.Heartbeat:Wait()
+            local character = LocalPlayer.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+            if root then
+                local targetPos, hitObject = getPositionUnderCursor()
+                if targetPos then
+                    root.CFrame = CFrame.new(targetPos)
+                    local vel = root.Velocity
+                    root.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                    
+                    RunService.RenderStepped:Wait()
+                    if root then
+                        root.Velocity = vel
+                    end
+                end
+            end
+        end
+    end)
+end
+local function disableWalkFling()
+    if not isActive then return end
+    isActive = false
+    task.wait(0.05)
+    local character = LocalPlayer.Character
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart and returnCFrame then
+        humanoidRootPart.CFrame = returnCFrame
+        humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+        humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    end
+    restoreCamera()
+    enableGravity()
+    disableNoclip()
+    returnCFrame = nil
+    print("Walkfling stopped.")
+end
+local function performFling()
+    local character = LocalPlayer.Character
+    local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    local saveCFrame = humanoidRootPart.CFrame
+    lockCameraInPlace()
+    disableGravity()
+    enableNoclip()
+    local camera = Workspace.CurrentCamera
+    if camera and originalCameraCFrame then
+        local cameraDirection = originalCameraCFrame.LookVector
+        humanoidRootPart.Velocity = cameraDirection * flingForce + Vector3.new(0, 2000, 0)
+        task.delay(0.3, function()
+            if humanoidRootPart then
+                humanoidRootPart.CFrame = saveCFrame
+                humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                restoreCamera()
+                
+                enableGravity()
+                disableNoclip()
+            end
+        end)
+    end
+end
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        enableWalkFling()
+    elseif input.KeyCode == Enum.KeyCode.F then
+        performFling()
+    end
+end)
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        disableWalkFling()
+    end
+end)
+local function disableScript()
+    disableWalkFling()
+    restoreCamera()
+    enableGravity()
+    disableNoclip()
+end
+local function onCharacterAdded(character)
+    character:WaitForChild("Humanoid").Died:Connect(function()
+        disableScript()
+    end)
+end
+if LocalPlayer.Character then
+    onCharacterAdded(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+local function setPenetrationDepth(newDepth)
+    penetrationDepth = math.clamp(newDepth, 0.1, 10)
+    print("Penetration depth set to: " .. penetrationDepth .. " studs")
+end
+local function setMaxDistance(newDistance)
+    maxDistance = math.clamp(newDistance, 100, 5000)
+    print("Max distance set to: " .. maxDistance .. " studs")
+end
+local function setFlingForce(newForce)
+    flingForce = math.clamp(newForce, 1000, 50000)
+    print("Fling force set to: " .. flingForce)
+end
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.PageUp then
+        penetrationDepth = penetrationDepth + 0.5
+        if penetrationDepth > 10 then penetrationDepth = 10 end
+        print("Penetration depth: " .. penetrationDepth .. " studs")
+    elseif input.KeyCode == Enum.KeyCode.PageDown then
+        penetrationDepth = penetrationDepth - 0.5
+        if penetrationDepth < 0.1 then penetrationDepth = 0.1 end
+        print("Penetration depth: " .. penetrationDepth .. " studs")
+    elseif input.KeyCode == Enum.KeyCode.Equals then
+        maxDistance = maxDistance + 100
+        if maxDistance > 5000 then maxDistance = 5000 end
+        print("Max distance: " .. maxDistance .. " studs")
+    elseif input.KeyCode == Enum.KeyCode.Minus then
+        maxDistance = maxDistance - 100
+        if maxDistance < 100 then maxDistance = 100 end
+        print("Max distance: " .. maxDistance .. " studs")
+    elseif input.KeyCode == Enum.KeyCode.RightBracket then
+        flingForce = flingForce + 1000
+        print("Fling force: " .. flingForce)
+    elseif input.KeyCode == Enum.KeyCode.LeftBracket then
+        flingForce = flingForce - 1000
+        if flingForce < 1000 then flingForce = 1000 end
+        print("Fling force: " .. flingForce)
+    end
+end)
+return {
+    Disable = disableScript,
+    SetPenetrationDepth = setPenetrationDepth,
+    SetMaxDistance = setMaxDistance,
+    SetFlingForce = setFlingForce,
+    StartWalkFling = enableWalkFling,
+    StopWalkFling = disableWalkFling,
+    PerformFling = performFling
+}

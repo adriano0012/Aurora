@@ -1,0 +1,20 @@
+
+local scripts = {
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/stopbot",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/stopjb"
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+        
+        if not success then
+            warn("Ошибка в скрипте "..i.." ("..url.."): "..err)
+        else
+            print("Скрипт "..i.." успешно запущен: "..url)
+        end
+    end)()
+end

@@ -1,0 +1,429 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+-- Load UI Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/X2ZU%20UI%20ROBLOX%20OPEN%20SOURCE/DummyUi-leak-by-x2zu/fetching-main/Tools/Framework.luau"))()
+
+-- Create Main Window
+local Window = Library:Window({
+    Title = "1qlua lib",
+    Desc = "1qlua on top",
+    Icon = 80494437171393,
+    Theme = "Dark",
+    Config = {
+        Keybind = Enum.KeyCode.LeftControl,
+        Size = UDim2.new(0, 500, 0, 400)
+    },
+    CloseUIButton = {
+        Enabled = true,
+        Text = "x2zu"
+    }
+})
+
+-- Sidebar Vertical Separator
+local SidebarLine = Instance.new("Frame")
+SidebarLine.Size = UDim2.new(0, 1, 1, 0)
+SidebarLine.Position = UDim2.new(0, 140, 0, 0) -- adjust if needed
+SidebarLine.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SidebarLine.BorderSizePixel = 0
+SidebarLine.ZIndex = 5
+SidebarLine.Name = "SidebarLine"
+SidebarLine.Parent = game:GetService("CoreGui") -- Or Window.Gui if accessible
+
+-- Tab
+local Tab = Window:Tab({Title = "ADDPART", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "ADDPART"})
+
+        Tab:Section({Title = ""})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TPPLAYER_SETTINGS({
+    Size = Vector3.new(4, 1, 4),  -- размер
+    Color = Color3.fromRGB(0, 255, 0),  -- цвет
+    Material = Enum.Material.Plastic,   -- матерьял
+    Anchored = true,   -- закрепление
+    CanCollide = true,  -- коллизия
+    ForwardOffset = 5,  --  смещение вперед
+    UpOffset = 0,  --  смещение вверх
+    RightOffset = 0  -- смещение вправо
+})
+
+ADDPART()]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "DEL", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "DEL"})
+
+        Tab:Section({Title = ""})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[DEL("путь.к.объекту")]]
+    })
+end
+
+
+-- Tab
+local Tab = Window:Tab({Title = "ESP", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "ESP"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[ESP("путь.к.объекту") -- вклучить подсветку]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNESP("путь.к.объекту") -- отключить подсветку]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "FLYTO", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "FLYTO"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[FLYTO("X,Y,Z") -- лететь к координатам]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[FLYTO("путь.к.объекту") -- лететь к объекту]]
+    })
+
+        -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[STOPFLY() -- остановить полет]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "Скрипты", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "Скрипты"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[SPEED(число) -- изменить скорость ходьбы]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[JP(число) -- изменить силу прыжка]]
+    })
+
+        -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[GRAV(число) -- изменить гравитацию]]
+    })
+
+        -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[RSPY() -- RemoteSpy]]
+    })
+
+      
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[DEX() -- Dex Explorer]]
+    })
+
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[QLUA() -- 1QLua]]
+    })
+
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[IY() -- Infinite Yield]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "SHOP", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "SHOP"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[SHOP() или SERVERHOP() -- перейти на случайный сервер]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[REJOIN() -- перезайти в текущий сервер]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "TP", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "TP"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TP("X,Y,Z") -- к координатам]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TP("путь.к.объекту") -- к объекту]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "TPCOME", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "TPCOME Телепортация объектов к себе"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TP_SETTINGS({
+    ForwardOffset = 0,   -- Смещение вперед/назад (Z)
+    RightOffset = 0,     -- Смещение вправо/влево (X)
+    UpOffset = 0,        -- Смещение вверх/вниз (Y)
+    Yaw = 0,             -- Поворот влево/вправо (оси Y, градусы)
+    Pitch = 0,           -- Поворот вверх/вниз (оси X, градусы)
+    Roll = 0             -- Наклон (оси Z, градусы)
+     })
+
+
+TPCOME("путь.к.объекту")]]
+    })
+
+
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "BUILD", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "BUILD"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[     BUILD_SETTINGS({
+       Spam = false,  -- вклучения выклучения спама
+       Retention = 8  -- на сколько удерживаеться кнопка
+     })
+
+     BUILD("G")]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNBUILD("G") -- Остановить спам ]]
+    })
+end
+
+
+-- Tab
+local Tab = Window:Tab({Title = "CLICK", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "CLICK"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[     CLICK_SETTINGS({
+    Position = nil,       -- координаты (можно убрать эту строчку если не нужно ставить позицию)
+    Spam = false,        -- Спам кликами
+    Retention = 0.1,     -- Время удержания (сек)
+    Delay = 0.05,        -- Задержка между кликами (при спаме)
+    Button = 1         -- 1 - левая кнопка, 2 - правая
+     })
+
+     CLICK()]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[COPYCLICK() -- скопировать позицию]]
+    })
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNCLICK() - остановить все клики
+UNCLICK("100,200") - остановить клики в позици]]
+    })
+end
+
+-- Tab
+local Tab = Window:Tab({Title = "TPPLAYER", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "TPPLAYER"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TPPLAYER_SETTINGS({
+    Position = {
+        ForwardOffset = 3,  -- Дистанция спереди/сзади
+        RightOffset = 0,     -- Смещение вправо/влево
+        UpOffset = 0         -- Высота
+    },
+
+    Delay = 0.5,              -- Задержка между телепортациями
+    LookAtPlayer = true,     -- Смотреть на игрока
+    AutoStop = true,         -- Автостоп при ошибке
+    TeleportToDead = false   -- Телепорт к мертвым игрокам
+})
+
+TPPLAYER("ник") -- телепорт к игроку
+TPPLAYER("ник1", "ник2") -- телепорт с задержкой
+TPPLAYER("ALL") -- телепорт по очереди ко всем]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNTPPLAYER() - остановить телепортацию]]
+    })
+end
+
+local Tab = Window:Tab({Title = "SETCAM", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "SETCAM"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[COPYCAM()  -- Копирует позицию камеры]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[SETCAM(Суда вставляем что скопировалось)]]
+    })
+end
+
+local Tab = Window:Tab({Title = "CAMTO", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "CAMTO"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[CAMTO("путь")  направить камеру на объект]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[CAMTO("название обьекта")  найдет ближайший и будет на него смотреть]]
+    })
+end
+
+local Tab = Window:Tab({Title = "FLYTOAUTO", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "FLYTOAUTO"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[FLYTOAUTO("название обьекта") -- будет лететь к обьекту который ты написал]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNFLYTOAUTO() - остановить]]
+    })
+end
+
+
+
+local Tab = Window:Tab({Title = "TPTO", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "TPTO"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TPTO("имя_объекта")  -- будет телепортироваться к обьекту который ты написал]]
+    })
+
+    
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[UNTPTO() - остановить]]
+    })
+end
+
+local Tab = Window:Tab({Title = "TPTO_ONLY", Icon = "star"}) do
+    -- Section
+    Tab:Section({Title = "TPTO_ONLY"})
+
+
+    -- Code Display
+    local CodeBlock = Tab:Code({
+        Title = "Example Code",
+        Code = [[TPTO_ONLY("имя_объекта")  -- будет телепортироваться к обьекту который ты написал но только 1 раз]]
+    })
+end
+
+
+-- Line Separator
+Window:Line()
+
+-- Final Notification
+Window:Notify({
+    Title = "x2zu",
+    Desc = "All components loaded successfully! Credits leak: @x2zu",
+    Time = 4
+})

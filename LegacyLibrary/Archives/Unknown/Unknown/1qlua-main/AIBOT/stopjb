@@ -1,0 +1,15 @@
+local player = game:GetService("Players").LocalPlayer
+
+local controller = player:FindFirstChild("AutoJumpConfig")
+if controller then
+    controller:Destroy()
+    print("✅ Автопрыжки отключены")
+else
+    print("⚠️ Скрипт уже отключен")
+end
+
+for _, thread in pairs({coroutine.running()}) do
+    if type(thread) == "thread" then
+        coroutine.close(thread)
+    end
+end

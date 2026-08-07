@@ -1,0 +1,180 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Настройки по умолчанию
+local CLICK_SETTINGS = {
+    Position = nil,       -- Vector2 (если nil - текущая позиция мыши)
+    Spam = false,        -- Спам кликами
+    Retention = 0.1,     -- Время удержания (сек)
+    Delay = 0.05,        -- Задержка между кликами (при спаме)
+    Button = 1           -- 1 - левая кнопка, 2 - правая
+}
+
+-- Активные процессы
+local activeClickProcesses = {}
+
+-- Функция для копирования позиции мыши
+getgenv().COPYCLICK = function()
+    local mousePos = UserInputService:GetMouseLocation()
+    setclipboard(string.format("%d, %d", mousePos.X, mousePos.Y))
+    print("✅ Позиция мыши скопирована: "..string.format("%d, %d", mousePos.X, mousePos.Y))
+    return mousePos
+end
+
+-- Настройки клика
+getgenv().CLICK_SETTINGS = function(settings)
+    if settings.Position then
+        if type(settings.Position) == "string" then
+            local coords = {}
+            for num in settings.Position:gmatch("%d+") do
+                table.insert(coords, tonumber(num))
+            end
+            if #coords == 2 then
+                CLICK_SETTINGS.Position = Vector2.new(coords[1], coords[2])
+            end
+        elseif typeof(settings.Position) == "Vector2" then
+            CLICK_SETTINGS.Position = settings.Position
+        end
+    end
+    
+    if settings.Spam ~= nil then CLICK_SETTINGS.Spam = settings.Spam end
+    if settings.Retention then CLICK_SETTINGS.Retention = settings.Retention end
+    if settings.Delay then CLICK_SETTINGS.Delay = settings.Delay end
+    if settings.Button then CLICK_SETTINGS.Button = settings.Button end
+    
+    print("✅ Настройки клика обновлены:")
+    print("Position:", CLICK_SETTINGS.Position)
+    print("Spam:", CLICK_SETTINGS.Spam)
+    print("Retention:", CLICK_SETTINGS.Retention, "сек")
+    print("Delay:", CLICK_SETTINGS.Delay, "сек")
+    print("Button:", CLICK_SETTINGS.Button == 1 and "Left" or "Right")
+end
+
+-- Основная функция клика
+local function performClick(settings)
+    -- Устанавливаем позицию мыши если указана
+    if settings.Position then
+        VirtualInputManager:SendMouseMoveEvent(
+            settings.Position.X, 
+            settings.Position.Y, 
+            game:GetService("CoreGui")
+        )
+    end
+    
+    -- Выполняем клик
+    if settings.Button == 1 then
+        VirtualInputManager:SendMouseButtonEvent(
+            settings.Position and settings.Position.X or UserInputService:GetMouseLocation().X,
+            settings.Position and settings.Position.Y or UserInputService:GetMouseLocation().Y,
+            0, -- Left button
+            true, -- Down
+            nil, -- Game
+            0  -- Input type
+        )
+    else
+        VirtualInputManager:SendMouseButtonEvent(
+            settings.Position and settings.Position.X or UserInputService:GetMouseLocation().X,
+            settings.Position and settings.Position.Y or UserInputService:GetMouseLocation().Y,
+            1, -- Right button
+            true, -- Down
+            nil, -- Game
+            0  -- Input type
+        )
+    end
+    
+    -- Удерживаем если нужно
+    if settings.Retention > 0 then
+        task.wait(settings.Retention)
+    end
+    
+    -- Отпускаем кнопку
+    if settings.Button == 1 then
+        VirtualInputManager:SendMouseButtonEvent(
+            settings.Position and settings.Position.X or UserInputService:GetMouseLocation().X,
+            settings.Position and settings.Position.Y or UserInputService:GetMouseLocation().Y,
+            0, -- Left button
+            false, -- Up
+            nil, -- Game
+            0  -- Input type
+        )
+    else
+        VirtualInputManager:SendMouseButtonEvent(
+            settings.Position and settings.Position.X or UserInputService:GetMouseLocation().X,
+            settings.Position and settings.Position.Y or UserInputService:GetMouseLocation().Y,
+            1, -- Right button
+            false, -- Up
+            nil, -- Game
+            0  -- Input type
+        )
+    end
+end
+
+-- Функция клика
+getgenv().CLICK = function(customSettings)
+    local settings = table.clone(CLICK_SETTINGS)
+    if type(customSettings) == "table" then
+        for k,v in pairs(customSettings) do settings[k] = v end
+    end
+    
+    -- Если позиция не указана - используем текущую
+    if not settings.Position then
+        settings.Position = UserInputService:GetMouseLocation()
+    end
+    
+    if settings.Spam then
+        -- Режим спама
+        if activeClickProcesses[settings.Position] then
+            warn("⚠️ Спам кликами уже запущен для этой позиции")
+            return false
+        end
+        
+        activeClickProcesses[settings.Position] = true
+        coroutine.wrap(function()
+            while activeClickProcesses[settings.Position] do
+                performClick(settings)
+                task.wait(settings.Delay)
+            end
+        end)()
+    else
+        -- Одиночный клик
+        performClick(settings)
+    end
+    
+    return true
+end
+
+-- Функция остановки спама
+getgenv().UNCLICK = function(position)
+    if not position then
+        -- Останавливаем все
+        for pos,_ in pairs(activeClickProcesses) do
+            activeClickProcesses[pos] = nil
+        end
+        print("✅ Все клики остановлены")
+        return true
+    end
+    
+    -- Парсим позицию если передана строка
+    if type(position) == "string" then
+        local coords = {}
+        for num in position:gmatch("%d+") do
+            table.insert(coords, tonumber(num))
+        end
+        if #coords == 2 then
+            position = Vector2.new(coords[1], coords[2])
+        else
+            warn("❌ Неверный формат позиции")
+            return false
+        end
+    end
+    
+    if activeClickProcesses[position] then
+        activeClickProcesses[position] = nil
+        print("✅ Спам кликов остановлен для позиции:", position)
+        return true
+    else
+        warn("⚠️ Нет активного спама для позиции:", position)
+        return false
+    end
+end

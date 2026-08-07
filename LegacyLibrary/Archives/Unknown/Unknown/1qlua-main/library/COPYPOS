@@ -1,0 +1,24 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+getgenv().COPYPOS = function()
+    -- Проверяем наличие персонажа
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        warn("Ошибка: персонаж не найден или отсутствует HumanoidRootPart!")
+        return nil
+    end
+    
+    -- Получаем текущую позицию
+    local position = character.HumanoidRootPart.Position
+    local posString = string.format("%.2f, %.2f, %.2f", position.X, position.Y, position.Z)
+    
+    -- Пытаемся скопировать в буфер обмена
+    pcall(function()
+        setclipboard(posString)
+    end)
+    
+    -- Выводим результат
+    print("Позиция скопирована: "..posString)
+    return position
+end

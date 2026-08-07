@@ -1,0 +1,997 @@
+-- Auto Chaser для Roblox инжекторов
+-- Авто-преследователь игроков с обходом препятствий
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local PathfindingService = game:GetService("PathfindingService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character
+local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+
+-- Ожидание персонажа
+if not Character then
+    Character = LocalPlayer.CharacterAdded:Wait()
+end
+if not HumanoidRootPart then
+    repeat wait() until Character:FindFirstChild("HumanoidRootPart")
+    HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+end
+
+local Humanoid = Character:FindFirstChild("Humanoid") or Character:WaitForChild("Humanoid")
+
+-- Настройки
+local Settings = {
+    Enabled = false,
+    IgnoreTeam = true,
+    IgnoreFriends = false,
+    LookAtTarget = false,  -- Новая опция: смотреть на цель
+    IgnoredPlayers = {},
+    TargetDistance = 5,
+    PathRefreshRate = 1.5,
+    WalkSpeed = 16,
+    SmoothMovement = true,
+    LookSmoothness = 0.1  -- Плавность поворота камеры
+}
+
+-- Устанавливаем скорость
+Humanoid.WalkSpeed = Settings.WalkSpeed
+
+-- Переменные
+local CurrentTarget = nil
+local CurrentPath = nil
+local Waypoints = {}
+local CurrentWaypointIndex = 0
+local LastPathUpdate = 0
+local IsMoving = false
+local LastTargetPosition = Vector3.new(0, 0, 0)
+local MovementCooldown = 0
+local MainFrameMinimized = false
+local OriginalMainFrameSize = UDim2.new(0, 394, 0, 331)
+local MinimizedMainFrameSize = UDim2.new(0, 394, 0, 50)
+
+-- Функция для безопасного создания GUI
+local function CreateSafeGUI()
+    local ScreenGui = nil
+    
+    -- Метод 1: Через CoreGui (стандартный)
+    local success1, result1 = pcall(function()
+        ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "AutoChaserGUI"
+        ScreenGui.DisplayOrder = 999999
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ScreenGui.Parent = CoreGui
+        return ScreenGui
+    end)
+    
+    if success1 and ScreenGui then
+        return ScreenGui
+    end
+    
+    -- Метод 2: Через PlayerGui
+    local success2, result2 = pcall(function()
+        ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "AutoChaserGUI"
+        ScreenGui.DisplayOrder = 999999
+        ScreenGui.ResetOnSpawn = false
+        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+        return ScreenGui
+    end)
+    
+    if success2 and ScreenGui then
+        return ScreenGui
+    end
+    
+    warn("Не удалось создать GUI")
+    return nil
+end
+
+-- Создаем GUI
+local ScreenGui = CreateSafeGUI()
+
+if not ScreenGui then
+    error("Не удалось создать интерфейс!")
+end
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 360)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Selectable = true
+MainFrame.Visible = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.Parent = MainFrame
+
+local MainShadow = Instance.new("UIStroke")
+MainShadow.Color = Color3.fromRGB(50, 50, 50)
+MainShadow.Thickness = 2
+MainShadow.Transparency = 0.3
+MainShadow.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 2, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 42, 0.5, -8)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -140, 1, 0)
+Title.Position = UDim2.new(0, 50, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Auto Walk"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 24
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Кнопка "Свернуть"
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeButton.Font = Enum.Font.SourceSansBold
+MinimizeButton.TextSize = 20
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+-- Прозрачная кнопка поверх текста
+local MinimizeImageButton = Instance.new("ImageButton")
+MinimizeImageButton.Name = "MinimizeImageButton"
+MinimizeImageButton.Size = UDim2.new(1, 0, 1, 0)
+MinimizeImageButton.BackgroundTransparency = 1
+MinimizeImageButton.Image = ""
+
+-- Кнопка "Закрыть"
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 16
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+-- Прозрачная кнопка поверх текста
+local CloseImageButton = Instance.new("ImageButton")
+CloseImageButton.Name = "CloseImageButton"
+CloseImageButton.Size = UDim2.new(1, 0, 1, 0)
+CloseImageButton.BackgroundTransparency = 1
+CloseImageButton.Image = ""
+
+-- Основная рабочая область
+local ContentArea = Instance.new("Frame")
+ContentArea.Name = "ContentArea"
+ContentArea.Size = UDim2.new(1, 0, 1, -50)
+ContentArea.Position = UDim2.new(0, 0, 0, 50)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Visible = true
+
+-- Настройки
+local SettingsFrame = Instance.new("Frame")
+SettingsFrame.Name = "SettingsFrame"
+SettingsFrame.Size = UDim2.new(1, -20, 0, 190)  -- Увеличили высоту для нового переключателя
+SettingsFrame.Position = UDim2.new(0, 10, 0, 10)
+SettingsFrame.BackgroundTransparency = 1
+
+-- Переключатели
+local function CreateToggle(name, text, defaultValue)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 35)
+    ToggleFrame.BackgroundTransparency = 1
+    
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Text = text
+    ToggleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    ToggleLabel.Font = Enum.Font.SourceSans
+    ToggleLabel.TextSize = 16
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = name
+    ToggleButton.Size = UDim2.new(0, 60, 0, 30)
+    ToggleButton.Position = UDim2.new(1, -60, 0.5, -15)
+    ToggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(253, 104, 159) or Color3.fromRGB(60, 60, 70)
+    ToggleButton.Text = ""
+    
+    local ToggleCorner = Instance.new("UICorner")
+    ToggleCorner.CornerRadius = UDim.new(0, 15)
+    ToggleCorner.Parent = ToggleButton
+    
+    local ToggleCircle = Instance.new("Frame")
+    ToggleCircle.Size = UDim2.new(0, 26, 0, 26)
+    ToggleCircle.Position = defaultValue and UDim2.new(1, -28, 0, 2) or UDim2.new(0, 2, 0, 2)
+    ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(1, 0)
+    CircleCorner.Parent = ToggleCircle
+    
+    ToggleCircle.Parent = ToggleButton
+    ToggleLabel.Parent = ToggleFrame
+    ToggleButton.Parent = ToggleFrame
+    
+    return ToggleFrame, ToggleButton, ToggleCircle
+end
+
+-- Создание переключателей
+local EnableToggle, EnableButton, EnableCircle = CreateToggle("Enable", "Включить авто-преследование", false)
+EnableToggle.Position = UDim2.new(0, 0, 0, 0)
+
+local TeamToggle, TeamButton, TeamCircle = CreateToggle("IgnoreTeam", "Игнорировать свою команду", true)
+TeamToggle.Position = UDim2.new(0, 0, 0, 40)
+
+local FriendsToggle, FriendsButton, FriendsCircle = CreateToggle("IgnoreFriends", "Игнорировать друзей", false)
+FriendsToggle.Position = UDim2.new(0, 0, 0, 80)
+
+-- Новая опция: Смотреть на игрока
+local LookAtToggle, LookAtButton, LookAtCircle = CreateToggle("LookAtTarget", "Смотреть на игрока", false)
+LookAtToggle.Position = UDim2.new(0, 0, 0, 120)
+
+-- Настройка скорости
+local SpeedFrame = Instance.new("Frame")
+SpeedFrame.Size = UDim2.new(1, 0, 0, 35)
+SpeedFrame.Position = UDim2.new(0, 0, 0, 160)
+SpeedFrame.BackgroundTransparency = 1
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(0.7, 0, 1, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Скорость: " .. Settings.WalkSpeed
+SpeedLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+SpeedLabel.Font = Enum.Font.SourceSans
+SpeedLabel.TextSize = 16
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local SpeedSlider = Instance.new("TextButton")
+SpeedSlider.Name = "SpeedSlider"
+SpeedSlider.Size = UDim2.new(0, 150, 0, 20)
+SpeedSlider.Position = UDim2.new(1, -150, 0.5, -10)
+SpeedSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+SpeedSlider.Text = ""
+SpeedSlider.AutoButtonColor = false
+
+local SliderCorner = Instance.new("UICorner")
+SliderCorner.CornerRadius = UDim.new(0, 10)
+SliderCorner.Parent = SpeedSlider
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Name = "SliderFill"
+SliderFill.Size = UDim2.new((Settings.WalkSpeed - 16) / 84, 0, 1, 0)
+SliderFill.Position = UDim2.new(0, 0, 0, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+SliderFill.BorderSizePixel = 0
+
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(0, 10)
+FillCorner.Parent = SliderFill
+
+SliderFill.Parent = SpeedSlider
+SpeedLabel.Parent = SpeedFrame
+SpeedSlider.Parent = SpeedFrame
+
+-- Кнопка списка игроков
+local PlayersButton = Instance.new("TextButton")
+PlayersButton.Name = "PlayersButton"
+PlayersButton.Size = UDim2.new(1, 0, 0, 35)
+PlayersButton.Position = UDim2.new(0, 0, 0, 205)
+PlayersButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+PlayersButton.Text = "Список игроков"
+PlayersButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayersButton.Font = Enum.Font.SourceSansBold
+PlayersButton.TextSize = 16
+
+local PlayersButtonCorner = Instance.new("UICorner")
+PlayersButtonCorner.CornerRadius = UDim.new(0, 8)
+PlayersButtonCorner.Parent = PlayersButton
+
+-- Текущая цель
+local TargetFrame = Instance.new("Frame")
+TargetFrame.Name = "TargetFrame"
+TargetFrame.Size = UDim2.new(1, -20, 0, 60)
+TargetFrame.Position = UDim2.new(0, 10, 0, 250)
+TargetFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TargetFrame.Visible = true
+
+local TargetCorner = Instance.new("UICorner")
+TargetCorner.CornerRadius = UDim.new(0, 8)
+TargetCorner.Parent = TargetFrame
+
+local TargetLabel = Instance.new("TextLabel")
+TargetLabel.Size = UDim2.new(1, -10, 0, 20)
+TargetLabel.Position = UDim2.new(0, 5, 0, 5)
+TargetLabel.BackgroundTransparency = 1
+TargetLabel.Text = "Текущая цель:"
+TargetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TargetLabel.Font = Enum.Font.SourceSans
+TargetLabel.TextSize = 14
+TargetLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local TargetName = Instance.new("TextLabel")
+TargetName.Size = UDim2.new(1, -10, 0, 30)
+TargetName.Position = UDim2.new(0, 5, 0, 25)
+TargetName.BackgroundTransparency = 1
+TargetName.Text = "Нет"
+TargetName.TextColor3 = Color3.fromRGB(255, 100, 100)
+TargetName.Font = Enum.Font.SourceSansBold
+TargetName.TextSize = 16
+TargetName.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Окно списка игроков
+local PlayersWindow = Instance.new("Frame")
+PlayersWindow.Name = "PlayersWindow"
+PlayersWindow.Size = UDim2.new(1, -20, 0, 260)
+PlayersWindow.Position = UDim2.new(0, 10, 0, 250)
+PlayersWindow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+PlayersWindow.Visible = false
+
+local PlayersWindowCorner = Instance.new("UICorner")
+PlayersWindowCorner.CornerRadius = UDim.new(0, 8)
+PlayersWindowCorner.Parent = PlayersWindow
+
+-- Поиск игроков
+local SearchFrame = Instance.new("Frame")
+SearchFrame.Name = "SearchFrame"
+SearchFrame.Size = UDim2.new(1, -10, 0, 30)
+SearchFrame.Position = UDim2.new(0, 5, 0, 5)
+SearchFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SearchFrame.BorderSizePixel = 0
+
+local SearchCorner = Instance.new("UICorner")
+SearchCorner.CornerRadius = UDim.new(0, 6)
+SearchCorner.Parent = SearchFrame
+
+local SearchIcon = Instance.new("ImageLabel")
+SearchIcon.Name = "SearchIcon"
+SearchIcon.Size = UDim2.new(0, 20, 0, 20)
+SearchIcon.Position = UDim2.new(0, 5, 0.5, -10)
+SearchIcon.BackgroundTransparency = 1
+SearchIcon.Image = "rbxassetid://6035067839"
+SearchIcon.ImageColor3 = Color3.fromRGB(180, 180, 180)
+
+local SearchBox = Instance.new("TextBox")
+SearchBox.Name = "SearchBox"
+SearchBox.Size = UDim2.new(1, -35, 1, 0)
+SearchBox.Position = UDim2.new(0, 30, 0, 0)
+SearchBox.BackgroundTransparency = 1
+SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.PlaceholderText = "Поиск игроков..."
+SearchBox.Text = ""
+SearchBox.Font = Enum.Font.SourceSans
+SearchBox.TextSize = 14
+SearchBox.ClearTextOnFocus = false
+SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Список игроков
+local PlayersScroll = Instance.new("ScrollingFrame")
+PlayersScroll.Name = "PlayersScroll"
+PlayersScroll.Size = UDim2.new(1, -10, 1, -45)
+PlayersScroll.Position = UDim2.new(0, 5, 0, 40)
+PlayersScroll.BackgroundTransparency = 1
+PlayersScroll.ScrollBarThickness = 8
+PlayersScroll.ScrollingEnabled = true
+PlayersScroll.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+PlayersScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PlayersScroll.ScrollBarImageTransparency = 0.5
+
+local PlayersList = Instance.new("UIListLayout")
+PlayersList.Padding = UDim.new(0, 5)
+PlayersList.SortOrder = Enum.SortOrder.Name
+PlayersList.Parent = PlayersScroll
+
+-- Сборка GUI
+TopBar.Parent = MainFrame
+Icon.Parent = TopBar
+DecorativeLine.Parent = TopBar
+Title.Parent = TopBar
+MinimizeButton.Parent = TopBar
+MinimizeImageButton.Parent = MinimizeButton
+CloseButton.Parent = TopBar
+CloseImageButton.Parent = CloseButton
+ContentArea.Parent = MainFrame
+
+SettingsFrame.Parent = ContentArea
+EnableToggle.Parent = SettingsFrame
+TeamToggle.Parent = SettingsFrame
+FriendsToggle.Parent = SettingsFrame
+LookAtToggle.Parent = SettingsFrame
+SpeedFrame.Parent = SettingsFrame
+PlayersButton.Parent = SettingsFrame
+TargetFrame.Parent = ContentArea
+PlayersWindow.Parent = ContentArea
+SearchFrame.Parent = PlayersWindow
+SearchIcon.Parent = SearchFrame
+SearchBox.Parent = SearchFrame
+PlayersScroll.Parent = PlayersWindow
+
+MinimizeImageButton.Parent = MinimizeButton
+CloseImageButton.Parent = CloseButton
+
+MainFrame.Parent = ScreenGui
+
+-- Функции
+local function UpdateToggle(button, circle, state)
+    button.BackgroundColor3 = state and Color3.fromRGB(253, 104, 159) or Color3.fromRGB(60, 60, 70)
+    
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(circle, tweenInfo, {
+        Position = state and UDim2.new(1, -28, 0, 2) or UDim2.new(0, 2, 0, 2)
+    })
+    tween:Play()
+end
+
+local function UpdateSpeedSlider(value)
+    local minSpeed = 16
+    local maxSpeed = 100
+    local clampedValue = math.clamp(value, minSpeed, maxSpeed)
+    
+    Settings.WalkSpeed = clampedValue
+    if Humanoid then
+        Humanoid.WalkSpeed = Settings.WalkSpeed
+    end
+    
+    local fillPercent = (clampedValue - minSpeed) / (maxSpeed - minSpeed)
+    SliderFill.Size = UDim2.new(fillPercent, 0, 1, 0)
+    SpeedLabel.Text = "Скорость: " .. clampedValue
+end
+
+local function IsPlayerIgnored(player)
+    if Settings.IgnoredPlayers[player.Name] then
+        return true
+    end
+    
+    if Settings.IgnoreTeam and player.Team == LocalPlayer.Team then
+        return true
+    end
+    
+    if Settings.IgnoreFriends and player:IsFriendsWith(LocalPlayer.UserId) then
+        return true
+    end
+    
+    return false
+end
+
+local function GetClosestPlayer()
+    if not Character or not HumanoidRootPart then
+        return nil, math.huge
+    end
+    
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            
+            if humanoid and humanoid.Health > 0 and rootPart and not IsPlayerIgnored(player) then
+                local distance = (HumanoidRootPart.Position - rootPart.Position).Magnitude
+                
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    
+    return closestPlayer, closestDistance
+end
+
+-- Функция для поворота камеры на цель
+local function LookAtTarget(targetPosition)
+    if not Settings.LookAtTarget or not CurrentTarget then return end
+    
+    local camera = Workspace.CurrentCamera
+    if not camera then return end
+    
+    -- Получаем текущее положение камеры
+    local cameraPos = camera.CFrame.Position
+    
+    -- Вычисляем направление к цели
+    local direction = (targetPosition - cameraPos).Unit
+    
+    -- Создаем новый CFrame для камеры (смотрим на цель)
+    local targetCFrame = CFrame.new(cameraPos, cameraPos + direction)
+    
+    -- Плавно интерполируем камеру к новому положению
+    local currentCFrame = camera.CFrame
+    local smoothCFrame = currentCFrame:Lerp(targetCFrame, Settings.LookSmoothness)
+    
+    camera.CFrame = smoothCFrame
+end
+
+local function UpdatePath(targetPosition)
+    if not Humanoid or not HumanoidRootPart then 
+        return false 
+    end
+    
+    local distanceToTarget = (HumanoidRootPart.Position - targetPosition).Magnitude
+    if distanceToTarget < 20 then
+        Waypoints = {{
+            Position = targetPosition,
+            Action = Enum.PathWaypointAction.Walk
+        }}
+        CurrentWaypointIndex = 1
+        return true
+    end
+    
+    CurrentPath = PathfindingService:CreatePath({
+        AgentRadius = 2.5,
+        AgentHeight = 5,
+        AgentCanJump = true,
+        AgentCanClimb = true,
+        WaypointSpacing = 10,
+        Costs = {
+            Water = 10,
+            Lava = 50
+        }
+    })
+    
+    local success, pathResult = pcall(function()
+        CurrentPath:ComputeAsync(HumanoidRootPart.Position, targetPosition)
+    end)
+    
+    if not success then
+        return false
+    end
+    
+    if CurrentPath.Status == Enum.PathStatus.Success then
+        Waypoints = CurrentPath:GetWaypoints()
+        
+        local optimizedWaypoints = {}
+        local lastPoint = nil
+        
+        for i, waypoint in ipairs(Waypoints) do
+            if not lastPoint or (lastPoint.Position - waypoint.Position).Magnitude > 8 then
+                table.insert(optimizedWaypoints, waypoint)
+                lastPoint = waypoint
+            end
+        end
+        
+        Waypoints = optimizedWaypoints
+        CurrentWaypointIndex = 1
+        return true
+    else
+        Waypoints = {}
+        CurrentWaypointIndex = 0
+        
+        Waypoints = {{
+            Position = targetPosition,
+            Action = Enum.PathWaypointAction.Walk
+        }}
+        CurrentWaypointIndex = 1
+        return true
+    end
+end
+
+local function SmoothFollowPath()
+    if not Settings.Enabled or not Humanoid or not HumanoidRootPart or #Waypoints == 0 then
+        IsMoving = false
+        if Humanoid then
+            Humanoid:MoveTo(HumanoidRootPart.Position)
+        end
+        return
+    end
+    
+    if CurrentWaypointIndex > #Waypoints then
+        IsMoving = false
+        return
+    end
+    
+    local waypoint = Waypoints[CurrentWaypointIndex]
+    IsMoving = true
+    
+    if waypoint.Action == Enum.PathWaypointAction.Jump then
+        Humanoid.Jump = true
+    end
+    
+    Humanoid:MoveTo(waypoint.Position)
+    
+    if (HumanoidRootPart.Position - waypoint.Position).Magnitude < 8 then
+        CurrentWaypointIndex = CurrentWaypointIndex + 1
+        
+        if CurrentWaypointIndex <= #Waypoints then
+            local nextWaypoint = Waypoints[CurrentWaypointIndex]
+            Humanoid:MoveTo(nextWaypoint.Position)
+        end
+    end
+end
+
+local function CreatePlayerEntry(player)
+    local PlayerFrame = Instance.new("Frame")
+    PlayerFrame.Name = player.Name
+    PlayerFrame.Size = UDim2.new(1, 0, 0, 50)
+    PlayerFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    PlayerFrame.BackgroundTransparency = 0
+    
+    local PlayerCorner = Instance.new("UICorner")
+    PlayerCorner.CornerRadius = UDim.new(0, 6)
+    PlayerCorner.Parent = PlayerFrame
+    
+    local Avatar = Instance.new("ImageLabel")
+    Avatar.Size = UDim2.new(0, 40, 0, 40)
+    Avatar.Position = UDim2.new(0, 5, 0, 5)
+    Avatar.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    Avatar.BorderSizePixel = 0
+    
+    local AvatarCorner = Instance.new("UICorner")
+    AvatarCorner.CornerRadius = UDim.new(0, 4)
+    AvatarCorner.Parent = Avatar
+    
+    local NameLabel = Instance.new("TextLabel")
+    NameLabel.Size = UDim2.new(0.5, 0, 0.5, 0)
+    NameLabel.Position = UDim2.new(0, 50, 0, 5)
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.Text = player.Name
+    NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NameLabel.Font = Enum.Font.SourceSans
+    NameLabel.TextSize = 14
+    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local IgnoreButton = Instance.new("TextButton")
+    IgnoreButton.Name = "IgnoreButton"
+    IgnoreButton.Size = UDim2.new(0, 80, 0, 30)
+    IgnoreButton.Position = UDim2.new(1, -85, 0, 10)
+    IgnoreButton.BackgroundColor3 = Settings.IgnoredPlayers[player.Name] and 
+        Color3.fromRGB(213, 7, 69) or Color3.fromRGB(253, 104, 159)
+    IgnoreButton.Text = Settings.IgnoredPlayers[player.Name] and "В игноре" or "Игнорировать"
+    IgnoreButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    IgnoreButton.Font = Enum.Font.SourceSans
+    IgnoreButton.TextSize = 12
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 4)
+    ButtonCorner.Parent = IgnoreButton
+    
+    Avatar.Parent = PlayerFrame
+    NameLabel.Parent = PlayerFrame
+    IgnoreButton.Parent = PlayerFrame
+    PlayerFrame.Parent = PlayersScroll
+    
+    pcall(function()
+        local userId = player.UserId
+        local thumbType = Enum.ThumbnailType.HeadShot
+        local thumbSize = Enum.ThumbnailSize.Size420x420
+        
+        local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+        if content then
+            Avatar.Image = content
+        end
+    end)
+    
+    IgnoreButton.MouseButton1Click:Connect(function()
+        Settings.IgnoredPlayers[player.Name] = not Settings.IgnoredPlayers[player.Name]
+        IgnoreButton.BackgroundColor3 = Settings.IgnoredPlayers[player.Name] and 
+            Color3.fromRGB(213, 7, 69) or Color3.fromRGB(253, 104, 159)
+        IgnoreButton.Text = Settings.IgnoredPlayers[player.Name] and "В игноре" or "Игнорировать"
+    end)
+    
+    return PlayerFrame
+end
+
+local function UpdatePlayersList()
+    for _, child in pairs(PlayersScroll:GetChildren()) do
+        if child:IsA("Frame") and child.Name ~= "UIListLayout" then
+            child:Destroy()
+        end
+    end
+    
+    local searchText = string.lower(SearchBox.Text)
+    local entries = {}
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            if searchText == "" or string.find(string.lower(player.Name), searchText) then
+                table.insert(entries, player)
+            end
+        end
+    end
+    
+    table.sort(entries, function(a, b)
+        return a.Name:lower() < b.Name:lower()
+    end)
+    
+    for _, player in pairs(entries) do
+        CreatePlayerEntry(player)
+    end
+    
+    PlayersScroll.CanvasSize = UDim2.new(0, 0, 0, PlayersList.AbsoluteContentSize.Y + 10)
+end
+
+-- Функция для перетаскивания окна
+local dragging = false
+local dragStartPos
+local startPos
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStartPos = Vector2.new(input.Position.X, input.Position.Y)
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = Vector2.new(input.Position.X, input.Position.Y) - dragStartPos
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Обработчики событий
+local function ToggleMinimize()
+    MainFrameMinimized = not MainFrameMinimized
+    
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    
+    if MainFrameMinimized then
+        -- Сворачиваем
+        local tween = TweenService:Create(MainFrame, tweenInfo, {
+            Size = MinimizedMainFrameSize
+        })
+        tween:Play()
+        
+        ContentArea.Visible = false
+        MinimizeButton.Text = "+"
+    else
+        -- Разворачиваем
+        local tween = TweenService:Create(MainFrame, tweenInfo, {
+            Size = OriginalMainFrameSize
+        })
+        tween:Play()
+        
+        ContentArea.Visible = true
+        MinimizeButton.Text = "-"
+    end
+end
+
+CloseImageButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    Settings.Enabled = false
+    Settings.LookAtTarget = false
+    if Humanoid then
+        Humanoid:MoveTo(HumanoidRootPart.Position)
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    Settings.Enabled = false
+    Settings.LookAtTarget = false
+    if Humanoid then
+        Humanoid:MoveTo(HumanoidRootPart.Position)
+    end
+end)
+
+MinimizeImageButton.MouseButton1Click:Connect(ToggleMinimize)
+MinimizeButton.MouseButton1Click:Connect(ToggleMinimize)
+
+EnableButton.MouseButton1Click:Connect(function()
+    Settings.Enabled = not Settings.Enabled
+    UpdateToggle(EnableButton, EnableCircle, Settings.Enabled)
+    
+    if not Settings.Enabled then
+        if Humanoid then
+            Humanoid:MoveTo(HumanoidRootPart.Position)
+        end
+        Settings.LookAtTarget = false
+        UpdateToggle(LookAtButton, LookAtCircle, false)
+    end
+end)
+
+TeamButton.MouseButton1Click:Connect(function()
+    Settings.IgnoreTeam = not Settings.IgnoreTeam
+    UpdateToggle(TeamButton, TeamCircle, Settings.IgnoreTeam)
+end)
+
+FriendsButton.MouseButton1Click:Connect(function()
+    Settings.IgnoreFriends = not Settings.IgnoreFriends
+    UpdateToggle(FriendsButton, FriendsCircle, Settings.IgnoreFriends)
+end)
+
+LookAtButton.MouseButton1Click:Connect(function()
+    Settings.LookAtTarget = not Settings.LookAtTarget
+    UpdateToggle(LookAtButton, LookAtCircle, Settings.LookAtTarget)
+end)
+
+-- Обработчик слайдера скорости
+local isSliding = false
+SpeedSlider.MouseButton1Down:Connect(function()
+    isSliding = true
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = false
+    end
+end)
+
+SpeedSlider.MouseMoved:Connect(function()
+    if isSliding then
+        local mousePos = UserInputService:GetMouseLocation()
+        local sliderAbsPos = SpeedSlider.AbsolutePosition
+        local sliderAbsSize = SpeedSlider.AbsoluteSize
+        
+        local relativeX = (mousePos.X - sliderAbsPos.X) / sliderAbsSize.X
+        relativeX = math.clamp(relativeX, 0, 1)
+        
+        local newSpeed = 16 + (relativeX * 84)
+        UpdateSpeedSlider(newSpeed)
+    end
+end)
+
+-- Инициализация слайдера
+UpdateSpeedSlider(Settings.WalkSpeed)
+
+PlayersButton.MouseButton1Click:Connect(function()
+    PlayersWindow.Visible = not PlayersWindow.Visible
+    TargetFrame.Visible = not PlayersWindow.Visible
+    
+    if PlayersWindow.Visible then
+        UpdatePlayersList()
+    end
+end)
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    UpdatePlayersList()
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    wait(1)
+    UpdatePlayersList()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    wait()
+    UpdatePlayersList()
+end)
+
+-- Основной цикл движения
+local Connection
+Connection = RunService.Heartbeat:Connect(function(deltaTime)
+    -- Обновляем ссылки на персонажа
+    if not Character or not Character.Parent then
+        Character = LocalPlayer.Character
+        if Character then
+            Humanoid = Character:WaitForChild("Humanoid")
+            HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+            Humanoid.WalkSpeed = Settings.WalkSpeed
+        end
+    end
+    
+    if not Settings.Enabled or not Character or not Humanoid or not HumanoidRootPart then
+        IsMoving = false
+        return
+    end
+    
+    MovementCooldown = MovementCooldown - deltaTime
+    
+    local closestPlayer, distance = GetClosestPlayer()
+    
+    if closestPlayer ~= CurrentTarget then
+        CurrentTarget = closestPlayer
+        TargetName.Text = CurrentTarget and CurrentTarget.Name or "Нет"
+        TargetName.TextColor3 = CurrentTarget and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+    end
+    
+    if CurrentTarget and CurrentTarget.Character then
+        local targetRoot = CurrentTarget.Character:FindFirstChild("HumanoidRootPart")
+        local targetHumanoid = CurrentTarget.Character:FindFirstChild("Humanoid")
+        
+        if targetRoot and targetHumanoid and targetHumanoid.Health > 0 then
+            local targetPos = targetRoot.Position
+            
+            local targetMoved = (LastTargetPosition - targetPos).Magnitude > 15
+            
+            if (targetMoved or tick() - LastPathUpdate > Settings.PathRefreshRate or #Waypoints == 0) and MovementCooldown <= 0 then
+                if UpdatePath(targetPos) then
+                    LastPathUpdate = tick()
+                    LastTargetPosition = targetPos
+                    MovementCooldown = 0.3
+                end
+            end
+            
+            SmoothFollowPath()
+            
+            -- Если включена опция "Смотреть на игрока", поворачиваем камеру
+            if Settings.LookAtTarget then
+                LookAtTarget(targetPos)
+            end
+            
+            if distance <= Settings.TargetDistance then
+                IsMoving = false
+                Humanoid:MoveTo(HumanoidRootPart.Position)
+            end
+        else
+            IsMoving = false
+            Humanoid:MoveTo(HumanoidRootPart.Position)
+            CurrentTarget = nil
+            TargetName.Text = "Нет"
+            TargetName.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    else
+        IsMoving = false
+        if Humanoid then
+            Humanoid:MoveTo(HumanoidRootPart.Position)
+        end
+    end
+end)
+
+-- Инициализация
+UpdateToggle(EnableButton, EnableCircle, Settings.Enabled)
+UpdateToggle(TeamButton, TeamCircle, Settings.IgnoreTeam)
+UpdateToggle(FriendsButton, FriendsCircle, Settings.IgnoreFriends)
+UpdateToggle(LookAtButton, LookAtCircle, Settings.LookAtTarget)
+
+ScreenGui.Destroying:Connect(function()
+    if Connection then
+        Connection:Disconnect()
+    end
+    Settings.Enabled = false
+    Settings.LookAtTarget = false
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+spawn(function()
+    wait(2)
+    UpdatePlayersList()
+end)

@@ -1,0 +1,193 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки полета
+local FLY_SETTINGS = {
+    Speed = 25,
+    HeightOffset = 0,
+    RefreshDelay = 1,
+    ReachDistance = 1,
+    LookAtTarget = true
+}
+
+-- Состояние системы
+local flying = false
+local currentTask = nil
+local visitedObjects = {}
+local currentTarget = nil
+local connection = nil
+
+-- Проверить существование объекта
+local function isValidObject(obj)
+    return obj and obj.Parent ~= nil
+end
+
+-- Обновить список объектов
+local function getValidObjects(objectName)
+    local validObjects = {}
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name == objectName and isValidObject(obj) and not visitedObjects[obj] then
+            if obj:IsA("BasePart") or (obj:IsA("Model") and obj.PrimaryPart) then
+                local pos = obj:IsA("BasePart") and obj.Position or obj.PrimaryPart.Position
+                local dist = root and (pos - root.Position).Magnitude or math.huge
+                
+                table.insert(validObjects, {
+                    object = obj,
+                    distance = dist
+                })
+            end
+        end
+    end
+    
+    table.sort(validObjects, function(a, b)
+        return a.distance < b.distance
+    end)
+    
+    return validObjects
+end
+
+-- Плавный полет к объекту
+local function flyToTarget(target)
+    local char = LocalPlayer.Character
+    if not char or not isValidObject(target) then return false end
+    
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    local targetPos = target:IsA("BasePart") and target.Position or target.PrimaryPart.Position
+    targetPos += Vector3.new(0, FLY_SETTINGS.HeightOffset, 0)
+    
+    local startPos = root.Position
+    local startTime = os.clock()
+    local distance = (targetPos - startPos).Magnitude
+    local duration = distance / FLY_SETTINGS.Speed
+    
+    while flying and isValidObject(target) do
+        local elapsed = os.clock() - startTime
+        if elapsed >= duration then break end
+        
+        local alpha = elapsed / duration
+        local newPos = startPos:Lerp(targetPos, alpha)
+        
+        if FLY_SETTINGS.LookAtTarget then
+            root.CFrame = CFrame.new(newPos, targetPos)
+        else
+            root.CFrame = CFrame.new(newPos)
+        end
+        
+        -- Проверка достижения
+        if (root.Position - targetPos).Magnitude < FLY_SETTINGS.ReachDistance then
+            visitedObjects[target] = true
+            return true
+        end
+        
+        RunService.Heartbeat:Wait()
+    end
+    
+    return false
+end
+
+-- Основной цикл полета
+local function flightLoop(objectName)
+    while flying do
+        local objects = getValidObjects(objectName)
+        
+        if #objects == 0 then
+            print("⏳ Нет доступных объектов, ожидание...")
+            task.wait(FLY_SETTINGS.RefreshDelay)
+        else
+            currentTarget = objects[1].object
+            
+            if flyToTarget(currentTarget) then
+                print("✅ Достигнут:", currentTarget:GetFullName())
+            else
+                print("⚠️ Не удалось достичь объекта")
+            end
+            
+            task.wait(0.2)
+        end
+    end
+end
+
+-- Отслеживание новых объектов
+local function trackObjects(objectName)
+    if connection then
+        connection:Disconnect()
+    end
+    
+    connection = Workspace.DescendantAdded:Connect(function(obj)
+        if flying and obj.Name == objectName and isValidObject(obj) then
+            print("🆕 Обнаружен новый объект:", obj:GetFullName())
+        end
+    end)
+end
+
+-- Запуск автополета
+getgenv().FLYTOAUTO = function(objectName)
+    if not objectName or type(objectName) ~= "string" then
+        warn("❌ Укажите название объекта: FLYTOAUTO(\"название\")")
+        return
+    end
+    
+    -- Остановка предыдущего полета
+    UNFLYTOAUTO()
+    
+    -- Сброс состояния
+    flying = true
+    visitedObjects = {}
+    currentTarget = nil
+    
+    -- Начать отслеживание
+    if FLY_SETTINGS.RefreshDelay > 0 then
+        trackObjects(objectName)
+    end
+    
+    -- Запуск основного цикла
+    currentTask = task.spawn(function()
+        flightLoop(objectName)
+    end)
+    
+    print("🛫 Автополет запущен к объектам:", objectName)
+end
+
+-- Остановка автополета
+getgenv().UNFLYTOAUTO = function()
+    flying = false
+    
+    if currentTask then
+        task.cancel(currentTask)
+        currentTask = nil
+    end
+    
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+    
+    currentTarget = nil
+    print("🛑 Автополет остановлен")
+end
+
+-- Настройки
+getgenv().FLYTO_SETTINGS = function(settings)
+    if settings.Speed then FLY_SETTINGS.Speed = settings.Speed end
+    if settings.HeightOffset then FLY_SETTINGS.HeightOffset = settings.HeightOffset end
+    if settings.RefreshDelay then FLY_SETTINGS.RefreshDelay = settings.RefreshDelay end
+    if settings.ReachDistance then FLY_SETTINGS.ReachDistance = settings.ReachDistance end
+    if settings.LookAtTarget ~= nil then FLY_SETTINGS.LookAtTarget = settings.LookAtTarget end
+    
+    print("⚙️ Настройки обновлены:")
+    print("Скорость:", FLY_SETTINGS.Speed)
+    print("Высота:", FLY_SETTINGS.HeightOffset)
+    print("Частота обновления:", FLY_SETTINGS.RefreshDelay)
+end
+
+print("🚀 FLYTOAUTO скрипт загружен!")
+print("FLYTOAUTO(\"название\") - начать автополет")
+print("UNFLYTOAUTO() - остановить")
+print("FLYTO_SETTINGS({...}) - настройки")

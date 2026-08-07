@@ -1,0 +1,6 @@
+wait(300)
+
+
+while task.wait(0.3) do
+    SHOP()
+end

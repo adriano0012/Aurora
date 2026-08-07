@@ -1,0 +1,180 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки по умолчанию
+local TPPLAYER_SETTINGS = {
+    Position = {
+        ForwardOffset = -3,  -- Отступ спереди/сзади
+        RightOffset = 0,     -- Отступ вправо/влево
+        UpOffset = 0         -- Высота
+    },
+    Delay = 4,               -- Задержка между телепортами (сек)
+    LookAtPlayer = true,     -- Смотреть на игрока
+    AutoStop = true,         -- Автостоп при смене персонажа
+    TeleportToDead = false,  -- Телепорт к мертвым игрокам
+    LoopMode = false         -- Бесконечная телепортация
+}
+
+local teleportActive = false
+local teleportQueue = {}
+local currentTeleportTask = nil
+
+-- Поиск игрока по имени
+local function findPlayer(name)
+    name = string.lower(name)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and 
+           (string.lower(player.Name) == name or 
+           string.lower(player.DisplayName) == name) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- Выполнение телепортации
+local function executeTeleport(player)
+    if not player or not player.Character then return false end
+    
+    local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    
+    -- Проверка на мертвого игрока
+    if not TPPLAYER_SETTINGS.TeleportToDead and humanoid and humanoid.Health <= 0 then
+        return false
+    end
+    
+    if rootPart then
+        local offset = Vector3.new(
+            TPPLAYER_SETTINGS.Position.RightOffset,
+            TPPLAYER_SETTINGS.Position.UpOffset,
+            TPPLAYER_SETTINGS.Position.ForwardOffset
+        )
+        
+        local targetCFrame = rootPart.CFrame * CFrame.new(offset)
+        
+        if TPPLAYER_SETTINGS.LookAtPlayer then
+            targetCFrame = CFrame.new(targetCFrame.Position, rootPart.Position)
+        end
+        
+        LocalPlayer.Character:SetPrimaryPartCFrame(targetCFrame)
+        return true
+    end
+    return false
+end
+
+-- Процесс телепортации
+local function processTeleportQueue()
+    if #teleportQueue == 0 or not teleportActive then
+        currentTeleportTask = nil
+        return
+    end
+
+    local player = table.remove(teleportQueue, 1)
+    local success = executeTeleport(player)
+    
+    print(success and "✅ Телепортирован к: "..player.Name or "❌ Не удалось телепортироваться к: "..player.Name)
+
+    if #teleportQueue > 0 or TPPLAYER_SETTINGS.LoopMode then
+        if TPPLAYER_SETTINGS.LoopMode and #teleportQueue == 0 then
+            -- Повторно заполняем очередь в режиме LoopMode
+            if string.upper(teleportQueue.originalCommand) == "ALL" then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer then
+                        table.insert(teleportQueue, p)
+                    end
+                end
+            else
+                -- Для конкретных игроков
+                for _, name in ipairs(teleportQueue.originalNames) do
+                    local p = findPlayer(name)
+                    if p then table.insert(teleportQueue, p) end
+                end
+            end
+        end
+        
+        currentTeleportTask = task.delay(TPPLAYER_SETTINGS.Delay, processTeleportQueue)
+    else
+        currentTeleportTask = nil
+    end
+end
+
+-- Основная функция телепортации
+getgenv().TPPLAYER = function(...)
+    local args = {...}
+    if #args == 0 then
+        print("ℹ️ Использование: TPPLAYER(\"ник\"), TPPLAYER(\"ник1\", \"ник2\"), TPPLAYER(\"ALL\")")
+        return
+    end
+
+    -- Остановка текущего процесса
+    if currentTeleportTask then
+        task.cancel(currentTeleportTask)
+        currentTeleportTask = nil
+    end
+
+    -- Формирование очереди
+    teleportQueue = {}
+    teleportQueue.originalCommand = args[1]
+    teleportQueue.originalNames = args
+    
+    if string.upper(args[1]) == "ALL" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                table.insert(teleportQueue, player)
+            end
+        end
+    else
+        for _, name in ipairs(args) do
+            local player = findPlayer(name)
+            if player then
+                table.insert(teleportQueue, player)
+            else
+                print("❌ Игрок не найден: "..name)
+            end
+        end
+    end
+
+    if #teleportQueue == 0 then return end
+
+    -- Запуск процесса
+    teleportActive = true
+    processTeleportQueue() -- Первый телепорт сразу
+end
+
+-- Функция остановки
+getgenv().UNTPPLAYER = function()
+    teleportActive = false
+    teleportQueue = {}
+    if currentTeleportTask then
+        task.cancel(currentTeleportTask)
+        currentTeleportTask = nil
+    end
+    print("⏹ Телепортация остановлена")
+end
+
+-- Настройки
+getgenv().TPPLAYER_SETTINGS = function(settings)
+    if settings.Position then
+        TPPLAYER_SETTINGS.Position.ForwardOffset = settings.Position.ForwardOffset or TPPLAYER_SETTINGS.Position.ForwardOffset
+        TPPLAYER_SETTINGS.Position.RightOffset = settings.Position.RightOffset or TPPLAYER_SETTINGS.Position.RightOffset
+        TPPLAYER_SETTINGS.Position.UpOffset = settings.Position.UpOffset or TPPLAYER_SETTINGS.Position.UpOffset
+    end
+    
+    if settings.Delay then TPPLAYER_SETTINGS.Delay = settings.Delay end
+    if settings.LookAtPlayer ~= nil then TPPLAYER_SETTINGS.LookAtPlayer = settings.LookAtPlayer end
+    if settings.AutoStop ~= nil then TPPLAYER_SETTINGS.AutoStop = settings.AutoStop end
+    if settings.TeleportToDead ~= nil then TPPLAYER_SETTINGS.TeleportToDead = settings.TeleportToDead end
+    if settings.LoopMode ~= nil then TPPLAYER_SETTINGS.LoopMode = settings.LoopMode end
+    
+    print("⚙️ Настройки обновлены:")
+    print("Режим повтора: " .. (TPPLAYER_SETTINGS.LoopMode and "ВКЛ" or "ВЫКЛ"))
+    print("Задержка: " .. TPPLAYER_SETTINGS.Delay .. " сек")
+end
+
+-- Автостоп при смене персонажа
+LocalPlayer.CharacterAdded:Connect(function()
+    if TPPLAYER_SETTINGS.AutoStop then
+        UNTPPLAYER()
+    end
+end)

@@ -1,0 +1,543 @@
+-- ======== НАСТРОЙКИ ======== --
+local SETTINGS = {
+    WALK_SPEED = {
+        DEFAULT = 16,
+        MIN = 0,
+        MAX = 150
+    },
+    JUMP_POWER = {
+        DEFAULT = 50,
+        MIN = 0,
+        MAX = 500
+    },
+    FOV = {
+        DEFAULT = 70,
+        MIN = 0,
+        MAX = 120
+    },
+    TIME = {
+        DEFAULT = 12,
+        MIN = 0,
+        MAX = 24
+    }
+}
+
+-- Глобальные переменные для скорости
+_G.Walk = SETTINGS.WALK_SPEED.DEFAULT
+_G.WalkSpeedEnabled = true
+
+-- ======== ИНИЦИАЛИЗАЦИЯ БИБЛИОТЕКИ ======== --
+local Compkiller = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/CompKiller/refs/heads/main/src/source.luau"))()
+local Notifier = Compkiller.newNotify()
+local ConfigManager = Compkiller:ConfigManager({
+    Directory = "1Qlua-Config",
+    Config = "Main-Config"
+})
+
+-- Загрузка интерфейса
+Compkiller:Loader("rbxassetid://80494437171393", 2.5).yield()
+
+-- ======== СОЗДАНИЕ ОКНА ======== --
+local Window = Compkiller.new({
+    Name = "1Qlua ",
+    Keybind = "LeftAlt",
+    Logo = "rbxassetid://80494437171393",
+    Scale = Compkiller.Scale.Window,
+    TextSize = 15,
+})
+
+-- Уведомление при запуске
+Notifier.new({
+    Title = "1Qlua",
+    Content = "Universal Script Hub успешно загружен!",
+    Duration = 5,
+    Icon = "rbxassetid://80494437171393"
+})
+
+-- ======== ВОДЯНОЙ ЗНАК ======== --
+local Watermark = Window:Watermark()
+
+Watermark:AddText({
+    Icon = "user",
+    Text = "1Qlua",
+})
+
+local Time = Watermark:AddText({
+    Icon = "server",
+    Text = "V2",
+})
+
+Watermark:AddText({
+    Icon = "clock",
+    Text = Compkiller:GetDate(),
+})
+
+-- ======== ОБРАБОТЧИК СКОРОСТИ ======== --
+local Heartbeat = game:GetService("RunService").Heartbeat
+local Player = game:GetService("Players").LocalPlayer
+
+-- Функция для обновления скорости
+local function UpdateSpeed()
+    if not _G.WalkSpeedEnabled then return end
+    
+    local character = Player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = _G.Walk
+        end
+    end
+end
+
+-- Постоянное обновление скорости
+Heartbeat:Connect(UpdateSpeed)
+
+-- Автоматическое применение при смене персонажа
+Player.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid")
+    UpdateSpeed()
+end)
+
+-- ======== ФУНКЦИОНАЛЬНЫЕ ФУНКЦИИ ======== --
+local Functions = {}
+
+-- Управление силой прыжка
+Functions.JumpPower = function(value)
+    local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.JumpPower = value
+    end
+    
+    Player.CharacterAdded:Connect(function(character)
+        local hum = character:WaitForChild("Humanoid")
+        hum.JumpPower = value
+    end)
+end
+
+-- Управление полем зрения
+Functions.FOV = function(value)
+    workspace.CurrentCamera.FieldOfView = value
+    workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = value
+        end
+    end)
+end
+
+-- Управление временем суток
+Functions.TimeOfDay = function(hours)
+    local Lighting = game:GetService("Lighting")
+    hours = math.clamp(hours, 0, 24)
+    local robloxTime = hours % 12
+    if robloxTime == 0 then robloxTime = 12 end
+    Lighting.ClockTime = robloxTime
+    if hours >= 6 and hours < 18 then
+        Lighting:SetMinutesAfterMidnight(hours * 60)
+    end
+end
+
+-- Загрузка скриптов
+Functions.LoadScript = function(url)
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(url))()
+    end)
+    
+    if not success then
+        Notifier.new({
+            Title = "Ошибка",
+            Content = "Не удалось загрузить скрипт: " .. err,
+            Duration = 5,
+            Icon = "rbxassetid://7734068321"
+        })
+    end
+end
+
+-- ======== СОЗДАНИЕ ВКЛАДОК ======== --
+Window:DrawCategory({
+	Name = "Скрипты"
+});
+-- Вкладка Игрока
+local PlayerTab = Window:DrawTab({
+    Name = "Игрок",
+    Icon = "user",
+    EnableScrolling = true
+})
+
+-- Раздел Основные настройки
+local scriptOc = PlayerTab:DrawSection({
+    Name = "Полезные скрипты",
+    Position = "right"
+})
+
+    scriptOc:AddParagraph({
+		Title = "Infinite Yield",
+		Content = "Очень полезый скрипт \nПо типу админ командом"
+	})
+
+scriptOc:AddButton({
+    Name = "Infinite Yield",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Infinite-Store/Infinite-Store/main/main.lua"))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "sigma spy",
+		Content = "Перехват эвентов\nС помошью этого скрипта\nможно накрутить деньги"
+	})
+
+scriptOc:AddButton({
+    Name = "sigma spy",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/depthso/Sigma-Spy/refs/heads/main/Main.lua"))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "dex 2.0",
+		Content = "Просмотор всего что есть в игре"
+	})
+
+scriptOc:AddButton({
+    Name = "dex 2.0",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/MariyaFurmanova/Library/main/dex2.0", true))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Яндекс музыка (бета)",
+		Content = "Можно слушать музыку \nПрям в игре\nХотите добавить своб музыку?\nТо напишите в Дискорд"
+	})
+
+scriptOc:AddButton({
+    Name = "Яндекс музыка (бета)",
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/YandexMusic'))()
+    end
+})
+
+-- Раздел Основные настройки
+local scriptOc = PlayerTab:DrawSection({
+    Name = "скрипты",
+    Position = "right"
+})
+
+    scriptOc:AddParagraph({
+		Title = "Чекпоинты",
+		Content = "Телепортурет туда \nгде ты сохранил позицию"
+	})
+
+scriptOc:AddButton({
+    Name = "Чекпойнты",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/rz7uUmED'))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "вх",
+		Content = "Видеть где находяться игроки \nувидешь сковось стены игроков"
+	})
+
+scriptOc:AddButton({
+    Name = "вх",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/r97SAaUa'))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Телепорд к игрокам",
+		Content = "Ты можешь выбрать игрока \nкоторого ты выберешь)"
+	})
+
+scriptOc:AddButton({
+    Name = "Телепорд к игрокам",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/z4HARAHs'))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Играть с писюном",
+		Content = "Ты можешь дрочить \nЭто видят все игроки)"
+	})
+
+scriptOc:AddButton({
+    Name = "Играть с писюном",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/73RsNXY2"))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Tool Для изменения моделий",
+		Content = "Ты можешь удалять стены \nДублировать стены\nДвигать стены\nИ также он удаляет анти чит на\nчто ты не видишь tool"
+	})
+
+scriptOc:AddButton({
+    Name = "Tool Для изменения моделий",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/FBKJTUyw"))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Телепорд по координатам",
+		Content = "Дает сразу 2 топовых скрипта \nМожно скопировать свои \nкоординаты\nИ также телепортироваться по \nкоординатам"
+	})
+
+scriptOc:AddButton({
+    Name = "Телепорд по координатам",
+    Callback = function()
+        loadstring(game:HttpGetAsync("https://pastebin.com/raw/9ybHwgLa"))()
+    end
+})
+
+    scriptOc:AddParagraph({
+		Title = "Тп в свой мир",
+		Content = "Дает сразу 3 скрипта \nМожно создать мир\nтелепортироваться в мир\nСохранения свое позиции"
+	})
+
+scriptOc:AddButton({
+    Name = "Тп в свой мир",
+    Callback = function()
+        loadstring(game:HttpGetAsync("https://pastebin.com/raw/SRZJGHyq"))()
+    end
+})
+
+
+    scriptOc:AddParagraph({
+		Title = "Летать",
+		Content = "Можно летать на кнопку"
+	})
+
+scriptOc:AddButton({
+    Name = "Летать",
+    Callback = function()
+        loadstring("\108\111\97\100\115\116\114\105\110\103\40\103\97\109\101\58\72\116\116\112\71\101\116\40\40\39\104\116\116\112\115\58\47\47\103\105\115\116\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\109\101\111\122\111\110\101\89\84\47\98\102\48\51\55\100\102\102\57\102\48\97\55\48\48\49\55\51\48\52\100\100\100\54\55\102\100\99\100\51\55\48\47\114\97\119\47\101\49\52\101\55\52\102\52\50\53\98\48\54\48\100\102\53\50\51\51\52\51\99\102\51\48\98\55\56\55\48\55\52\101\98\51\99\53\100\50\47\97\114\99\101\117\115\37\50\53\50\48\120\37\50\53\50\48\102\108\121\37\50\53\50\48\50\37\50\53\50\48\111\98\102\108\117\99\97\116\111\114\39\41\44\116\114\117\101\41\41\40\41\10\10")()
+    end
+})
+
+-- Раздел Основные настройки
+local PlayerMainSection = PlayerTab:DrawSection({
+    Name = "Основные настройки",
+    Position = "left"
+})
+PlayerMainSection:AddSlider({
+    Name = "Базовая скорость передвижения",
+    Min = SETTINGS.WALK_SPEED.MIN,
+    Max = SETTINGS.WALK_SPEED.MAX,
+    Default = SETTINGS.WALK_SPEED.DEFAULT,
+    Color = Color3.fromRGB(0,255,0),
+    Increment = 1,
+    ValueName = "скорость",
+    Callback = function(value)
+        _G.Walk = value
+    end    
+})
+
+PlayerMainSection:AddSlider({
+    Name = "Высота прыжка",
+    Min = SETTINGS.JUMP_POWER.MIN,
+    Max = SETTINGS.JUMP_POWER.MAX,
+    Default = SETTINGS.JUMP_POWER.DEFAULT,
+    Flag = "JumpPower",
+    Callback = Functions.JumpPower
+})
+
+PlayerMainSection:AddSlider({
+    Name = "Поле зрения (FOV)",
+    Min = SETTINGS.FOV.MIN,
+    Max = SETTINGS.FOV.MAX,
+    Default = SETTINGS.FOV.DEFAULT,
+    Flag = "FOV",
+    Callback = Functions.FOV
+})
+
+-- Вкладка Графика
+local GraphicsTab = Window:DrawTab({
+    Name = "Графика",
+    Icon = "image",
+    EnableScrolling = true
+})
+
+-- Раздел Настройки графики
+local GraphicsTimeSection = GraphicsTab:DrawSection({
+    Name = "Настройки графики",
+    Position = "left"
+})
+
+GraphicsTimeSection:AddSlider({
+    Name = "Время суток",
+    Min = SETTINGS.TIME.MIN,
+    Max = SETTINGS.TIME.MAX,
+    Default = SETTINGS.TIME.DEFAULT,
+    Flag = "TimeOfDay",
+    Callback = Functions.TimeOfDay
+})
+
+-- Раздел Основные настройки
+local GraphicsTimeSection = PlayerTab:DrawSection({
+    Name = "скрипты с билтом на кнопку",
+    Position = "left"
+})
+
+    GraphicsTimeSection:AddParagraph({
+		Title = "ctrl+клик=телепорд",
+		Content = "Телепортурет туда \nкуда ты смотришь"
+	})
+
+GraphicsTimeSection:AddButton({
+    Name = "ctrl+клик=телепорд",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/icB69Hhf'))()
+    end
+})
+
+    GraphicsTimeSection:AddParagraph({
+		Title = "Невидимость (Нажми E)",
+		Content = "Ты становишься \nдля всех не видимым"
+	})
+
+GraphicsTimeSection:AddButton({
+    Name = "Невидимость (Нажми E)",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/VtWhnEnm"))()
+    end
+})
+
+    GraphicsTimeSection:AddParagraph({
+		Title = "Полет на машине (Нажми V)",
+		Content = "Ты можешь летать на машине"
+	})
+
+GraphicsTimeSection:AddButton({
+    Name = "Полет на машине (Нажми V)",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/9bNj1EcR'))()
+    end
+})
+
+    GraphicsTimeSection:AddParagraph({
+		Title = "Падение на месте (Нажми R)",
+		Content = "Ты можешь упасть на месте"
+	})
+
+GraphicsTimeSection:AddButton({
+    Name = "Падение на месте (Нажми R)",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/CTUaCKN1'))()
+    end
+})
+
+    GraphicsTimeSection:AddParagraph({
+		Title = "Свободная камера",
+		Content = "Ты можешь летать на камеры \nна кнопку shift+P"
+	})
+
+GraphicsTimeSection:AddButton({
+    Name = "Свободная камера (Shift+P)",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/ct8Kq5F0'))()
+    end
+})
+
+
+-- Раздел Шейдеры
+local GraphicsShadersSection = GraphicsTab:DrawSection({
+    Name = "Шейдеры",
+    Position = "left"
+})
+
+GraphicsShadersSection:AddButton({
+    Name = "Включить шейдеры",
+    Callback = function()
+        Functions.LoadScript("https://pastebin.com/raw/mXAwCUEk")
+    end
+})
+
+GraphicsShadersSection:AddButton({
+    Name = "Альтернативные шейдеры",
+    Callback = function()
+        Functions.LoadScript("https://pastebin.com/raw/1XA5qM3D")
+    end
+})
+
+Window:DrawCategory({
+	Name = "Настройки"
+});
+
+-- ======== НАСТРОЙКИ ИНТЕРФЕЙСА ======== --
+local SettingsTab = Window:DrawTab({
+    Name = "Настройки",
+    Icon = "settings",
+    Type = "Single"
+})
+
+local UISettings = SettingsTab:DrawSection({
+    Name = "Настройки интерфейса",
+    Position = "left"
+})
+
+UISettings:AddToggle({
+    Name = "Всегда показывать фрейм",
+    Default = false,
+    Flag = "AlwaysShowFrame",
+    Callback = function(v)
+        Window.AlwayShowTab = v
+    end
+})
+
+UISettings:AddColorPicker({
+    Name = "Основной цвет",
+    Default = Compkiller.Colors.Highlight,
+    Flag = "MainColor",
+    Callback = function(v)
+        Compkiller.Colors.Highlight = v
+        Compkiller:RefreshCurrentColor()
+    end
+})
+
+UISettings:AddButton({
+    Name = "Сохранить настройки",
+    Callback = function()
+        ConfigManager:Save()
+        Notifier.new({
+            Title = "Успех",
+            Content = "Настройки успешно сохранены!",
+            Duration = 3,
+            Icon = "rbxassetid://7734068321"
+        })
+    end
+})
+
+UISettings:AddButton({
+    Name = "Загрузить настройки",
+    Callback = function()
+        ConfigManager:Load()
+        Notifier.new({
+            Title = "Успех",
+            Content = "Настройки успешно загружены!",
+            Duration = 3,
+            Icon = "rbxassetid://7734068321"
+        })
+    end
+})
+
+-- ======== КОНФИГУРАЦИЯ ======== --
+local ConfigUI = Window:DrawConfig({
+    Name = "Конфигурация",
+    Icon = "folder",
+    Config = ConfigManager
+})
+
+ConfigUI:Init()
+
+-- ======== АВТОМАТИЧЕСКАЯ ЗАГРУЗКА НАСТРОЕК ======== --
+task.spawn(function()
+    -- Даем время интерфейсу полностью загрузиться
+    wait(1)
+    ConfigManager:Load()
+end)

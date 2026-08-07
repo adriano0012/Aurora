@@ -1,0 +1,13 @@
+--this part doesnt work with solara yet (apperently)
+-- you gotta paste raw anim.lua below the getgenv
+if getgenv().animloaded then loadstring(game:HttpGet('https://raw.githubusercontent.com/benomat/scripts/m/anim.lua',true))()
+else 
+    repeat task.wait() until game:IsLoaded()
+    game.Players.LocalPlayer.CharacterAdded:Connect(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/benomat/scripts/m/anim.lua',true))()
+        print("set animation")
+    end)
+    
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/benomat/scripts/m/anim.lua',true))()
+   getgenv().animloaded='hi'
+end

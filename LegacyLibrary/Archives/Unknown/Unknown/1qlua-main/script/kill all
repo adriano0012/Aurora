@@ -1,0 +1,25 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/LIBRARY_1QLUA_NOPRINT"))()
+
+wait(2)
+
+local scripts = {
+    "https://raw.githubusercontent.com/test1QLUA/QLUASCRIPT/refs/heads/main/Scriptkat/a",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/FARM/killall",
+    "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/FARM/spamclick",
+    "https://raw.githubusercontent.com/test1QLUA/QLUASCRIPT/refs/heads/main/Scriptkat/s"
+}
+
+for i, url in ipairs(scripts) do
+    coroutine.wrap(function()
+        local success, err = pcall(function()
+            local scriptContent = game:HttpGet(url)
+            loadstring(scriptContent)()
+        end)
+
+        if not success then
+            warn("Ошибка в скрипте "..i.." ("..url.."): "..err)
+        else
+            print("Скрипт "..i.." успешно запущен: "..url)
+        end
+    end)()
+end

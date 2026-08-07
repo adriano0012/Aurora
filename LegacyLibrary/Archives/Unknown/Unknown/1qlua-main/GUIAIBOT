@@ -1,0 +1,134 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "1Qlua",
+    Icon = "crown",
+    Author = "AI bot",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    Resizable = true,
+    SideBarWidth = 200,
+    Background = "",
+    BackgroundImageTransparency = 0.42,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    User = {
+        Enabled = true,
+        Anonymous = true,
+        Callback = function()
+            print("clicked")
+        end,
+    }
+})
+
+local Tabk = Window:Tab({
+    Title = "Приветствие!",
+    Icon = "bird",
+    Locked = false,
+})
+
+Window:SelectTab(1)
+
+
+Tabk:Paragraph({
+    Title = "Привет, это скрипт для Slab battle.",
+    Desc = "Скрипт для создания бота.\nЭтот скрипт полностью открытым кодом.",
+    Color = "Red",
+    Locked = false,
+})
+
+Tabk:Paragraph({
+    Title = "Удачной игры!",
+    Color = "Blue",
+    Locked = false,
+})
+
+local Tab = Window:Tab({
+    Title = "Настройка бота",
+    Icon = "bird",
+    Locked = false,
+})
+
+Tab:Section({ 
+    Title = "Выкл/Вкл",
+    TextXAlignment = "Left",
+    TextSize = 17,
+})
+
+
+Tab:Button({
+    Title = "Запустить бота",
+    Locked = false,
+    Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/StartOfStop/start"))()
+    end
+})
+
+Tab:Button({
+    Title = "Выключить бота",
+    Locked = false,
+    Callback = function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/AIBOT/StartOfStop/Stop"))()
+    end
+})
+
+local Section = Tab:Section({ 
+    Title = "Настройки бота!",
+    TextXAlignment = "Left",
+    TextSize = 21, 
+})
+
+local Paragraph = Tab:Paragraph({
+    Title = "Настройка бота",
+    Color = "Orange",
+    Locked = true,
+    Buttons = {
+        {
+            Icon = "meh",
+            Title = "Ресет каждые 5 минут",
+            Callback = function() local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local enabled = true
+
+local function killPlayer()
+    if player.Character then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.Health = 0
+        end
+    end
+end
+
+-- Запускаем цикл убийства каждые 5 минут
+spawn(function()
+    while enabled and task.wait(300) do -- 300 секунд = 5 минут
+        killPlayer()
+        warn("[AutoDeath] Персонаж убит!")
+    end
+end)
+
+-- Делаем возможность отключить скрипт
+getgenv().DisableAutoDeath = function()
+    enabled = false
+    warn("[AutoDeath] Скрипт отключен!")
+end end,
+        },
+        {
+            Icon = "inspection-panel",
+            Title = "выклучить ресет 5 минут",
+            Callback = function() if getgenv().DisableAutoDeath then
+    DisableAutoDeath() -- Вызываем функцию отключения
+    print("Авто-убийство отключено!")
+else
+    warn("Скрипт AutoDeath не найден или уже отключен!")
+end end,
+        },
+        {
+            Icon = "inspection-panel",
+            Title = "Невидимые стены!",
+            Callback = function() loadstring(game:HttpGet(('https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/slab%20battle%20stena')))() end,
+        }
+    }
+})

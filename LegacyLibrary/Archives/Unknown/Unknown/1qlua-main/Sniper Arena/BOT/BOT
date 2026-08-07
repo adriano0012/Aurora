@@ -1,0 +1,209 @@
+
+local Players            = game:GetService("Players")
+local RunService         = game:GetService("RunService")
+local PathfindingService = game:GetService("PathfindingService")
+local Workspace          = game:GetService("Workspace")
+
+local CONFIG = {
+    SEARCH_RADIUS          = 1000,
+    REACHED_DIST           = 4,
+    TARGET_UPDATE_INTERVAL = 0.1,
+    REPATH_DIST_THRESHOLD  = 10,
+    ENEMY_FOLDER_PATH = {"Highlight", "Enemy", "HighlightHolder"},
+    TRIGGER_POINT    = Vector3.new(-2, 505, 4001),
+    TRIGGER_RADIUS   = 50,
+    TRIGGER_TARGET   = Vector3.new(40, 505, 4000),
+    TRIGGER_REACHED  = 3,
+    PATH_PARAMS = {
+        AgentRadius     = 2,
+        AgentHeight     = 5,
+        AgentCanJump    = true,
+        AgentCanClimb   = true,
+        AgentJumpHeight = 7,
+        AgentMaxSlope   = 75,
+        WaypointSpacing = 4,
+    },
+    WALK_SPEED = 16,
+    JUMP_POWER = 50,
+}
+local LocalPlayer = Players.LocalPlayer
+local currentWaypoints = {}
+local currentWaypointIndex = 1
+local currentTargetPos = nil
+local inTrigger = false
+local function getCharacter()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp  = char:WaitForChild("HumanoidRootPart", 5)
+    local hum  = char:WaitForChild("Humanoid", 5)
+    return char, hrp, hum
+end
+local function getEnemyFolder()
+    local node = Workspace
+    for _, name in ipairs(CONFIG.ENEMY_FOLDER_PATH) do
+        node = node:FindFirstChild(name)
+        if not node then return nil end
+    end
+    return node
+end
+local function isAlive(model)
+    if not model:IsA("Model") then return false end
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    local hasArm, hasLeg = false, false
+    for _, part in ipairs(model:GetChildren()) do
+        if part:IsA("BasePart") then
+            local n = part.Name:lower()
+            if n:find("arm") then hasArm = true end
+            if n:find("leg") then hasLeg = true end
+        end
+    end
+    return (hasArm or hasLeg)
+end
+local function extractHRP(obj)
+    if obj:IsA("Model") then
+        local hrp = obj:FindFirstChild("HumanoidRootPart")
+            or obj:FindFirstChild("Torso")
+            or obj:FindFirstChild("UpperTorso")
+        local hum = obj:FindFirstChildOfClass("Humanoid")
+        if hrp and hum and hum.Health > 0 then
+            return hrp
+        end
+    end
+    if obj:IsA("Highlight") and obj.Adornee then
+        return extractHRP(obj.Adornee)
+    end
+    for _, child in ipairs(obj:GetChildren()) do
+        if child:IsA("Model") then
+            local hrp = extractHRP(child)
+            if hrp then return hrp end
+        end
+    end
+    return nil
+end
+local function findNearestEnemy(myPos)
+    local folder = getEnemyFolder()
+    if not folder then return nil end
+    local nearest, nearestDist = nil, CONFIG.SEARCH_RADIUS
+    for _, obj in ipairs(folder:GetChildren()) do
+        local hrp = extractHRP(obj)
+        if hrp then
+            local model = hrp.Parent
+            if model and model:IsA("Model") and isAlive(model) then
+                local d = (hrp.Position - myPos).Magnitude
+                if d < nearestDist then
+                    nearest, nearestDist = hrp, d
+                end
+            end
+        end
+    end
+    return nearest
+end
+local function computePath(startPos, endPos)
+    local path = PathfindingService:CreatePath(CONFIG.PATH_PARAMS)
+    local success, err = pcall(function()
+        path:ComputeAsync(startPos, endPos)
+    end)
+    if success and path.Status == Enum.PathStatus.Success then
+        local wps = {}
+        for _, wp in ipairs(path:GetWaypoints()) do
+            table.insert(wps, wp.Position)
+        end
+        if #wps > 1 and (wps[1] - startPos).Magnitude < 2 then
+            table.remove(wps, 1)
+        end
+        return wps
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        task.wait(CONFIG.TARGET_UPDATE_INTERVAL)
+        local char, hrp, hum = getCharacter()
+        if not (char and hrp and hum) or hum.Health <= 0 then
+            currentWaypoints = {}
+            currentWaypointIndex = 1
+            currentTargetPos = nil
+            continue
+        end
+        local myPos = hrp.Position
+        local newTargetPos = nil
+        local distToTrigger = (myPos - CONFIG.TRIGGER_POINT).Magnitude
+        if distToTrigger <= CONFIG.TRIGGER_RADIUS and not inTrigger then
+            inTrigger = true
+        elseif inTrigger and distToTrigger > CONFIG.TRIGGER_RADIUS then
+            inTrigger = false
+        end
+
+        if inTrigger then
+            local distToTarget = (myPos - CONFIG.TRIGGER_TARGET).Magnitude
+            if distToTarget <= CONFIG.TRIGGER_REACHED then
+                inTrigger = false
+            else
+                newTargetPos = CONFIG.TRIGGER_TARGET
+            end
+        end
+        if not inTrigger and not newTargetPos then
+            local enemyHRP = findNearestEnemy(myPos)
+            if enemyHRP then
+                newTargetPos = enemyHRP.Position
+            end
+        end
+        if newTargetPos then
+            if not currentTargetPos
+                or (newTargetPos - currentTargetPos).Magnitude > CONFIG.REPATH_DIST_THRESHOLD
+                or #currentWaypoints == 0
+            then
+                local wps = computePath(myPos, newTargetPos)
+                if wps then
+                    currentWaypoints = wps
+                    currentWaypointIndex = 1
+                    currentTargetPos = newTargetPos
+                else
+                    currentWaypoints = {}
+                    currentTargetPos = newTargetPos
+                end
+            end
+        else
+            currentWaypoints = {}
+            currentWaypointIndex = 1
+            currentTargetPos = nil
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        RunService.Heartbeat:Wait()
+        local char, hrp, hum = getCharacter()
+        if not (char and hrp and hum) then continue end
+        hum.WalkSpeed = CONFIG.WALK_SPEED
+        hum.JumpPower = CONFIG.JUMP_POWER
+        hum.AutoRotate = true
+
+        if #currentWaypoints == 0 then
+            hum:MoveTo(hrp.Position)
+            continue
+        end
+        local wp = currentWaypoints[currentWaypointIndex]
+        if not wp then
+            if currentTargetPos and (hrp.Position - currentTargetPos).Magnitude > CONFIG.REACHED_DIST then
+                currentWaypoints = {}
+                currentWaypointIndex = 1
+            end
+            continue
+        end
+        if (hrp.Position - wp).Magnitude < 3 then
+            currentWaypointIndex += 1
+        else
+            hum:MoveTo(wp)
+        end
+    end
+end)
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    currentWaypoints = {}
+    currentWaypointIndex = 1
+    currentTargetPos = nil
+    inTrigger = false
+end)

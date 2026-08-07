@@ -1,0 +1,56 @@
+-- Ultra Script Spammer v5.0
+local activeSpams = {}
+
+function SPAM(scriptToRun, interval, count)
+    -- Проверка и настройка параметров
+    if type(scriptToRun) ~= "string" then
+        error("Script must be a string")
+        return
+    end
+    
+    interval = interval or 0.5
+    count = count or math.huge
+    
+    -- Создаем уникальный ID для этого спама
+    local spamId = #activeSpams + 1
+    activeSpams[spamId] = true
+    
+    -- Запускаем в отдельном потоке
+    coroutine.wrap(function()
+        local executions = 0
+        while activeSpams[spamId] and executions < count do
+            -- Создаем новую функцию для выполнения
+            local chunk, err = loadstring(scriptToRun)
+            
+            if not chunk then
+                warn("Ошибка загрузки скрипта:", err)
+                break
+            end
+            
+            -- Выполняем скрипт с обработкой ошибок
+            local success, result = pcall(chunk)
+            if not success then
+                warn("Ошибка выполнения:", result)
+            end
+            
+            executions = executions + 1
+            task.wait(interval)
+        end
+        
+        -- Очистка
+        activeSpams[spamId] = nil
+        print("Спам завершен. Выполнено:", executions, "раз")
+    end)()
+    
+    return spamId
+end
+
+function UNSPAM(id)
+    if id then
+        activeSpams[id] = nil
+        print("Остановлен спам ID:", id)
+    else
+        table.clear(activeSpams)
+        print("Все спамы остановлены")
+    end
+end

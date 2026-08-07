@@ -1,0 +1,1281 @@
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+pcall(function() 
+    local old = CoreGui:FindFirstChild("ESPMenu")
+    if old then old:Destroy() end
+end)
+
+
+local settings = {
+    ShowName = true,
+    ShowHealth = true,
+    ShowHealthBar = true,
+    TeamESP = false,
+    GlobalToggle = false,
+    ToggleKey = Enum.KeyCode.F5,
+    ToggleKeyName = "F5",
+    TextSize = 16,
+    ShowDistance = false,
+    ShowSkeleton = false
+}
+
+local espData = {}
+local playerRows = {}
+local nextRowOrder = 2
+local screenGui, mainFrame, scrollingFrame
+
+local updateSkeleton, refreshAllESP, updateESP, createESP, removeESP
+local removeAllESP, toggleESP, setESPColor, toggleAllESP
+local createGlobalSettingsPanel, createPlayerRow, createColorPicker
+
+
+updateSkeleton = function(player)
+    print("🦴 updateSkeleton для", player.Name, "ShowSkeleton =", settings.ShowSkeleton)
+    local data = espData[player]
+    if not data or not data.Highlight then return end
+    data.Highlight.Enabled = settings.ShowSkeleton and data.Enabled
+    if settings.TeamESP then
+        if player.Team == LocalPlayer.Team then
+            data.Highlight.FillColor = Color3.new(0, 1, 0)
+        else
+            data.Highlight.FillColor = Color3.new(1, 0, 0)
+        end
+    else
+        data.Highlight.FillColor = data.Color
+    end
+    data.Highlight.FillTransparency = 0.5
+    data.Highlight.OutlineColor = Color3.new(1, 1, 1)
+    data.Highlight.OutlineTransparency = 0
+end
+
+refreshAllESP = function()
+    for player, _ in pairs(espData) do
+        if updateESP then updateESP(player) end
+        if updateSkeleton then updateSkeleton(player) end
+    end
+end
+
+updateESP = function(player)
+    local data = espData[player]
+    if not data or not data.Enabled then return end
+
+    local humanoid = data.Humanoid
+    local isAlive = humanoid and humanoid.Health > 0
+
+    if data.Billboard then
+        data.Billboard.Enabled = isAlive
+    end
+
+    if not isAlive then return end
+
+    local health = humanoid.Health
+    local maxHealth = humanoid.MaxHealth
+    local healthPercent = math.clamp(health / maxHealth, 0, 1)
+    local healthText = string.format("%.0f", healthPercent * 100) .. "%"
+
+    local displayText = ""
+    if settings.ShowName then
+        displayText = player.Name
+    end
+    if settings.ShowHealth then
+        if displayText ~= "" then
+            displayText = displayText .. " - " .. healthText
+        else
+            displayText = healthText
+        end
+    end
+    if settings.ShowDistance and data.Head then
+        local distance = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")) and
+                        (data.Head.Position - LocalPlayer.Character.Head.Position).Magnitude or 0
+        if displayText ~= "" then
+            displayText = displayText .. " [" .. math.floor(distance) .. "m]"
+        else
+            displayText = "[" .. math.floor(distance) .. "m]"
+        end
+    end
+
+    if data.TextLabel then
+        data.TextLabel.Text = displayText
+        data.TextLabel.TextColor3 = data.Color
+        data.TextLabel.TextSize = settings.TextSize
+        data.TextLabel.Visible = (settings.ShowName or settings.ShowHealth or settings.ShowDistance) and isAlive
+    end
+
+    if data.HealthBar and data.HealthBarBg then
+        data.HealthBar.Size = UDim2.new(healthPercent, 0, 0, 5)
+        data.HealthBar.Visible = settings.ShowHealthBar and isAlive
+        data.HealthBarBg.Visible = settings.ShowHealthBar and isAlive
+    end
+end
+
+createESP = function(player, color)
+    print("🆕 createESP для", player.Name, "цвет", color)
+    if player == LocalPlayer then return end
+    if espData[player] then
+        if espData[player].Billboard then espData[player].Billboard:Destroy() end
+        if espData[player].Highlight then espData[player].Highlight:Destroy() end
+        espData[player] = nil
+    end
+
+    local function onCharacterAdded(character)
+        print("👤 onCharacterAdded для", player.Name)
+        local head = character:WaitForChild("Head")
+        local humanoid = character:WaitForChild("Humanoid")
+
+        -- Billboard (текст и полоска)
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESP_"..player.Name
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.LightInfluence = 0
+        billboard.Parent = screenGui
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundTransparency = 1
+        frame.Parent = billboard
+
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(1, 0, 0, 30)
+        textLabel.Position = UDim2.new(0, 0, 0, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = color or Color3.new(1, 1, 1)
+        textLabel.TextStrokeTransparency = 0.5
+        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextSize = settings.TextSize
+        textLabel.Text = player.Name .. " - 100%"
+        textLabel.Parent = frame
+
+        local healthBarBg = Instance.new("Frame")
+        healthBarBg.Size = UDim2.new(1, 0, 0, 5)
+        healthBarBg.Position = UDim2.new(0, 0, 1, -5)
+        healthBarBg.BackgroundColor3 = Color3.new(1, 0, 0)
+        healthBarBg.BackgroundTransparency = 0.5
+        healthBarBg.BorderSizePixel = 0
+        healthBarBg.Parent = frame
+
+        local healthBar = Instance.new("Frame")
+        healthBar.Size = UDim2.new(1, 0, 0, 5)
+        healthBar.Position = UDim2.new(0, 0, 1, -5)
+        healthBar.BackgroundColor3 = Color3.new(0, 1, 0)
+        healthBar.BorderSizePixel = 0
+        healthBar.Parent = frame
+
+        -- Highlight (скелет)
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "Highlight_"..player.Name
+        highlight.Adornee = character
+        highlight.FillColor = color or Color3.new(1, 1, 1)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.OutlineTransparency = 0
+        highlight.Enabled = settings.ShowSkeleton
+        highlight.Parent = screenGui
+
+        espData[player] = {
+            Billboard = billboard,
+            TextLabel = textLabel,
+            HealthBar = healthBar,
+            HealthBarBg = healthBarBg,
+            Highlight = highlight,
+            Color = color or Color3.new(1, 1, 1),
+            Enabled = true,
+            Humanoid = humanoid,
+            Head = head
+        }
+
+        if settings.TeamESP then
+            if player.Team == LocalPlayer.Team then
+                setESPColor(player, Color3.new(0, 1, 0))
+            else
+                setESPColor(player, Color3.new(1, 0, 0))
+            end
+        end
+
+        updateESP(player)
+        updateSkeleton(player)
+
+        humanoid.HealthChanged:Connect(function()
+            updateESP(player)
+        end)
+    end
+
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+removeESP = function(player)
+    if espData[player] then
+        if espData[player].Billboard then espData[player].Billboard:Destroy() end
+        if espData[player].Highlight then espData[player].Highlight:Destroy() end
+        espData[player] = nil
+    end
+end
+
+removeAllESP = function()
+    for player, _ in pairs(espData) do
+        removeESP(player)
+    end
+end
+
+toggleESP = function(player, enabled)
+    if espData[player] then
+        espData[player].Enabled = enabled
+        if espData[player].Billboard then
+            espData[player].Billboard.Enabled = enabled and espData[player].Humanoid and espData[player].Humanoid.Health > 0
+        end
+        updateSkeleton(player)
+    end
+end
+
+setESPColor = function(player, color)
+    if espData[player] then
+        espData[player].Color = color
+        if espData[player].TextLabel then
+            espData[player].TextLabel.TextColor3 = color
+        end
+        if espData[player].Highlight then
+            espData[player].Highlight.FillColor = color
+        end
+    end
+end
+
+toggleAllESP = function(state)
+    for player, row in pairs(playerRows) do
+        if not espData[player] then
+            createESP(player, Color3.new(1, 1, 1))
+        end
+        toggleESP(player, state)
+        local checkbox = row and row:FindFirstChild("Checkbox")
+        if checkbox then
+            checkbox.Text = state and "✓" or ""
+        end
+    end
+end
+
+-- ============================
+-- ГЛОБАЛЬНАЯ ПАНЕЛЬ
+-- ============================
+createGlobalSettingsPanel = function()
+    if not scrollingFrame then return end
+
+    local panel = Instance.new("Frame")
+    panel.Name = "GlobalSettingsPanel"
+    panel.Size = UDim2.new(1, -20, 0, 250)
+    panel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    panel.BorderSizePixel = 0
+    panel.LayoutOrder = 0
+    panel.Parent = scrollingFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = panel
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingRight = UDim.new(0, 12)
+    padding.PaddingTop = UDim.new(0, 10)
+    padding.PaddingBottom = UDim.new(0, 10)
+    padding.Parent = panel
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Vertical
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = panel
+
+    -- Заголовок
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 24)
+    title.BackgroundTransparency = 1
+    title.Text = "⚙️ Глобальные настройки ESP"
+    title.TextColor3 = Color3.fromRGB(253, 104, 159)
+    title.TextSize = 18
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.LayoutOrder = 0
+    title.Parent = panel
+
+    -- Функция создания ряда
+    local function createRow(order)
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 30)
+        row.BackgroundTransparency = 1
+        row.LayoutOrder = order
+        row.Parent = panel
+
+        local left = Instance.new("Frame")
+        left.Size = UDim2.new(0.5, -6, 1, 0)
+        left.BackgroundTransparency = 1
+        left.Parent = row
+
+        local right = Instance.new("Frame")
+        right.Size = UDim2.new(0.5, -6, 1, 0)
+        right.Position = UDim2.new(0.5, 6, 0, 0)
+        right.BackgroundTransparency = 1
+        right.Parent = row
+
+        return left, right
+    end
+
+    -- Функция чекбокса
+    local function createCheckbox(parent, text, defaultState, callback)
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, 0, 0, 30)
+        container.BackgroundTransparency = 1
+        container.Parent = parent
+
+        local checkbox = Instance.new("TextButton")
+        checkbox.Size = UDim2.new(0, 22, 0, 22)
+        checkbox.Position = UDim2.new(0, 0, 0.5, -11)
+        checkbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        checkbox.BorderSizePixel = 0
+        checkbox.Text = defaultState and "✓" or ""
+        checkbox.TextColor3 = Color3.new(1, 1, 1)
+        checkbox.TextSize = 20
+        checkbox.Font = Enum.Font.GothamBold
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 5)
+        corner.Parent = checkbox
+        checkbox.Parent = container
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -30, 1, 0)
+        label.Position = UDim2.new(0, 27, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextColor3 = Color3.new(1, 1, 1)
+        label.TextSize = 14
+        label.Font = Enum.Font.Gotham
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = container
+
+        local state = defaultState
+        checkbox.MouseButton1Click:Connect(function()
+            state = not state
+            checkbox.Text = state and "✓" or ""
+            callback(state)
+        end)
+    end
+
+    -- Ряд 1
+    local left1, right1 = createRow(1)
+    createCheckbox(left1, "Показывать имя", settings.ShowName, function(s)
+        settings.ShowName = s; refreshAllESP()
+    end)
+    createCheckbox(right1, "Показывать здоровье", settings.ShowHealth, function(s)
+        settings.ShowHealth = s; refreshAllESP()
+    end)
+
+    -- Ряд 2
+    local left2, right2 = createRow(2)
+    createCheckbox(left2, "Показывать полоску HP", settings.ShowHealthBar, function(s)
+        settings.ShowHealthBar = s; refreshAllESP()
+    end)
+    createCheckbox(right2, "Командная ESP", settings.TeamESP, function(s)
+        settings.TeamESP = s
+        for player, data in pairs(espData) do
+            if s then
+                local newColor = (player.Team == LocalPlayer.Team) and Color3.new(0,1,0) or Color3.new(1,0,0)
+                setESPColor(player, newColor)
+            else
+                setESPColor(player, Color3.new(1,1,1))
+            end
+            local row = playerRows[player]
+            if row then
+                local preview = row:FindFirstChild("ColorPreview")
+                if preview then
+                    preview.BackgroundColor3 = espData[player] and espData[player].Color or Color3.new(1,1,1)
+                end
+            end
+        end
+    end)
+
+    -- Ряд 3
+    local row3 = Instance.new("Frame")
+    row3.Size = UDim2.new(1, 0, 0, 30)
+    row3.BackgroundTransparency = 1
+    row3.LayoutOrder = 3
+    row3.Parent = panel
+
+    local left3 = Instance.new("Frame")
+    left3.Size = UDim2.new(0.6, -6, 1, 0)
+    left3.BackgroundTransparency = 1
+    left3.Parent = row3
+
+    local right3 = Instance.new("Frame")
+    right3.Size = UDim2.new(0.4, -6, 1, 0)
+    right3.Position = UDim2.new(0.6, 6, 0, 0)
+    right3.BackgroundTransparency = 1
+    right3.Parent = row3
+
+    -- Ползунок размера текста
+    local textSizeContainer = Instance.new("Frame")
+    textSizeContainer.Size = UDim2.new(1, 0, 0, 30)
+    textSizeContainer.BackgroundTransparency = 1
+    textSizeContainer.Parent = left3
+
+    local textSizeLabel = Instance.new("TextLabel")
+    textSizeLabel.Size = UDim2.new(0, 70, 1, 0)
+    textSizeLabel.BackgroundTransparency = 1
+    textSizeLabel.Text = "Размер:"
+    textSizeLabel.TextColor3 = Color3.new(1, 1, 1)
+    textSizeLabel.TextSize = 14
+    textSizeLabel.Font = Enum.Font.Gotham
+    textSizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textSizeLabel.Parent = textSizeContainer
+
+    local textSizeValue = Instance.new("TextLabel")
+    textSizeValue.Size = UDim2.new(0, 30, 1, 0)
+    textSizeValue.Position = UDim2.new(0, 75, 0, 0)
+    textSizeValue.BackgroundTransparency = 1
+    textSizeValue.Text = tostring(settings.TextSize)
+    textSizeValue.TextColor3 = Color3.fromRGB(253, 104, 159)
+    textSizeValue.TextSize = 14
+    textSizeValue.Font = Enum.Font.GothamBold
+    textSizeValue.Parent = textSizeContainer
+
+    local textSizeSlider = Instance.new("Frame")
+    textSizeSlider.Size = UDim2.new(0, 100, 0, 10)
+    textSizeSlider.Position = UDim2.new(0, 110, 0.5, -5)
+    textSizeSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    textSizeSlider.BorderSizePixel = 0
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(0, 5)
+    sliderCorner.Parent = textSizeSlider
+    textSizeSlider.Parent = textSizeContainer
+
+    local textSizeFill = Instance.new("Frame")
+    textSizeFill.Size = UDim2.new((settings.TextSize - 10)/20, 0, 1, 0)
+    textSizeFill.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    textSizeFill.BorderSizePixel = 0
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 5)
+    fillCorner.Parent = textSizeFill
+    textSizeFill.Parent = textSizeSlider
+
+    if textSizeSlider then
+        local draggingSize = false
+        textSizeSlider.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSize = true
+                local mousePos = UserInputService:GetMouseLocation()
+                local relativeX = mousePos.X - textSizeSlider.AbsolutePosition.X
+                local scale = math.clamp(relativeX / textSizeSlider.AbsoluteSize.X, 0, 1)
+                local newSize = math.floor(10 + scale * 20)
+                settings.TextSize = newSize
+                textSizeValue.Text = tostring(newSize)
+                textSizeFill.Size = UDim2.new(scale, 0, 1, 0)
+                refreshAllESP()
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingSize and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local mousePos = UserInputService:GetMouseLocation()
+                local relativeX = mousePos.X - textSizeSlider.AbsolutePosition.X
+                local scale = math.clamp(relativeX / textSizeSlider.AbsoluteSize.X, 0, 1)
+                local newSize = math.floor(10 + scale * 20)
+                settings.TextSize = newSize
+                textSizeValue.Text = tostring(newSize)
+                textSizeFill.Size = UDim2.new(scale, 0, 1, 0)
+                refreshAllESP()
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSize = false
+            end
+        end)
+    end
+
+    createCheckbox(right3, "Дистанция", settings.ShowDistance, function(s)
+        settings.ShowDistance = s; refreshAllESP()
+    end)
+
+    -- Ряд 4: Скелет
+    local left4, right4 = createRow(4)
+    createCheckbox(left4, "Подсветка скелета", settings.ShowSkeleton, function(s)
+        settings.ShowSkeleton = s; refreshAllESP()
+    end)
+
+    -- Ряд 5: Кнопки + клавиша
+    local row5 = Instance.new("Frame")
+    row5.Size = UDim2.new(1, 0, 0, 40)
+    row5.BackgroundTransparency = 1
+    row5.LayoutOrder = 5
+    row5.Parent = panel
+
+    local left5 = Instance.new("Frame")
+    left5.Size = UDim2.new(0.5, -6, 1, 0)
+    left5.BackgroundTransparency = 1
+    left5.Parent = row5
+
+    local right5 = Instance.new("Frame")
+    right5.Size = UDim2.new(0.5, -6, 1, 0)
+    right5.Position = UDim2.new(0.5, 6, 0, 0)
+    right5.BackgroundTransparency = 1
+    right5.Parent = row5
+
+    local enableAll = Instance.new("TextButton")
+    enableAll.Size = UDim2.new(0, 110, 0, 32)
+    enableAll.Position = UDim2.new(0, 0, 0.5, -16)
+    enableAll.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    enableAll.BorderSizePixel = 0
+    enableAll.Text = "✅ Вкл. всех"
+    enableAll.TextColor3 = Color3.new(1, 1, 1)
+    enableAll.TextSize = 14
+    enableAll.Font = Enum.Font.GothamBold
+    local btnCorner1 = Instance.new("UICorner")
+    btnCorner1.CornerRadius = UDim.new(0, 6)
+    btnCorner1.Parent = enableAll
+    enableAll.Parent = left5
+
+    local disableAll = Instance.new("TextButton")
+    disableAll.Size = UDim2.new(0, 110, 0, 32)
+    disableAll.Position = UDim2.new(0, 120, 0.5, -16)
+    disableAll.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    disableAll.BorderSizePixel = 0
+    disableAll.Text = "❌ Выкл. всех"
+    disableAll.TextColor3 = Color3.new(1, 1, 1)
+    disableAll.TextSize = 14
+    disableAll.Font = Enum.Font.GothamBold
+    local btnCorner2 = Instance.new("UICorner")
+    btnCorner2.CornerRadius = UDim.new(0, 6)
+    btnCorner2.Parent = disableAll
+    disableAll.Parent = left5
+
+    enableAll.MouseButton1Click:Connect(function() toggleAllESP(true) end)
+    disableAll.MouseButton1Click:Connect(function() toggleAllESP(false) end)
+
+    -- Горячая клавиша
+    local keyLabel = Instance.new("TextLabel")
+    keyLabel.Size = UDim2.new(0, 70, 1, 0)
+    keyLabel.BackgroundTransparency = 1
+    keyLabel.Text = "Клавиша:"
+    keyLabel.TextColor3 = Color3.new(1, 1, 1)
+    keyLabel.TextSize = 14
+    keyLabel.Font = Enum.Font.Gotham
+    keyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    keyLabel.Parent = right5
+
+    local keyButton = Instance.new("TextButton")
+    keyButton.Size = UDim2.new(0, 60, 0, 30)
+    keyButton.Position = UDim2.new(0, 80, 0.5, -15)
+    keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    keyButton.BorderSizePixel = 0
+    keyButton.Text = settings.ToggleKeyName
+    keyButton.TextColor3 = Color3.new(1, 1, 1)
+    keyButton.TextSize = 14
+    keyButton.Font = Enum.Font.GothamBold
+    local keyCorner = Instance.new("UICorner")
+    keyCorner.CornerRadius = UDim.new(0, 6)
+    keyCorner.Parent = keyButton
+    keyButton.Parent = right5
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0, 100, 1, 0)
+    statusLabel.Position = UDim2.new(0, 150, 0, 0)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = settings.GlobalToggle and "Глобально: ВКЛ" or "Глобально: ВЫКЛ"
+    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    statusLabel.TextSize = 14
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statusLabel.Parent = right5
+
+    local listening = false
+    keyButton.MouseButton1Click:Connect(function()
+        listening = true
+        keyButton.Text = "..."
+        keyButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+            listening = false
+            settings.ToggleKey = input.KeyCode
+            settings.ToggleKeyName = input.KeyCode.Name
+            keyButton.Text = settings.ToggleKeyName
+            keyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        end
+    end)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == settings.ToggleKey then
+            settings.GlobalToggle = not settings.GlobalToggle
+            toggleAllESP(settings.GlobalToggle)
+            statusLabel.Text = settings.GlobalToggle and "Глобально: ВКЛ" or "Глобально: ВЫКЛ"
+        end
+    end)
+end
+
+-- ============================
+-- СТРОКА ИГРОКА
+-- ============================
+createPlayerRow = function(player)
+    if not scrollingFrame then return end
+
+    if playerRows[player] and playerRows[player].Parent then
+        playerRows[player]:Destroy()
+        playerRows[player] = nil
+    end
+
+    local row = Instance.new("Frame")
+    row.Name = "PlayerRow_"..player.Name
+    row.Size = UDim2.new(1, -20, 0, 50)
+    row.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    row.BorderSizePixel = 0
+    row.LayoutOrder = nextRowOrder
+    nextRowOrder = nextRowOrder + 1
+    row.Parent = scrollingFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = row
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = row
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingRight = UDim.new(0, 12)
+    padding.Parent = row
+
+    -- Чекбокс
+    local checkbox = Instance.new("TextButton")
+    checkbox.Name = "Checkbox"
+    checkbox.Size = UDim2.new(0, 30, 0, 30)
+    checkbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    checkbox.BorderSizePixel = 0
+    checkbox.Text = "✓"
+    checkbox.TextColor3 = Color3.new(1, 1, 1)
+    checkbox.TextSize = 22
+    checkbox.Font = Enum.Font.GothamBold
+    checkbox.AutoButtonColor = false
+    local checkboxCorner = Instance.new("UICorner")
+    checkboxCorner.CornerRadius = UDim.new(0, 6)
+    checkboxCorner.Parent = checkbox
+    checkbox.Parent = row
+
+    -- Имя игрока
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(0, 150, 0, 30)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextSize = 15
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = row
+
+    -- Предпросмотр цвета
+    local colorPreview = Instance.new("Frame")
+    colorPreview.Name = "ColorPreview"
+    colorPreview.Size = UDim2.new(0, 30, 0, 30)
+    colorPreview.BackgroundColor3 = Color3.new(1, 1, 1)
+    colorPreview.BorderSizePixel = 0
+    local previewCorner = Instance.new("UICorner")
+    previewCorner.CornerRadius = UDim.new(0, 6)
+    previewCorner.Parent = colorPreview
+    colorPreview.Parent = row
+
+    -- Кнопка цвета
+    local colorButton = Instance.new("TextButton")
+    colorButton.Name = "ColorButton"
+    colorButton.Size = UDim2.new(0, 65, 0, 30)
+    colorButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    colorButton.BorderSizePixel = 0
+    colorButton.Text = "Цвет"
+    colorButton.TextColor3 = Color3.new(1, 1, 1)
+    colorButton.TextSize = 14
+    colorButton.Font = Enum.Font.GothamBold
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = colorButton
+    colorButton.Parent = row
+
+    -- Создаём ESP и включаем
+    if not espData[player] then
+        createESP(player, Color3.new(1, 1, 1))
+    else
+        espData[player].Enabled = true
+    end
+    checkbox.Text = "✓"
+    colorPreview.BackgroundColor3 = espData[player] and espData[player].Color or Color3.new(1, 1, 1)
+
+    checkbox.MouseButton1Click:Connect(function()
+        local newState = not (espData[player] and espData[player].Enabled)
+        if espData[player] then
+            toggleESP(player, newState)
+            checkbox.Text = newState and "✓" or ""
+        else
+            createESP(player, Color3.new(1, 1, 1))
+            toggleESP(player, true)
+            checkbox.Text = "✓"
+        end
+    end)
+
+    colorButton.MouseButton1Click:Connect(function()
+        print("🎨 Открытие ColorPicker для", player.Name)
+        createColorPicker(player, colorPreview)
+    end)
+
+    -- ВАЖНО: обработчик респавна
+    player.CharacterAdded:Connect(function()
+        print("🔁 CharacterAdded для", player.Name)
+        if espData[player] and espData[player].Enabled then
+            createESP(player, espData[player].Color)
+        end
+    end)
+
+    playerRows[player] = row
+
+    if scrollingFrame then
+        task.spawn(function()
+            if scrollingFrame then
+                scrollingFrame.CanvasSize = UDim2.new(0,0,0,0)
+                scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            end
+        end)
+    end
+end
+
+-- ============================
+-- COLOR PICKER (без изменений)
+-- ============================
+createColorPicker = function(player, previewFrame)
+    if not player then
+        warn("createColorPicker: player is nil")
+        return
+    end
+    if not espData[player] then
+        warn("createColorPicker: espData for", player.Name, "is nil")
+        return
+    end
+    if not screenGui then
+        warn("createColorPicker: screenGui is nil")
+        return
+    end
+
+    -- Удаляем предыдущий пикер
+    local oldOverlay = screenGui:FindFirstChild("ColorPickerOverlay")
+    if oldOverlay then oldOverlay:Destroy() end
+    local oldPicker = screenGui:FindFirstChild("ColorPicker")
+    if oldPicker then oldPicker:Destroy() end
+
+    -- Затемнение фона
+    local overlay = Instance.new("Frame")
+    overlay.Name = "ColorPickerOverlay"
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.new(0, 0, 0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.Parent = screenGui
+
+    -- Окно пикера
+    local pickerFrame = Instance.new("Frame")
+    pickerFrame.Name = "ColorPicker"
+    pickerFrame.Size = UDim2.new(0, 300, 0, 280)
+    pickerFrame.Position = UDim2.new(0.5, -150, 0.5, -140)
+    pickerFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    pickerFrame.BorderSizePixel = 0
+    pickerFrame.Parent = screenGui
+
+    local pickerCorner = Instance.new("UICorner")
+    pickerCorner.CornerRadius = UDim.new(0, 8)
+    pickerCorner.Parent = pickerFrame
+
+    -- Заголовок
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.BackgroundTransparency = 1
+    title.Text = "Цвет для " .. player.Name
+    title.TextColor3 = Color3.fromRGB(253, 104, 159)
+    title.TextSize = 18
+    title.Font = Enum.Font.GothamBold
+    title.Parent = pickerFrame
+
+    -- Предпросмотр
+    local previewBox = Instance.new("Frame")
+    previewBox.Name = "PreviewBox"
+    previewBox.Size = UDim2.new(0, 50, 0, 50)
+    previewBox.Position = UDim2.new(0.5, -25, 0, 50)
+    previewBox.BackgroundColor3 = espData[player] and espData[player].Color or Color3.new(1, 1, 1)
+    previewBox.BorderSizePixel = 0
+    local previewBoxCorner = Instance.new("UICorner")
+    previewBoxCorner.CornerRadius = UDim.new(0, 6)
+    previewBoxCorner.Parent = previewBox
+    previewBox.Parent = pickerFrame
+
+    -- Функция создания ползунка
+    local function createSlider(label, channel, max, startVal, yPos)
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, -20, 0, 40)
+        container.Position = UDim2.new(0, 10, 0, yPos)
+        container.BackgroundTransparency = 1
+        container.Parent = pickerFrame
+
+        local labelText = Instance.new("TextLabel")
+        labelText.Size = UDim2.new(0, 30, 0, 20)
+        labelText.Position = UDim2.new(0, 0, 0.5, -10)
+        labelText.BackgroundTransparency = 1
+        labelText.Text = label
+        labelText.TextColor3 = Color3.new(1, 1, 1)
+        labelText.TextSize = 14
+        labelText.Font = Enum.Font.GothamBold
+        labelText.Parent = container
+
+        local sliderBg = Instance.new("Frame")
+        sliderBg.Size = UDim2.new(1, -90, 0, 10)
+        sliderBg.Position = UDim2.new(0, 40, 0.5, -5)
+        sliderBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        sliderBg.BorderSizePixel = 0
+        local bgCorner = Instance.new("UICorner")
+        bgCorner.CornerRadius = UDim.new(0, 5)
+        bgCorner.Parent = sliderBg
+        sliderBg.Parent = container
+
+        local fill = Instance.new("Frame")
+        fill.Size = UDim2.new(startVal/max, 0, 1, 0)
+        if channel == "R" then
+            fill.BackgroundColor3 = Color3.new(1, 0, 0)
+        elseif channel == "G" then
+            fill.BackgroundColor3 = Color3.new(0, 1, 0)
+        elseif channel == "B" then
+            fill.BackgroundColor3 = Color3.new(0, 0, 1)
+        end
+        fill.BorderSizePixel = 0
+        local fillCorner = Instance.new("UICorner")
+        fillCorner.CornerRadius = UDim.new(0, 5)
+        fillCorner.Parent = fill
+        fill.Parent = sliderBg
+
+        local valueBox = Instance.new("TextBox")
+        valueBox.Size = UDim2.new(0, 40, 0, 30)
+        valueBox.Position = UDim2.new(1, -40, 0.5, -15)
+        valueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        valueBox.BorderSizePixel = 0
+        valueBox.Text = tostring(math.floor(startVal))
+        valueBox.TextColor3 = Color3.new(1, 1, 1)
+        valueBox.TextSize = 14
+        valueBox.Font = Enum.Font.Gotham
+        local valueCorner = Instance.new("UICorner")
+        valueCorner.CornerRadius = UDim.new(0, 4)
+        valueCorner.Parent = valueBox
+        valueBox.Parent = container
+
+        local dragging = false
+        local function updateFromInput(mousePos)
+            if not sliderBg or not sliderBg.AbsolutePosition then return end
+            local relativeX = mousePos.X - sliderBg.AbsolutePosition.X
+            local scale = math.clamp(relativeX / sliderBg.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(scale, 0, 1, 0)
+            local val = math.floor(scale * max)
+            valueBox.Text = tostring(val)
+
+            local r, g, b = previewBox.BackgroundColor3.R, previewBox.BackgroundColor3.G, previewBox.BackgroundColor3.B
+            if channel == "R" then
+                previewBox.BackgroundColor3 = Color3.new(scale, g, b)
+            elseif channel == "G" then
+                previewBox.BackgroundColor3 = Color3.new(r, scale, b)
+            elseif channel == "B" then
+                previewBox.BackgroundColor3 = Color3.new(r, g, scale)
+            end
+        end
+
+        sliderBg.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                updateFromInput(UserInputService:GetMouseLocation())
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                updateFromInput(UserInputService:GetMouseLocation())
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+
+        valueBox.FocusLost:Connect(function()
+            local val = tonumber(valueBox.Text) or 0
+            val = math.clamp(val, 0, max)
+            valueBox.Text = tostring(val)
+            local scale = val / max
+            fill.Size = UDim2.new(scale, 0, 1, 0)
+
+            local r, g, b = previewBox.BackgroundColor3.R, previewBox.BackgroundColor3.G, previewBox.BackgroundColor3.B
+            if channel == "R" then
+                previewBox.BackgroundColor3 = Color3.new(scale, g, b)
+            elseif channel == "G" then
+                previewBox.BackgroundColor3 = Color3.new(r, scale, b)
+            elseif channel == "B" then
+                previewBox.BackgroundColor3 = Color3.new(r, g, scale)
+            end
+        end)
+    end
+
+    local startColor = espData[player] and espData[player].Color or Color3.new(1, 1, 1)
+    createSlider("R", "R", 255, startColor.R * 255, 110)
+    createSlider("G", "G", 255, startColor.G * 255, 160)
+    createSlider("B", "B", 255, startColor.B * 255, 210)
+
+    -- Кнопки
+    local btnFrame = Instance.new("Frame")
+    btnFrame.Size = UDim2.new(1, 0, 0, 50)
+    btnFrame.Position = UDim2.new(0, 0, 1, -50)
+    btnFrame.BackgroundTransparency = 1
+    btnFrame.Parent = pickerFrame
+
+    local okButton = Instance.new("TextButton")
+    okButton.Size = UDim2.new(0, 100, 0, 30)
+    okButton.Position = UDim2.new(0.5, -110, 0.5, -15)
+    okButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    okButton.BorderSizePixel = 0
+    okButton.Text = "Применить"
+    okButton.TextColor3 = Color3.new(1, 1, 1)
+    okButton.TextSize = 14
+    okButton.Font = Enum.Font.GothamBold
+    local okCorner = Instance.new("UICorner")
+    okCorner.CornerRadius = UDim.new(0, 6)
+    okCorner.Parent = okButton
+    okButton.Parent = btnFrame
+
+    local cancelButton = Instance.new("TextButton")
+    cancelButton.Size = UDim2.new(0, 100, 0, 30)
+    cancelButton.Position = UDim2.new(0.5, 10, 0.5, -15)
+    cancelButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+    cancelButton.BorderSizePixel = 0
+    cancelButton.Text = "Отмена"
+    cancelButton.TextColor3 = Color3.new(1, 1, 1)
+    cancelButton.TextSize = 14
+    cancelButton.Font = Enum.Font.GothamBold
+    local cancelCorner = Instance.new("UICorner")
+    cancelCorner.CornerRadius = UDim.new(0, 6)
+    cancelCorner.Parent = cancelButton
+    cancelButton.Parent = btnFrame
+
+    okButton.MouseButton1Click:Connect(function()
+        local newColor = previewBox.BackgroundColor3
+        setESPColor(player, newColor)
+        if previewFrame then
+            previewFrame.BackgroundColor3 = newColor
+        end
+        overlay:Destroy()
+        pickerFrame:Destroy()
+    end)
+
+    cancelButton.MouseButton1Click:Connect(function()
+        overlay:Destroy()
+        pickerFrame:Destroy()
+    end)
+end
+
+-- ============================
+-- СОЗДАНИЕ GUI
+-- ============================
+screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ESPMenu"
+screenGui.Parent = CoreGui
+screenGui.DisplayOrder = 100
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 500, 0, 400)
+mainFrame.Position = UDim2.new(0.2, 0, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.Size = UDim2.new(1, 25, 1, 25)
+shadow.Position = UDim2.new(0, -12, 0, -12)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageColor3 = Color3.new(0, 0, 0)
+shadow.ImageTransparency = 0.7
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+shadow.Parent = mainFrame
+shadow.ZIndex = -1
+
+-- Верхняя панель
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 50)
+topBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+local topBarCorner = Instance.new("UICorner")
+topBarCorner.CornerRadius = UDim.new(0, 8)
+topBarCorner.Parent = topBar
+
+local icon = Instance.new("ImageLabel")
+icon.Name = "Icon"
+icon.Size = UDim2.new(0, 22, 0, 22)
+icon.Position = UDim2.new(0, 10, 0.5, -11)
+icon.BackgroundTransparency = 1
+icon.Image = "rbxassetid://7733774602"
+icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+icon.Parent = topBar
+
+local decoLine = Instance.new("Frame")
+decoLine.Name = "DecoLine"
+decoLine.Size = UDim2.new(0, 5, 0, 16)
+decoLine.Position = UDim2.new(0, 40, 0.5, -8)
+decoLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+decoLine.BorderSizePixel = 0
+decoLine.Parent = topBar
+
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(0, 200, 0, 31)
+title.Position = UDim2.new(0, 55, 0.5, -15.5)
+title.BackgroundTransparency = 1
+title.Text = "ESP PRO"
+title.TextColor3 = Color3.fromRGB(253, 104, 159)
+title.TextSize = 31
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Size = UDim2.new(0, 30, 0, 31)
+minimizeButton.Position = UDim2.new(1, -80, 0.5, -15.5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+minimizeButton.BorderSizePixel = 0
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+minimizeButton.TextSize = 24
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.AutoButtonColor = false
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(0, 8)
+minimizeCorner.Parent = minimizeButton
+minimizeButton.Parent = topBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 0, 31)
+closeButton.Position = UDim2.new(1, -40, 0.5, -15.5)
+closeButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+closeButton.BorderSizePixel = 0
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+closeButton.TextSize = 24
+closeButton.Font = Enum.Font.GothamBold
+closeButton.AutoButtonColor = false
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeButton
+closeButton.Parent = topBar
+
+-- ScrollingFrame
+scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Name = "SettingsFrame"
+scrollingFrame.Size = UDim2.new(1, -20, 1, -60)
+scrollingFrame.Position = UDim2.new(0, 10, 0, 60)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.BorderSizePixel = 0
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollingFrame.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 8)
+listLayout.Parent = scrollingFrame
+
+local listPadding = Instance.new("UIPadding")
+listPadding.PaddingTop = UDim.new(0, 10)
+listPadding.PaddingBottom = UDim.new(0, 10)
+listPadding.Parent = scrollingFrame
+
+-- Кнопка полного отключения
+local disableButton = Instance.new("TextButton")
+disableButton.Name = "DisableScriptButton"
+disableButton.Size = UDim2.new(1, -20, 0, 45)
+disableButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+disableButton.BorderSizePixel = 0
+disableButton.Text = "⛔ ПОЛНОСТЬЮ ВЫКЛЮЧИТЬ ESP ⛔"
+disableButton.TextColor3 = Color3.new(1, 1, 1)
+disableButton.TextSize = 14
+disableButton.Font = Enum.Font.GothamBold
+disableButton.AutoButtonColor = false
+disableButton.LayoutOrder = 9999
+local disableCorner = Instance.new("UICorner")
+disableCorner.CornerRadius = UDim.new(0, 8)
+disableCorner.Parent = disableButton
+disableButton.Parent = scrollingFrame
+
+disableButton.MouseButton1Click:Connect(function()
+    removeAllESP()
+    screenGui:Destroy()
+end)
+
+-- ============================
+-- ПЕРЕТАСКИВАНИЕ
+-- ============================
+if topBar then
+    local dragging = false
+    local dragOffset = Vector2.new()
+
+    topBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            local mousePos = UserInputService:GetMouseLocation()
+            local framePos = mainFrame.AbsolutePosition
+            dragOffset = Vector2.new(framePos.X - mousePos.X, framePos.Y - mousePos.Y)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = UserInputService:GetMouseLocation()
+            mainFrame.Position = UDim2.new(0, mousePos.X + dragOffset.X, 0, mousePos.Y + dragOffset.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+-- Сворачивание
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        if scrollingFrame then scrollingFrame.Visible = false end
+        mainFrame.Size = UDim2.new(0, 500, 0, 50)
+        minimizeButton.Text = "+"
+    else
+        if scrollingFrame then scrollingFrame.Visible = true end
+        mainFrame.Size = UDim2.new(0, 500, 0, 400)
+        minimizeButton.Text = "-"
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    removeAllESP()
+    screenGui:Destroy()
+end)
+
+-- ============================
+-- ИНИЦИАЛИЗАЦИЯ ИГРОКОВ
+-- ============================
+createGlobalSettingsPanel()
+
+local function onPlayerAdded(player)
+    if player == LocalPlayer then return end
+    print("➕ Player added:", player.Name)
+    createPlayerRow(player)
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        onPlayerAdded(player)
+    end
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+Players.PlayerRemoving:Connect(function(player)
+    print("➖ Player removed:", player.Name)
+    removeESP(player)
+    if playerRows[player] then
+        playerRows[player]:Destroy()
+        playerRows[player] = nil
+        if scrollingFrame then
+            task.spawn(function()
+                if scrollingFrame then
+                    scrollingFrame.CanvasSize = UDim2.new(0,0,0,0)
+                    scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+                end
+            end)
+        end
+    end
+end)
+
+-- ============================
+-- ГЛАВНЫЙ ЦИКЛ
+-- ============================
+RunService.Heartbeat:Connect(function()
+    for player, data in pairs(espData) do
+        if data.Enabled then
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                local humanoid = player.Character.Humanoid
+                if humanoid.Health > 0 then
+                    if data.Humanoid ~= humanoid then
+                        data.Humanoid = humanoid
+                        data.Head = player.Character:FindFirstChild("Head")
+                    end
+                    updateESP(player)
+                else
+                    if data.Billboard then
+                        data.Billboard.Enabled = false
+                    end
+                end
+            else
+                if data.Billboard then
+                    data.Billboard.Enabled = false
+                end
+            end
+            updateSkeleton(player)
+        end
+    end
+end)
+
+-- Применить командную окраску
+if settings.TeamESP then
+    for player, data in pairs(espData) do
+        if player.Team == LocalPlayer.Team then
+            setESPColor(player, Color3.new(0, 1, 0))
+        else
+            setESPColor(player, Color3.new(1, 0, 0))
+        end
+    end
+end
+
+-- Финальное обновление CanvasSize
+task.wait(0.1)
+if scrollingFrame then
+    scrollingFrame.CanvasSize = UDim2.new(0,0,0,0)
+    scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+end

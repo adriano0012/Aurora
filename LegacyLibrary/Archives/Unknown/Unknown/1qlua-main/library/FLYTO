@@ -1,0 +1,163 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Ожидание персонажа
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- Настройки
+local FLY_SPEED = 50
+local FLYING = false
+local FLY_CONNECTION = nil
+
+-- Сохраняем оригинальные параметры камеры
+local originalCameraType = workspace.CurrentCamera.CameraType
+local originalCameraSubject = workspace.CurrentCamera.CameraSubject
+
+local function GetTargetPosition(target)
+    -- Для координат
+    if type(target) == "string" and target:find(",") then
+        local coords = {}
+        for num in target:gmatch("-?%d+") do
+            table.insert(coords, tonumber(num))
+        end
+        if #coords == 3 then
+            return Vector3.new(coords[1], coords[2], coords[3])
+        end
+    end
+    
+    -- Для объектов
+    local success, obj = pcall(function()
+        if type(target) == "string" then
+            local corrected = target
+                :gsub('game:GetService%("', 'game:GetService(\'')
+                :gsub('")', '\')')
+            return loadstring("return "..corrected)()
+        end
+        return target
+    end)
+    
+    if success and obj then
+        if obj:IsA("BasePart") then
+            -- Для частей - центр объекта
+            return obj.Position
+        elseif obj:IsA("Model") then
+            local part = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+            if part then
+                -- Для моделей - центр основной части
+                return part.Position
+            end
+        end
+    end
+    
+    return nil
+end
+
+getgenv().FLYTO = function(target)
+    if FLYING then
+        warn("⚠️ Уже в полете! Сначала STOPFLY()")
+        return
+    end
+
+    -- Обновляем ссылки
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    Humanoid = Character:FindFirstChild("Humanoid")
+    HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+    if not Humanoid or not HumanoidRootPart then
+        warn("❌ Персонаж не готов")
+        return
+    end
+
+    local targetPos = GetTargetPosition(target)
+    if not targetPos then
+        warn("❌ Цель не найдена: "..tostring(target))
+        return
+    end
+
+    -- Фиксируем камеру на персонаже
+    workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+    workspace.CurrentCamera.CameraSubject = Humanoid
+
+    -- Настройка физики
+    local originalGravity = workspace.Gravity
+    local originalPlatformStand = Humanoid.PlatformStand
+    workspace.Gravity = 0
+    Humanoid.PlatformStand = true
+    FLYING = true
+
+    local startTime = tick()
+    local startPos = HumanoidRootPart.Position
+    local distance = (targetPos - startPos).Magnitude
+    local direction = (targetPos - startPos).Unit
+
+    FLY_CONNECTION = RunService.Heartbeat:Connect(function(delta)
+        if not FLYING or not Character or not Character.Parent then
+            STOPFLY()
+            return
+        end
+
+        HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+        if not HumanoidRootPart then
+            STOPFLY()
+            return
+        end
+
+        local currentPos = HumanoidRootPart.Position
+        local currentDistance = (targetPos - currentPos).Magnitude
+        
+        -- Достигли цели
+        if currentDistance < 2 then
+            -- Точное позиционирование внутри объекта
+            HumanoidRootPart.CFrame = CFrame.new(targetPos)
+            STOPFLY()
+            print("✅ Достигнута цель: "..tostring(target))
+            return
+        end
+
+        -- Плавное перемещение
+        local flyProgress = (tick() - startTime) * FLY_SPEED
+        local moveStep = math.min(flyProgress, distance)
+        local newPos = startPos + (direction * moveStep)
+        
+        HumanoidRootPart.CFrame = CFrame.new(newPos, targetPos)
+    end)
+
+    print("🛫 Полет к: "..tostring(target))
+end
+
+getgenv().STOPFLY = function()
+    if not FLYING then return end
+    
+    FLYING = false
+    
+    if FLY_CONNECTION then
+        FLY_CONNECTION:Disconnect()
+        FLY_CONNECTION = nil
+    end
+    
+    -- Восстановление параметров
+    if workspace then
+        workspace.Gravity = 196.2
+    end
+    
+    if Character and Humanoid then
+        Humanoid.PlatformStand = false
+        Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+    
+    -- Восстановление камеры
+    if workspace.CurrentCamera then
+        workspace.CurrentCamera.CameraSubject = Humanoid
+    end
+    
+    print("✋ Полет остановлен")
+end
+
+-- Автоматическая остановка при изменении персонажа
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    STOPFLY()
+end)

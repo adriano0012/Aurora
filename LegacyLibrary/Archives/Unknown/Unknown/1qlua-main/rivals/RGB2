@@ -1,0 +1,38 @@
+local runService = game:GetService("RunService")
+local workspace = game:GetService("Workspace")
+
+local SPEED = 50
+local SATURATION = 1
+local BRIGHTNESS = 1 
+
+local allParticles = {}
+
+local function getRgbColor(t)
+    return Color3.fromHSV((t * 0.1 * SPEED) % 1, SATURATION, BRIGHTNESS)
+end
+
+local function trackParticle(obj)
+    if obj:IsA("ParticleEmitter") then
+        allParticles[obj] = true
+    end
+end
+
+workspace.DescendantAdded:Connect(trackParticle)
+
+for _, desc in ipairs(workspace:GetDescendants()) do
+    trackParticle(desc)
+end
+
+runService.Heartbeat:Connect(function()
+    local t = tick()
+    local color = getRgbColor(t)
+    local colorSeq = ColorSequence.new(color)
+
+    for particle in pairs(allParticles) do
+        if particle and particle.Parent then
+            particle.Color = colorSeq
+        else
+            allParticles[particle] = nil
+        end
+    end
+end)

@@ -1,0 +1,793 @@
+-- Основной скрипт для GUI телепортации объектов
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Получаем локального игрока
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Переменные для управления GUI
+local guiEnabled = true
+local dragging = false
+local dragInput, dragStart, startPos
+local selectionMode = false
+
+-- Создаем основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+-- Помещаем GUI в CoreGui
+if RunService:IsStudio() then
+	ScreenGui.Parent = player:WaitForChild("PlayerGui")
+else
+	ScreenGui.Parent = game:GetService("CoreGui")
+end
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 500)  -- Увеличена высота
+MainFrame.Position = UDim2.new(0.146, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+
+-- Закругление основного окна
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 2
+
+-- Закругление верхней панели
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 5, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 50, 0.5, -8)
+DecorativeLine.AnchorPoint = Vector2.new(0, 0.5)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+DecorativeLine.ZIndex = 3
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 20, 0.5, -11)
+Icon.AnchorPoint = Vector2.new(0, 0.5)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.ZIndex = 3
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 70, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Teleport GUI"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.Unknown
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 3
+
+-- Кнопка "Свернуть"
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.AnchorPoint = Vector2.new(1, 0.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.ZIndex = 3
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.Position = UDim2.new(0, 0, 0, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.TextSize = 20
+MinimizeText.Font = Enum.Font.SourceSansBold
+MinimizeText.ZIndex = 4
+
+local MinimizeButtonBtn = Instance.new("ImageButton")
+MinimizeButtonBtn.Name = "MinimizeButtonBtn"
+MinimizeButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+MinimizeButtonBtn.Position = UDim2.new(0, 0, 0, 0)
+MinimizeButtonBtn.BackgroundTransparency = 1
+MinimizeButtonBtn.ZIndex = 5
+
+-- Кнопка "Закрыть"
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -30, 0.5, -15.5)
+CloseButton.AnchorPoint = Vector2.new(1, 0.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.ZIndex = 3
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.Position = UDim2.new(0, 0, 0, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.TextSize = 20
+CloseText.Font = Enum.Font.SourceSansBold
+CloseText.ZIndex = 4
+
+local CloseButtonBtn = Instance.new("ImageButton")
+CloseButtonBtn.Name = "CloseButtonBtn"
+CloseButtonBtn.Size = UDim2.new(1, 0, 1, 0)
+CloseButtonBtn.Position = UDim2.new(0, 0, 0, 0)
+CloseButtonBtn.BackgroundTransparency = 1
+CloseButtonBtn.ZIndex = 5
+
+-- Контейнер для контента со скроллом
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, 0, 1, -130)  -- Учитываем верхнюю панель и нижние кнопки
+ContentFrame.Position = UDim2.new(0, 0, 0, 50)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.BorderSizePixel = 0
+ContentFrame.ScrollBarThickness = 8
+ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+ContentFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
+
+-- Текст инструкции
+local InstructionText = Instance.new("TextLabel")
+InstructionText.Name = "InstructionText"
+InstructionText.Size = UDim2.new(1, -40, 0, 40)
+InstructionText.Position = UDim2.new(0, 20, 0, 10)
+InstructionText.BackgroundTransparency = 1
+InstructionText.Text = "Нажмите кнопку 'ВЫБРАТЬ ОБЪЕКТ' для выбора объекта"
+InstructionText.TextColor3 = Color3.fromRGB(255, 255, 255)
+InstructionText.TextSize = 16
+InstructionText.Font = Enum.Font.SourceSans
+InstructionText.TextWrapped = true
+
+-- Кнопка выбора объекта
+local SelectObjectButton = Instance.new("TextButton")
+SelectObjectButton.Name = "SelectObjectButton"
+SelectObjectButton.Size = UDim2.new(1, -40, 0, 40)
+SelectObjectButton.Position = UDim2.new(0, 20, 0, 60)
+SelectObjectButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SelectObjectButton.BorderSizePixel = 0
+SelectObjectButton.Text = "ВЫБРАТЬ ОБЪЕКТ"
+SelectObjectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SelectObjectButton.TextSize = 18
+SelectObjectButton.Font = Enum.Font.SourceSansBold
+
+local SelectObjectCorner = Instance.new("UICorner")
+SelectObjectCorner.CornerRadius = UDim.new(0, 8)
+SelectObjectCorner.Parent = SelectObjectButton
+
+-- Индикатор режима выбора
+local SelectionModeIndicator = Instance.new("TextLabel")
+SelectionModeIndicator.Name = "SelectionModeIndicator"
+SelectionModeIndicator.Size = UDim2.new(1, -40, 0, 30)
+SelectionModeIndicator.Position = UDim2.new(0, 20, 0, 110)
+SelectionModeIndicator.BackgroundTransparency = 1
+SelectionModeIndicator.Text = "Режим выбора: ВЫКЛ"
+SelectionModeIndicator.TextColor3 = Color3.fromRGB(255, 100, 100)
+SelectionModeIndicator.TextSize = 14
+SelectionModeIndicator.Font = Enum.Font.SourceSans
+SelectionModeIndicator.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Поле выбранного объекта
+local SelectedObjectFrame = Instance.new("Frame")
+SelectedObjectFrame.Name = "SelectedObjectFrame"
+SelectedObjectFrame.Size = UDim2.new(1, -40, 0, 40)
+SelectedObjectFrame.Position = UDim2.new(0, 20, 0, 150)
+SelectedObjectFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SelectedObjectFrame.BorderSizePixel = 0
+
+local SelectedObjectCorner = Instance.new("UICorner")
+SelectedObjectCorner.CornerRadius = UDim.new(0, 8)
+SelectedObjectCorner.Parent = SelectedObjectFrame
+
+local SelectedObjectText = Instance.new("TextLabel")
+SelectedObjectText.Name = "SelectedObjectText"
+SelectedObjectText.Size = UDim2.new(1, -20, 1, 0)
+SelectedObjectText.Position = UDim2.new(0, 10, 0, 0)
+SelectedObjectText.BackgroundTransparency = 1
+SelectedObjectText.Text = "Объект не выбран"
+SelectedObjectText.TextColor3 = Color3.fromRGB(200, 200, 200)
+SelectedObjectText.TextSize = 14
+SelectedObjectText.Font = Enum.Font.SourceSans
+SelectedObjectText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Координаты
+local CoordinatesTitle = Instance.new("TextLabel")
+CoordinatesTitle.Name = "CoordinatesTitle"
+CoordinatesTitle.Size = UDim2.new(1, -40, 0, 30)
+CoordinatesTitle.Position = UDim2.new(0, 20, 0, 200)
+CoordinatesTitle.BackgroundTransparency = 1
+CoordinatesTitle.Text = "КООРДИНАТЫ ТЕЛЕПОРТАЦИИ:"
+CoordinatesTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+CoordinatesTitle.TextSize = 18
+CoordinatesTitle.Font = Enum.Font.SourceSansBold
+CoordinatesTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Контейнер для координат
+local CoordinatesContainer = Instance.new("Frame")
+CoordinatesContainer.Name = "CoordinatesContainer"
+CoordinatesContainer.Size = UDim2.new(1, -40, 0, 140)
+CoordinatesContainer.Position = UDim2.new(0, 20, 0, 240)
+CoordinatesContainer.BackgroundTransparency = 1
+
+-- Координата X
+local XContainer = Instance.new("Frame")
+XContainer.Name = "XContainer"
+XContainer.Size = UDim2.new(1, 0, 0, 40)
+XContainer.Position = UDim2.new(0, 0, 0, 0)
+XContainer.BackgroundTransparency = 1
+
+local XLabel = Instance.new("TextLabel")
+XLabel.Name = "XLabel"
+XLabel.Size = UDim2.new(0, 40, 0, 40)
+XLabel.Position = UDim2.new(0, 0, 0, 0)
+XLabel.BackgroundTransparency = 1
+XLabel.Text = "X:"
+XLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+XLabel.TextSize = 20
+XLabel.Font = Enum.Font.SourceSansBold
+XLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local XTextBox = Instance.new("TextBox")
+XTextBox.Name = "XTextBox"
+XTextBox.Size = UDim2.new(1, -50, 0, 40)
+XTextBox.Position = UDim2.new(0, 50, 0, 0)
+XTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+XTextBox.BorderSizePixel = 0
+XTextBox.Text = "0"
+XTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+XTextBox.TextSize = 18
+XTextBox.Font = Enum.Font.SourceSans
+XTextBox.PlaceholderText = "X координата"
+XTextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+
+local XCorner = Instance.new("UICorner")
+XCorner.CornerRadius = UDim.new(0, 6)
+XCorner.Parent = XTextBox
+
+-- Координата Y
+local YContainer = Instance.new("Frame")
+YContainer.Name = "YContainer"
+YContainer.Size = UDim2.new(1, 0, 0, 40)
+YContainer.Position = UDim2.new(0, 0, 0, 50)
+YContainer.BackgroundTransparency = 1
+
+local YLabel = Instance.new("TextLabel")
+YLabel.Name = "YLabel"
+YLabel.Size = UDim2.new(0, 40, 0, 40)
+YLabel.Position = UDim2.new(0, 0, 0, 0)
+YLabel.BackgroundTransparency = 1
+YLabel.Text = "Y:"
+YLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+YLabel.TextSize = 20
+YLabel.Font = Enum.Font.SourceSansBold
+YLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local YTextBox = Instance.new("TextBox")
+YTextBox.Name = "YTextBox"
+YTextBox.Size = UDim2.new(1, -50, 0, 40)
+YTextBox.Position = UDim2.new(0, 50, 0, 0)
+YTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+YTextBox.BorderSizePixel = 0
+YTextBox.Text = "0"
+YTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+YTextBox.TextSize = 18
+YTextBox.Font = Enum.Font.SourceSans
+YTextBox.PlaceholderText = "Y координата"
+YTextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+
+local YCorner = Instance.new("UICorner")
+YCorner.CornerRadius = UDim.new(0, 6)
+YCorner.Parent = YTextBox
+
+-- Координата Z
+local ZContainer = Instance.new("Frame")
+ZContainer.Name = "ZContainer"
+ZContainer.Size = UDim2.new(1, 0, 0, 40)
+ZContainer.Position = UDim2.new(0, 0, 0, 100)
+ZContainer.BackgroundTransparency = 1
+
+local ZLabel = Instance.new("TextLabel")
+ZLabel.Name = "ZLabel"
+ZLabel.Size = UDim2.new(0, 40, 0, 40)
+ZLabel.Position = UDim2.new(0, 0, 0, 0)
+ZLabel.BackgroundTransparency = 1
+ZLabel.Text = "Z:"
+ZLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZLabel.TextSize = 20
+ZLabel.Font = Enum.Font.SourceSansBold
+ZLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local ZTextBox = Instance.new("TextBox")
+ZTextBox.Name = "ZTextBox"
+ZTextBox.Size = UDim2.new(1, -50, 0, 40)
+ZTextBox.Position = UDim2.new(0, 50, 0, 0)
+ZTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ZTextBox.BorderSizePixel = 0
+ZTextBox.Text = "0"
+ZTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZTextBox.TextSize = 18
+ZTextBox.Font = Enum.Font.SourceSans
+ZTextBox.PlaceholderText = "Z координата"
+ZTextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+
+local ZCorner = Instance.new("UICorner")
+ZCorner.CornerRadius = UDim.new(0, 6)
+ZCorner.Parent = ZTextBox
+
+-- Кнопка для копирования текущих координат камеры
+local CameraButton = Instance.new("TextButton")
+CameraButton.Name = "CameraButton"
+CameraButton.Size = UDim2.new(1, -40, 0, 40)
+CameraButton.Position = UDim2.new(0, 20, 0, 400)
+CameraButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+CameraButton.BorderSizePixel = 0
+CameraButton.Text = "КОПИРОВАТЬ ПОЗИЦИЮ КАМЕРЫ"
+CameraButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CameraButton.TextSize = 14
+CameraButton.Font = Enum.Font.SourceSansBold
+
+local CameraButtonCorner = Instance.new("UICorner")
+CameraButtonCorner.CornerRadius = UDim.new(0, 8)
+CameraButtonCorner.Parent = CameraButton
+
+-- Нижняя панель для кнопок управления
+local BottomPanel = Instance.new("Frame")
+BottomPanel.Name = "BottomPanel"
+BottomPanel.Size = UDim2.new(1, 0, 0, 80)
+BottomPanel.Position = UDim2.new(0, 0, 1, -80)
+BottomPanel.AnchorPoint = Vector2.new(0, 1)
+BottomPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+BottomPanel.BorderSizePixel = 0
+
+local BottomPanelCorner = Instance.new("UICorner")
+BottomPanelCorner.CornerRadius = UDim.new(0, 8)
+BottomPanelCorner.Parent = BottomPanel
+
+-- Кнопка телепортации
+local TeleportButton = Instance.new("TextButton")
+TeleportButton.Name = "TeleportButton"
+TeleportButton.Size = UDim2.new(0.5, -15, 0, 40)
+TeleportButton.Position = UDim2.new(0, 10, 0.5, -20)
+TeleportButton.AnchorPoint = Vector2.new(0, 0.5)
+TeleportButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+TeleportButton.BorderSizePixel = 0
+TeleportButton.Text = "ТЕЛЕПОРТИРОВАТЬ"
+TeleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TeleportButton.TextSize = 16
+TeleportButton.Font = Enum.Font.SourceSansBold
+
+local TeleportButtonCorner = Instance.new("UICorner")
+TeleportButtonCorner.CornerRadius = UDim.new(0, 8)
+TeleportButtonCorner.Parent = TeleportButton
+
+-- Кнопка сброса выбора
+local ClearSelectionButton = Instance.new("TextButton")
+ClearSelectionButton.Name = "ClearSelectionButton"
+ClearSelectionButton.Size = UDim2.new(0.5, -15, 0, 40)
+ClearSelectionButton.Position = UDim2.new(1, -10, 0.5, -20)
+ClearSelectionButton.AnchorPoint = Vector2.new(1, 0.5)
+ClearSelectionButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+ClearSelectionButton.BorderSizePixel = 0
+ClearSelectionButton.Text = "СБРОСИТЬ ВЫБОР"
+ClearSelectionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ClearSelectionButton.TextSize = 16
+ClearSelectionButton.Font = Enum.Font.SourceSansBold
+
+local ClearSelectionCorner = Instance.new("UICorner")
+ClearSelectionCorner.CornerRadius = UDim.new(0, 8)
+ClearSelectionCorner.Parent = ClearSelectionButton
+
+-- Собираем иерархию
+TopBar.Parent = MainFrame
+DecorativeLine.Parent = TopBar
+Icon.Parent = TopBar
+Title.Parent = TopBar
+
+MinimizeText.Parent = MinimizeButton
+MinimizeButtonBtn.Parent = MinimizeButton
+MinimizeButton.Parent = TopBar
+
+CloseText.Parent = CloseButton
+CloseButtonBtn.Parent = CloseButton
+CloseButton.Parent = TopBar
+
+MainFrame.Parent = ScreenGui
+
+ContentFrame.Parent = MainFrame
+
+InstructionText.Parent = ContentFrame
+SelectObjectButton.Parent = ContentFrame
+SelectionModeIndicator.Parent = ContentFrame
+SelectedObjectText.Parent = SelectedObjectFrame
+SelectedObjectFrame.Parent = ContentFrame
+CoordinatesTitle.Parent = ContentFrame
+
+CoordinatesContainer.Parent = ContentFrame
+XLabel.Parent = XContainer
+XTextBox.Parent = XContainer
+XContainer.Parent = CoordinatesContainer
+YLabel.Parent = YContainer
+YTextBox.Parent = YContainer
+YContainer.Parent = CoordinatesContainer
+ZLabel.Parent = ZContainer
+ZTextBox.Parent = ZContainer
+ZContainer.Parent = CoordinatesContainer
+
+CameraButton.Parent = ContentFrame
+
+BottomPanel.Parent = MainFrame
+TeleportButton.Parent = BottomPanel
+ClearSelectionButton.Parent = BottomPanel
+
+-- Переменные для логики
+local selectedObject = nil
+local isMinimized = false
+local originalSize = MainFrame.Size
+local minimizedSize = UDim2.new(0, 394, 0, 50)
+
+-- Функция для обновления текста выбранного объекта
+local function updateSelectedObjectText()
+	if selectedObject then
+		SelectedObjectText.Text = "Выбран: " .. selectedObject.Name
+		SelectedObjectText.TextColor3 = Color3.fromRGB(100, 255, 100)
+	else
+		SelectedObjectText.Text = "Объект не выбран"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(200, 200, 200)
+	end
+end
+
+-- Функция для обновления индикатора режима выбора
+local function updateSelectionModeIndicator()
+	if selectionMode then
+		SelectionModeIndicator.Text = "Режим выбора: ВКЛ (кликните на объект)"
+		SelectionModeIndicator.TextColor3 = Color3.fromRGB(100, 255, 100)
+		SelectObjectButton.Text = "ОТМЕНИТЬ ВЫБОР"
+		SelectObjectButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+	else
+		SelectionModeIndicator.Text = "Режим выбора: ВЫКЛ"
+		SelectionModeIndicator.TextColor3 = Color3.fromRGB(255, 100, 100)
+		SelectObjectButton.Text = "ВЫБРАТЬ ОБЪЕКТ"
+		SelectObjectButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	end
+end
+
+-- Функция для телепортации объекта
+local function teleportObject()
+	if not selectedObject then
+		SelectedObjectText.Text = "Ошибка: объект не выбран!"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(255, 50, 50)
+		return
+	end
+	
+	-- Проверяем, существует ли объект
+	if not selectedObject:IsDescendantOf(workspace) and not selectedObject:IsDescendantOf(game) then
+		SelectedObjectText.Text = "Ошибка: объект не найден!"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(255, 50, 50)
+		selectedObject = nil
+		updateSelectedObjectText()
+		return
+	end
+	
+	-- Получаем координаты
+	local x = tonumber(XTextBox.Text)
+	local y = tonumber(YTextBox.Text)
+	local z = tonumber(ZTextBox.Text)
+	
+	if x and y and z then
+		-- Пытаемся телепортировать объект
+		local success, errorMessage = pcall(function()
+			if selectedObject:IsA("BasePart") then
+				selectedObject.Position = Vector3.new(x, y, z)
+			elseif selectedObject:IsA("Model") then
+				-- Для моделей телепортируем первичную часть
+				local primaryPart = selectedObject.PrimaryPart
+				if primaryPart then
+					primaryPart.Position = Vector3.new(x, y, z)
+				else
+					-- Если нет PrimaryPart, телепортируем все части
+					for _, child in ipairs(selectedObject:GetChildren()) do
+						if child:IsA("BasePart") then
+							child.Position = Vector3.new(x, y, z)
+							break
+						end
+					end
+				end
+			end
+		end)
+		
+		if success then
+			SelectedObjectText.Text = "Объект телепортирован!"
+			SelectedObjectText.TextColor3 = Color3.fromRGB(50, 255, 50)
+			
+			-- Возвращаем цвет через 2 секунды
+			task.wait(2)
+			updateSelectedObjectText()
+		else
+			SelectedObjectText.Text = "Ошибка телепортации: " .. errorMessage
+			SelectedObjectText.TextColor3 = Color3.fromRGB(255, 50, 50)
+		end
+	else
+		SelectedObjectText.Text = "Ошибка: неверные координаты!"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(255, 50, 50)
+	end
+end
+
+-- Функция для сброса выбора
+local function clearSelection()
+	selectedObject = nil
+	selectionMode = false
+	updateSelectedObjectText()
+	updateSelectionModeIndicator()
+	XTextBox.Text = "0"
+	YTextBox.Text = "0"
+	ZTextBox.Text = "0"
+end
+
+-- Функция для выбора объекта
+local function selectObject()
+	selectionMode = not selectionMode
+	updateSelectionModeIndicator()
+	
+	if not selectionMode then
+		SelectedObjectText.Text = "Выбор отменен"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(255, 200, 100)
+		task.wait(1)
+		updateSelectedObjectText()
+	end
+end
+
+-- Функция для сворачивания/разворачивания окна
+local function toggleMinimize()
+	if isMinimized then
+		-- Разворачиваем
+		local tween = TweenService:Create(
+			MainFrame,
+			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{Size = originalSize}
+		)
+		tween:Play()
+		MinimizeText.Text = "-"
+		isMinimized = false
+	else
+		-- Сворачиваем
+		local tween = TweenService:Create(
+			MainFrame,
+			TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{Size = minimizedSize}
+		)
+		tween:Play()
+		MinimizeText.Text = "+"
+		isMinimized = true
+	end
+end
+
+-- Функция для закрытия GUI
+local function closeGUI()
+	ScreenGui:Destroy()
+	guiEnabled = false
+end
+
+-- Функция для перетаскивания окна
+local function updateDrag(input)
+	if not dragging then return end
+	
+	local delta = input.Position - dragStart
+	MainFrame.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end
+
+-- Обработчики событий для перетаскивания
+TopBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		updateDrag(input)
+	end
+end)
+
+-- Обработчик клика по объектам в мире
+mouse.Button1Down:Connect(function()
+	if not guiEnabled then return end
+	if not selectionMode then return end
+	
+	-- Проверяем, не нажали ли мы на элементы GUI
+	local target = mouse.Target
+	if target and not target:IsDescendantOf(ScreenGui) then
+		selectedObject = target
+		selectionMode = false
+		updateSelectedObjectText()
+		updateSelectionModeIndicator()
+		
+		-- Автоматически заполняем текущие координаты
+		if selectedObject:IsA("BasePart") then
+			XTextBox.Text = string.format("%.2f", selectedObject.Position.X)
+			YTextBox.Text = string.format("%.2f", selectedObject.Position.Y)
+			ZTextBox.Text = string.format("%.2f", selectedObject.Position.Z)
+		elseif selectedObject:IsA("Model") then
+			local primaryPart = selectedObject.PrimaryPart
+			if primaryPart then
+				XTextBox.Text = string.format("%.2f", primaryPart.Position.X)
+				YTextBox.Text = string.format("%.2f", primaryPart.Position.Y)
+				ZTextBox.Text = string.format("%.2f", primaryPart.Position.Z)
+			end
+		end
+		
+		-- Показываем сообщение об успешном выборе
+		SelectedObjectText.Text = "Объект успешно выбран!"
+		SelectedObjectText.TextColor3 = Color3.fromRGB(100, 255, 100)
+		task.wait(1)
+		updateSelectedObjectText()
+	end
+end)
+
+-- Назначаем обработчики кнопок
+TeleportButton.MouseButton1Click:Connect(teleportObject)
+ClearSelectionButton.MouseButton1Click:Connect(clearSelection)
+SelectObjectButton.MouseButton1Click:Connect(selectObject)
+MinimizeButtonBtn.MouseButton1Click:Connect(toggleMinimize)
+CloseButtonBtn.MouseButton1Click:Connect(closeGUI)
+
+-- Добавляем эффекты при наведении на кнопки
+local function setupButtonHoverEffects(button, defaultColor, hoverColor)
+	button.MouseEnter:Connect(function()
+		if guiEnabled then
+			button.BackgroundColor3 = hoverColor
+		end
+	end)
+	
+	button.MouseLeave:Connect(function()
+		if guiEnabled then
+			button.BackgroundColor3 = defaultColor
+		end
+	end)
+end
+
+-- Настраиваем эффекты для кнопок
+setupButtonHoverEffects(TeleportButton, Color3.fromRGB(253, 104, 159), Color3.fromRGB(233, 84, 139))
+setupButtonHoverEffects(ClearSelectionButton, Color3.fromRGB(60, 60, 60), Color3.fromRGB(80, 80, 80))
+setupButtonHoverEffects(SelectObjectButton, Color3.fromRGB(60, 60, 60), Color3.fromRGB(80, 80, 80))
+setupButtonHoverEffects(CameraButton, Color3.fromRGB(80, 80, 80), Color3.fromRGB(100, 100, 100))
+
+-- Функция для копирования позиции камеры
+CameraButton.MouseButton1Click:Connect(function()
+	local camera = workspace.CurrentCamera
+	if camera then
+		local position = camera.CFrame.Position
+		XTextBox.Text = string.format("%.2f", position.X)
+		YTextBox.Text = string.format("%.2f", position.Y)
+		ZTextBox.Text = string.format("%.2f", position.Z)
+		
+		-- Временное изменение текста кнопки
+		local originalText = CameraButton.Text
+		CameraButton.Text = "Скопировано!"
+		task.wait(1)
+		CameraButton.Text = originalText
+	end
+end)
+
+-- Добавляем эффекты для текстовых полей
+local function setupTextBoxEffects(textBox)
+	textBox.Focused:Connect(function()
+		if guiEnabled then
+			textBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		end
+	end)
+	
+	textBox.FocusLost:Connect(function()
+		if guiEnabled then
+			textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+			
+			-- Проверяем введенное значение
+			local value = tonumber(textBox.Text)
+			if not value then
+				textBox.Text = "0"
+			end
+		end
+	end)
+end
+
+setupTextBoxEffects(XTextBox)
+setupTextBoxEffects(YTextBox)
+setupTextBoxEffects(ZTextBox)
+
+-- Инициализация
+updateSelectedObjectText()
+updateSelectionModeIndicator()
+
+-- Функция для обновления высоты контента
+local function updateContentHeight()
+	local contentHeight = 0
+	local children = ContentFrame:GetChildren()
+	
+	for _, child in ipairs(children) do
+		if child:IsA("GuiObject") then
+			local bottom = child.Position.Y.Offset + child.Size.Y.Offset
+			if bottom > contentHeight then
+				contentHeight = bottom
+			end
+		end
+	end
+	
+	contentHeight = contentHeight + 20
+	ContentFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+end
+
+-- Обновляем высоту контента
+updateContentHeight()
+
+-- Обновляем высоту при изменении интерфейса
+ContentFrame.ChildAdded:Connect(updateContentHeight)
+ContentFrame.ChildRemoved:Connect(updateContentHeight)
+
+print("GUI телепортации объектов успешно загружена!")
+print("Инструкции:")
+print("1. Нажмите кнопку 'ВЫБРАТЬ ОБЪЕКТ' для активации режима выбора")
+print("2. Кликните на объект в мире, чтобы выбрать его")
+print("3. Введите координаты в поля X, Y, Z (или используйте кнопку 'КОПИРОВАТЬ ПОЗИЦИЮ КАМЕРЫ')")
+print("4. Нажмите кнопку 'ТЕЛЕПОРТИРОВАТЬ' внизу окна")
+print("5. Используйте ползунок прокрутки справа для просмотра всего меню")
+print("6. Перетаскивайте окно за верхнюю панель")
+print("7. Используйте кнопки '-' для сворачивания и 'X' для закрытия")

@@ -1,0 +1,336 @@
+-- Настройки GUI
+local guiEnabled = true
+local dragSpeed = 0.25 -- Скорость перемещения GUI
+local isEnglish = false -- Флаг для перевода
+
+-- Создаем основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KeySystemGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Главный фрейм
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 350, 0, 400) -- Уменьшили высоту, так как удалили кнопку
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Selectable = true
+
+-- Скругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Тень
+local UIStroke = Instance.new("UIStroke")
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Color = Color3.fromRGB(60, 60, 80)
+UIStroke.LineJoinMode = Enum.LineJoinMode.Round
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
+
+-- Заголовок
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "KEY SYSTEM"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 24
+TitleLabel.TextStrokeTransparency = 0.7
+
+-- Подзаголовок
+local SubTitleLabel = Instance.new("TextLabel")
+SubTitleLabel.Name = "SubTitleLabel"
+SubTitleLabel.Size = UDim2.new(1, 0, 0, 20)
+SubTitleLabel.Position = UDim2.new(0, 0, 0, 40)
+SubTitleLabel.BackgroundTransparency = 1
+SubTitleLabel.Text = "Введите ключ для доступа к премиум версии"
+SubTitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SubTitleLabel.Font = Enum.Font.Gotham
+SubTitleLabel.TextSize = 14
+
+-- Поле для ввода ключа
+local KeyInput = Instance.new("TextBox")
+KeyInput.Name = "KeyInput"
+KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
+KeyInput.Position = UDim2.new(0.1, 0, 0, 80)
+KeyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.Font = Enum.Font.Gotham
+KeyInput.TextSize = 16
+KeyInput.PlaceholderText = "Введите ключ..."
+KeyInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+KeyInput.ClearTextOnFocus = false
+KeyInput.Text = ""
+
+-- Скругление для поля ввода
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = KeyInput
+
+-- Кнопка активации ключа
+local ActivateButton = Instance.new("TextButton")
+ActivateButton.Name = "ActivateButton"
+ActivateButton.Size = UDim2.new(0.8, 0, 0, 40)
+ActivateButton.Position = UDim2.new(0.1, 0, 0, 130)
+ActivateButton.BackgroundColor3 = Color3.fromRGB(70, 120, 200)
+ActivateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActivateButton.Font = Enum.Font.GothamBold
+ActivateButton.Text = "АКТИВИРОВАТЬ КЛЮЧ"
+ActivateButton.TextSize = 16
+
+-- Скругление для кнопки
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 6)
+ButtonCorner.Parent = ActivateButton
+
+-- Эффект при наведении на кнопку
+ActivateButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(
+        ActivateButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(90, 140, 220)}
+    ):Play()
+end)
+
+ActivateButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(
+        ActivateButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(70, 120, 200)}
+    ):Play()
+end)
+
+-- Разделитель
+local Divider = Instance.new("Frame")
+Divider.Name = "Divider"
+Divider.Size = UDim2.new(0.8, 0, 0, 1)
+Divider.Position = UDim2.new(0.1, 0, 0, 180)
+Divider.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+Divider.BorderSizePixel = 0
+
+-- Кнопка получения кода
+local GetCodeButton = Instance.new("TextButton")
+GetCodeButton.Name = "GetCodeButton"
+GetCodeButton.Size = UDim2.new(0.8, 0, 0, 40)
+GetCodeButton.Position = UDim2.new(0.1, 0, 0, 190)
+GetCodeButton.BackgroundColor3 = Color3.fromRGB(180, 100, 200)
+GetCodeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+GetCodeButton.Font = Enum.Font.GothamBold
+GetCodeButton.Text = "ПОЛУЧИТЬ КОД"
+GetCodeButton.TextSize = 16
+
+-- Скругление для кнопки
+local GetCodeButtonCorner = Instance.new("UICorner")
+GetCodeButtonCorner.CornerRadius = UDim.new(0, 6)
+GetCodeButtonCorner.Parent = GetCodeButton
+
+-- Эффект при наведении на кнопку
+GetCodeButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(
+        GetCodeButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(200, 120, 220)}
+    ):Play()
+end)
+
+GetCodeButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(
+        GetCodeButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(180, 100, 200)}
+    ):Play()
+end)
+
+-- Кнопка перевода на английский
+local TranslateButton = Instance.new("TextButton")
+TranslateButton.Name = "TranslateButton"
+TranslateButton.Size = UDim2.new(0.8, 0, 0, 40)
+TranslateButton.Position = UDim2.new(0.1, 0, 0, 240)
+TranslateButton.BackgroundColor3 = Color3.fromRGB(200, 160, 60)
+TranslateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TranslateButton.Font = Enum.Font.GothamBold
+TranslateButton.Text = "ENGLISH VERSION"
+TranslateButton.TextSize = 16
+
+-- Скругление для кнопки
+local TranslateButtonCorner = Instance.new("UICorner")
+TranslateButtonCorner.CornerRadius = UDim.new(0, 6)
+TranslateButtonCorner.Parent = TranslateButton
+
+-- Эффект при наведении на кнопку
+TranslateButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(
+        TranslateButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(220, 180, 80)}
+    ):Play()
+end)
+
+TranslateButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(
+        TranslateButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(200, 160, 60)}
+    ):Play()
+end)
+
+-- Кнопка выключения
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 10)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Text = "X"
+CloseButton.TextSize = 16
+CloseButton.ZIndex = 2
+
+-- Скругление для кнопки
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 15)
+CloseButtonCorner.Parent = CloseButton
+
+-- Эффект при наведении на кнопку
+CloseButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(
+        CloseButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(220, 80, 80)}
+    ):Play()
+end)
+
+CloseButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(
+        CloseButton,
+        TweenInfo.new(0.2),
+        {BackgroundColor3 = Color3.fromRGB(200, 60, 60)}
+    ):Play()
+end)
+
+-- Собираем GUI
+TitleLabel.Parent = MainFrame
+SubTitleLabel.Parent = MainFrame
+KeyInput.Parent = MainFrame
+ActivateButton.Parent = MainFrame
+Divider.Parent = MainFrame
+GetCodeButton.Parent = MainFrame
+TranslateButton.Parent = MainFrame
+CloseButton.Parent = MainFrame
+MainFrame.Parent = ScreenGui
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Функция для уведомлений
+local function Notify(text)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = isEnglish and "Key System" or "Система ключей",
+        Text = text,
+        Duration = 5
+    })
+end
+
+-- Функция для копирования в буфер обмена
+local function CopyToClipboard(text)
+    local ClipBoard = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
+    if ClipBoard then
+        ClipBoard(text)
+        Notify(isEnglish and "You copied Discord server: "..text or "Вы скопировали Discord сервер: "..text)
+    else
+        Notify(isEnglish and "Failed to copy link. Copy manually: "..text or "Не удалось скопировать ссылку. Скопируйте вручную: "..text)
+    end
+end
+
+-- Функция для перевода интерфейса
+local function ToggleLanguage()
+    isEnglish = not isEnglish
+    
+    if isEnglish then
+        -- Перевод на английский
+        SubTitleLabel.Text = "Enter the key to access the premium version"
+        KeyInput.PlaceholderText = "Enter key..."
+        ActivateButton.Text = "ACTIVATE KEY"
+        GetCodeButton.Text = "GET CODE"
+        TranslateButton.Text = "RUSSIAN VERSION"
+    else
+        -- Возврат к русскому
+        SubTitleLabel.Text = "Введите ключ для доступа к премиум версии"
+        KeyInput.PlaceholderText = "Введите ключ..."
+        ActivateButton.Text = "АКТИВИРОВАТЬ КЛЮЧ"
+        GetCodeButton.Text = "ПОЛУЧИТЬ КОД"
+        TranslateButton.Text = "ENGLISH VERSION"
+    end
+end
+
+-- Обработка активации ключа
+ActivateButton.MouseButton1Click:Connect(function()
+    local key = KeyInput.Text:gsub("%s+", ""):upper()
+    
+    if key == "1Q" then
+        Notify(isEnglish and "Key activated! Loading premium version..." or "Ключ активирован! Загружаем премиум версию...")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/eng/KEY"))()
+    else
+        Notify(isEnglish and "Invalid key! Try again." or "Неверный ключ! Попробуйте снова.")
+    end
+end)
+
+-- Обработка получения кода
+GetCodeButton.MouseButton1Click:Connect(function()
+    CopyToClipboard("https://discord.gg/Z9EuZUY67g")
+end)
+
+-- Обработка перевода
+TranslateButton.MouseButton1Click:Connect(function()
+    ToggleLanguage()
+end)
+
+-- Обработка закрытия GUI
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    guiEnabled = false
+end)
+
+-- Функция для плавного перемещения GUI
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)

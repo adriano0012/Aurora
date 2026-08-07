@@ -1,0 +1,35 @@
+local function DEL(target)
+    -- Проверяем, является ли target строкой (путь к объекту)
+    if type(target) == "string" then
+        -- Заменяем внутренние кавычки на одинарные
+        local fixedPath = target:gsub('game:GetService%("', 'game:GetService(\'')
+                      :gsub('")', '\')')
+        
+        -- Безопасно получаем объект
+        local success, obj = pcall(function()
+            return loadstring("return " .. fixedPath)()
+        end)
+        
+        if not success or not obj then
+            warn("❌ Объект не найден: " .. target)
+            return false
+        end
+        
+        -- Удаляем объект
+        obj:Destroy()
+        print("✅ Удалено: " .. target)
+        return true
+    
+    -- Если передали сам объект (не строку)
+    elseif typeof(target) == "Instance" then
+        target:Destroy()
+        print("✅ Удален объект: " .. target:GetFullName())
+        return true
+    else
+        warn("❌ Неверный формат. Используйте: DEL(\"путь.к.объекту\") или DEL(объект)")
+        return false
+    end
+end
+
+-- Делаем функцию глобальной
+getgenv().DEL = DEL

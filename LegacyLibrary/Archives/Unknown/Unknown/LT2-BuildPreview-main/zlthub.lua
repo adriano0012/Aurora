@@ -1,0 +1,365 @@
+--==================================================
+-- SERVIÇOS
+--==================================================
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+--==================================================
+-- GUI HUB
+--==================================================
+local gui = Instance.new("ScreenGui")
+gui.Name = "LT2_AutoBuildHub"
+gui.Parent = Player:WaitForChild("PlayerGui")
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromScale(0.28, 0.4)
+main.Position = UDim2.fromScale(0.36, 0.28)
+main.BackgroundColor3 = Color3.fromRGB(28,28,28)
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.fromScale(1,0.15)
+title.Text = "LT2 AutoBuild Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+
+local close = Instance.new("TextButton", main)
+close.Text = "X"
+close.Size = UDim2.fromScale(0.12,0.12)
+close.Position = UDim2.fromScale(0.86,0.02)
+close.BackgroundColor3 = Color3.fromRGB(170,60,60)
+close.TextColor3 = Color3.new(1,1,1)
+
+close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+local autoBtn = Instance.new("TextButton", main)
+autoBtn.Text = "AutoBuild: OFF"
+autoBtn.Size = UDim2.fromScale(0.8,0.18)
+autoBtn.Position = UDim2.fromScale(0.1,0.28)
+autoBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+autoBtn.TextColor3 = Color3.new(1,1,1)
+
+local importBtn = Instance.new("TextButton", main)
+importBtn.Text = "Import Blueprint"
+importBtn.Size = UDim2.fromScale(0.8,0.18)
+importBtn.Position = UDim2.fromScale(0.1,0.52)
+importBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+importBtn.TextColor3 = Color3.new(1,1,1)
+
+--==================================================
+-- CONFIGURAÇÃO
+--==================================================
+local Settings = {
+	AutoBuild = false,
+	Running = true
+}
+
+--==================================================
+-- 🔧 PLUGAR MÓDULO AQUI (ÚNICA PARTE MANUAL)
+-- O módulo deve retornar uma função Convert(partTable)
+--==================================================
+-- BlueprintModule (ModuleScript)
+
+local Module = {}
+
+--==================================================
+-- 🔵 COLE APENAS OS DADOS AQUI
+--==================================================
+Module.PartTable = {
+    {CFrame = CFrame.new(26.9999313, 55.2420006, -203.071808, 4.47034836e-08, 1.00000012, 5.96046448e-08, -0.82389164, -5.96046448e-08, -0.56675446, -0.566754282, -2.98023224e-08, 0.823891461), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999313, 55.2420006, -203.071808, 2.98023224e-08, 1.00000012, 5.96046448e-08, -0.181823254, -5.96046448e-08, -0.983335018, -0.983334482, -2.98023224e-08, 0.181823283), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 8.94069672e-08, 1.00000012, -2.98023224e-08, -0.923832536, -5.96046448e-08, -0.382806361, -0.38280642, -2.98023224e-08, 0.923832238), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 2.23516299e-08, 1, -4.36693028e-08, -0.382561386, -3.17965103e-08, -0.923930168, -0.923930109, 3.7357534e-08, 0.382561386), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999313, 55.2420006, -203.071808, 5.96046448e-08, 1.00000012, 0, -0.688916326, -5.96046448e-08, -0.724845648, -0.724845171, -2.98023224e-08, 0.688916266), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2419624, -203.071793, 5.96046448e-08, 1.00000012, 2.98023224e-08, -0.888611138, -5.96046448e-08, -0.458662301, -0.458662331, -2.98023224e-08, 0.888611555), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2419624, -203.071793, 4.47034836e-08, 1.00000012, 5.96046448e-08, -0.30401969, -5.96046448e-08, -0.952665806, -0.952665985, -2.98023224e-08, 0.304019749), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 5.96046448e-08, 1.00000012, 5.96046448e-08, -0.625936329, -5.96046448e-08, -0.779874325, -0.779874265, -2.98023224e-08, 0.625936568), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 2.98023224e-08, 1.00000012, 2.98023224e-08, 0.108850792, -5.96046448e-08, -0.994058132, -0.994058311, -2.98023224e-08, -0.108850688), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2419624, -203.071793, 4.47034836e-08, 1.00000012, -2.98023224e-08, -0.774585545, -5.96046448e-08, -0.632469416, -0.632469416, -2.98023224e-08, 0.774585724), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2419624, -203.071793, 1.49011612e-08, 1.00000012, 8.94069672e-08, -0.100490957, -5.96046448e-08, -0.994937181, -0.994936883, -2.98023224e-08, 0.100490898), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 1.86264515e-08, 1.00000012, 2.98023224e-08, -0.451176465, -5.96046448e-08, -0.892434597, -0.892434061, -2.98023224e-08, 0.451176345), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 2.98023224e-08, 1.00000012, 2.98023224e-08, 0.312016875, -5.96046448e-08, -0.950076759, -0.950076759, -2.98023224e-08, -0.312016934), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 8.94069672e-08, 1.00000012, 0, -0.958505034, -5.96046448e-08, -0.285082817, -0.285082549, -2.98023224e-08, 0.958505094), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 3.16649675e-08, 1.00000012, 0, -0.476182193, -5.96046448e-08, -0.879350781, -0.879350543, -2.98023224e-08, 0.476182133), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2420044, -203.071793, 7.4505806e-08, 1.00000012, 0, -0.760272682, -5.96046448e-08, -0.649609566, -0.649609685, -2.98023224e-08, 0.760272145), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2420044, -203.071793, 0, 1.00000012, 5.96046448e-08, -0.0782501101, -5.96046448e-08, -0.996934056, -0.996934533, -2.98023224e-08, 0.0782501698), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 4.47034836e-08, 1.00000012, 0, -0.878855228, -5.96046448e-08, -0.477089643, -0.477090061, -2.98023224e-08, 0.878854752), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 4.47034836e-08, 1.00000012, 0, -0.284090579, -5.96046448e-08, -0.958798051, -0.958797574, -2.98023224e-08, 0.284090877), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2420044, -203.071793, 3.35276127e-08, 1.00000012, 5.96046448e-08, -0.609539926, -5.96046448e-08, -0.792755187, -0.792755246, -2.98023224e-08, 0.609540045), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999352, 55.2420044, -203.071793, 2.98023224e-08, 1.00000012, 2.98023224e-08, 0.129552886, -5.96046448e-08, -0.991572559, -0.991572917, -2.98023224e-08, -0.129552901), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.999939, 55.2419662, -203.071793, 7.4505806e-08, 1.00000012, -2.98023224e-08, -0.835915029, -5.96046448e-08, -0.548859, -0.548859, -2.98023224e-08, 0.835915089), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.999939, 55.2419662, -203.071793, 5.96046448e-08, 1.00000012, 5.96046448e-08, -0.202979252, -5.96046448e-08, -0.979183197, -0.979183257, -2.98023224e-08, 0.202979282), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 1.25728548e-08, 1.00000012, 5.96046448e-08, -0.541165233, -5.96046448e-08, -0.840916336, -0.840916514, -2.98023224e-08, 0.541165352), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 0, 1.00000012, 5.96046448e-08, 0.211956471, -5.96046448e-08, -0.977279186, -0.977279305, -2.98023224e-08, -0.211956471), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999256, 55.2419739, -203.071808, 4.47034836e-08, 1.00000012, 2.98023224e-08, -0.704380393, -5.96046448e-08, -0.709822834, -0.709822893, -2.98023224e-08, 0.704380512), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999256, 55.2419739, -203.071808, 5.96046448e-08, 1.00000012, 2.98023224e-08, 0.0038485527, -5.96046448e-08, -0.999993205, -0.999992788, -2.98023224e-08, -0.00384864211), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 3.7252903e-08, 1.00000012, 0, -0.355616838, -5.96046448e-08, -0.934632421, -0.934631705, -2.98023224e-08, 0.355616659), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999237, 55.2419815, -203.071762, 2.98023224e-08, 1.00000012, 5.96046448e-08, 0.409426481, -5.96046448e-08, -0.91234529, -0.912344873, -2.98023224e-08, -0.409426153), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.9999313, 55.2420006, -203.071808, 0, 1.00000012, 2.98023224e-08, 0.025406003, -5.96046448e-08, -0.9996773, -0.9996773, -2.98023224e-08, -0.0254059136), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(27.3996887, 50.5448074, -205.883072, -5.96046448e-08, 0, 1.00000012, 0.944830716, -0.32755959, -5.96046448e-08, 0.327559382, 0.944831908, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.5727425, 34.2989235, -217.340439, -7.4505806e-08, 2.98023224e-08, 1.00000012, 0.807124913, -0.590381026, -5.96046448e-08, 0.590380907, 0.807124913, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.5727406, 35.2230034, -218.60379, -7.4505806e-08, 2.98023224e-08, 1.00000012, 0.807124913, -0.590381026, -5.96046448e-08, 0.590380907, 0.807124913, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.5995598, 58.0394897, -206.660736, -2.98023224e-08, -2.98023224e-08, 1.00000012, 0.9994241, -0.0339367688, -5.96046448e-08, 0.0339365602, 0.999428928, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.5995483, 58.6839828, -206.63884, -2.98023224e-08, -8.94069672e-08, 1.00000012, 0.9994241, -0.03393659, -5.96046448e-08, 0.0339365602, 0.999424279, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.5995617, 59.7308273, -206.603317, -5.96046448e-08, -2.98023224e-08, 1.00000012, 0.99942404, -0.0339366496, -5.96046448e-08, 0.0339365602, 0.999424458, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(27.3996754, 50.5842667, -206.059479, 0, -2.98023224e-08, 1.00000012, 0.9834584, 0.181134865, -5.96046448e-08, -0.181134641, 0.983458936, -2.98023224e-08), Name = 'Post', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.3996868, 49.3731155, -204.942017, -2.98023224e-08, -8.94069672e-08, -1.00000012, -0.159328669, 0.98722595, 5.96046448e-08, 0.987225711, 0.159327567, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996811, 48.4933205, -204.173965, -2.98023224e-08, -2.98023224e-08, -1.00000012, 0.0494401753, 0.998778462, 5.96046448e-08, 0.998778343, -0.0494413376, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996754, 57.4894638, -203.047913, 0, 8.94069672e-08, -1.00000012, 0.294142634, -0.95576179, 5.96046448e-08, -0.955761671, -0.294142574, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996887, 47.2492485, -202.020386, -3.53902578e-08, -2.98023224e-08, -1.00000012, 0.478114933, 0.87829721, 5.96046448e-08, 0.878299236, -0.478113949, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996887, 47.0233917, -200.874527, -8.94069672e-08, -5.96046448e-08, -1.00000012, 0.650298774, 0.759678125, 5.96046448e-08, 0.759681761, -0.650296867, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.399683, 47.42799, -202.515411, -7.4505806e-08, 0, -1.00000012, 0.393318862, 0.919402957, 5.96046448e-08, 0.919406533, -0.393317103, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996868, 47.095253, -201.395905, -3.35276127e-08, -2.98023224e-08, -1.00000012, 0.575903893, 0.817517579, 5.96046448e-08, 0.817517638, -0.575904012, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996811, 47.1957779, -198.910828, -2.98023224e-08, -5.96046448e-08, -1.00000012, 0.873702765, 0.486466616, 5.96046448e-08, 0.486470103, -0.873696089, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996925, 41.9839363, -209.811142, 0, -8.19563866e-08, 1.00000012, 0.679530442, 0.733647764, -5.96046448e-08, -0.733648717, 0.679529488, -2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996773, 57.0862274, -203.681686, 2.98023224e-08, 5.96046448e-08, -1.00000012, 0.163234025, -0.986583114, 5.96046448e-08, -0.986585915, -0.163238555, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996792, 58.1697807, -200.236267, 5.96046448e-08, 7.4505806e-09, -1.00000012, 0.732841849, -0.680402637, 5.96046448e-08, -0.680402398, -0.732842088, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996868, 58.0191879, -199.078262, -2.98023224e-08, 3.91155481e-08, -1.00000012, 0.858306289, -0.513138413, 5.96046448e-08, -0.513137937, -0.858307481, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996773, 47.1871986, -201.803802, -2.32830644e-08, -2.98023224e-08, -1.00000012, 0.51313895, 0.858306289, 5.96046448e-08, 0.858308017, -0.513137937, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996849, 47.0077057, -200.649765, -6.70552254e-08, 2.98023224e-08, -1.00000012, 0.680402815, 0.732841372, 5.96046448e-08, 0.732841909, -0.680402398, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996868, 47.4407959, -198.200684, -5.96046448e-08, -2.98023224e-08, -1.00000012, 0.931080401, 0.364822865, 5.96046448e-08, 0.364824831, -0.931074739, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996811, 57.9626274, -198.86026, 0, 1.49011612e-08, -1.00000012, 0.878297925, -0.478113979, 5.96046448e-08, -0.478114367, -0.878297925, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996849, 58.1597862, -200.011307, -2.98023224e-08, 7.4505806e-08, -1.00000012, 0.759677768, -0.650297284, 5.96046448e-08, -0.650300026, -0.759674788, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996773, 58.1008682, -199.48822, -2.98023224e-08, 5.40167093e-08, -1.00000012, 0.817518234, -0.575902998, 5.96046448e-08, -0.575903058, -0.817518115, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996773, 57.9384041, -201.969849, 2.98023224e-08, 4.47034836e-08, -1.00000012, 0.486458063, -0.873703063, 5.96046448e-08, -0.873703182, -0.486460924, 2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.3996906, 41.0792618, -210.649078, -2.98023224e-08, -6.70552254e-08, 1.00000012, 0.679525256, 0.733652234, -5.96046448e-08, -0.733652353, 0.679525316, -2.98023224e-08), Name = 'Wall2Tall', TreeValue = 'Koa'},
+    {CFrame = CFrame.new(26.5995617, 63.4515457, -211.996613, -2.98023224e-08, -7.82310963e-08, 1.00000012, 0.789724588, 0.613461792, -5.96046448e-08, -0.613461852, 0.789724529, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, 2.98023224e-08, 1.00000012, 5.96046448e-08, 0.0339364111, -5.96046448e-08, -0.999426365, -0.999426484, -2.98023224e-08, -0.0339363515), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, 0, 1.00000012, 3.7252903e-08, 0.730698705, -5.96046448e-08, -0.682705283, -0.682705343, -2.98023224e-08, -0.730698705), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.910778, -211.880554, 0, 1.00000012, 5.96046448e-08, 0.436694056, -5.96046448e-08, -0.899614036, -0.899614096, -2.98023224e-08, -0.436694086), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.910778, -211.880554, -5.96046448e-08, 1.00000012, -7.4505806e-09, 0.944910526, -5.96046448e-08, -0.327333122, -0.327333212, -2.98023224e-08, -0.944910526), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -2.98023224e-08, 1.00000012, 8.94069672e-08, 0.239830643, -5.96046448e-08, -0.970816016, -0.970816135, -2.98023224e-08, -0.239830613), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -2.98023224e-08, 1.00000012, 6.00703061e-08, 0.856056929, -5.96046448e-08, -0.516884804, -0.516885161, -2.98023224e-08, -0.85605675), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.910778, -211.880554, 0, 1.00000012, 2.98023224e-08, 0.613249421, -5.96046448e-08, -0.789890945, -0.789891064, -2.98023224e-08, -0.613249421), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.910778, -211.880554, -8.94069672e-08, 1.00000012, 4.47034836e-08, 0.992170691, -5.96046448e-08, -0.12490423, -0.12490429, -2.98023224e-08, -0.99217087), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.199831, 60.9107704, -211.880585, -2.98023224e-08, 1.00000012, 2.98023224e-08, 0.320113569, -5.96046448e-08, -0.947379351, -0.94737947, -2.98023224e-08, -0.32011351), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.199831, 60.9107704, -211.880585, 0, 1.00000012, 3.7252903e-08, 0.896248937, -5.96046448e-08, -0.443541765, -0.443541884, -2.98023224e-08, -0.896248996), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -2.98023224e-08, 1.00000012, 7.4505806e-08, 0.677104771, -5.96046448e-08, -0.735880673, -0.735880852, -2.98023224e-08, -0.677104712), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -5.96046448e-08, 1.00000012, 2.98023224e-08, 0.999132812, -5.96046448e-08, -0.0415607393, -0.0415607989, -2.98023224e-08, -0.999132872), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, 2.98023224e-08, 1.00000012, 5.96046448e-08, 0.509064496, -5.96046448e-08, -0.860728562, -0.860728681, -2.98023224e-08, -0.509064496), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, -8.94069672e-08, 1.00000012, 1.49011612e-08, 0.968589664, -5.96046448e-08, -0.248663872, -0.248663962, -2.98023224e-08, -0.968589664), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -2.98023224e-08, 1.00000012, 7.4505806e-08, 0.814619958, -5.96046448e-08, -0.579995275, -0.579995394, -2.98023224e-08, -0.814619958), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -8.94069672e-08, 1.00000012, 0, 0.986143708, -5.96046448e-08, 0.165904939, 0.165904909, -2.98023224e-08, -0.986143827), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, 0, 1.00000012, 5.96046448e-08, 0.138010591, -5.96046448e-08, -0.990431607, -0.990431786, -2.98023224e-08, -0.138010561), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998291, 60.9107666, -211.880554, -2.98023224e-08, 1.00000012, 7.07805157e-08, 0.797929704, -5.96046448e-08, -0.602752924, -0.602753043, -2.98023224e-08, -0.797929704), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.599556, 62.9403839, -211.599533, -5.96046448e-08, -4.09781933e-08, 1.00000012, 0.789724767, 0.613461792, -5.96046448e-08, -0.613461852, 0.78972435, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.5995598, 64.4058838, -210.768097, 0, -7.4505806e-09, 1.00000012, 0.789725184, 0.613463581, -5.96046448e-08, -0.613462269, 0.789726913, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.5995598, 65.1954346, -211.381393, -2.98023224e-08, -8.56816769e-08, 1.00000012, 0.789724708, 0.613462329, -5.96046448e-08, -0.613461971, 0.789725423, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.5995502, 61.6195679, -212.506531, 2.98023224e-08, -2.98023224e-08, 1.00000012, 0.312018394, 0.950076222, -5.96046448e-08, -0.950076342, 0.312018454, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.5995598, 62.3661003, -211.798416, -2.98023224e-08, -8.94069672e-08, 1.00000012, 0.963407159, 0.268043578, -5.96046448e-08, -0.268043131, 0.963411808, -2.98023224e-08), Name = 'Post', TreeValue = 'Volcano'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, -5.96046448e-08, 1.00000012, 0, 0.963455081, -5.96046448e-08, 0.267873347, 0.267873347, -2.98023224e-08, -0.963455141), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, 0, 1.00000012, 7.63684511e-08, 0.870680034, -5.96046448e-08, -0.491850436, -0.491850495, -2.98023224e-08, -0.870680094), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, -5.96046448e-08, 1.00000012, 2.98023224e-08, 0.989245832, -5.96046448e-08, -0.146264568, -0.146264613, -2.98023224e-08, -0.989245892), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, -2.98023224e-08, 1.00000012, 4.47034836e-08, 0.596076369, -5.96046448e-08, -0.802925348, -0.802925467, -2.98023224e-08, -0.596076369), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, -5.96046448e-08, 1.00000012, 0, 0.998015523, -5.96046448e-08, 0.0628947914, 0.062894702, -2.98023224e-08, -0.998015702), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, -8.94069672e-08, 1.00000012, 4.47034836e-08, 0.750180364, -5.96046448e-08, -0.661233366, -0.661233544, -2.98023224e-08, -0.750180364), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, -5.96046448e-08, 1.00000012, 5.96046448e-08, 0.937632978, -5.96046448e-08, -0.347627133, -0.347627282, -2.98023224e-08, -0.937633157), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998329, 60.9107819, -211.880585, 0, 1.00000012, 2.98023224e-08, 0.417196929, -5.96046448e-08, -0.908816338, -0.908816457, -2.98023224e-08, -0.417196929), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, 0, 1.00000012, 2.98023224e-08, 0.999785304, -5.96046448e-08, -0.0207201838, -0.0207202137, -2.98023224e-08, -0.999785542), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, 0, 1.00000012, 2.98023224e-08, 0.692303777, -5.96046448e-08, -0.721606433, -0.721606553, -2.98023224e-08, -0.692303717), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, 0, 1.00000012, 3.7252903e-08, 0.905305743, -5.96046448e-08, -0.424760699, -0.424760759, -2.98023224e-08, -0.905305922), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, 2.98023224e-08, 1.00000012, 5.96046448e-08, 0.339796603, -5.96046448e-08, -0.940499127, -0.940499246, -2.98023224e-08, -0.339796603), Name = 'Floor1Small', TreeValue = 'Birch'},
+    {CFrame = CFrame.new(26.1998215, 60.9107819, -211.880524, -2.98023224e-08, 1.00000012, 1.49011612e-08, 0.973900855, -5.96046448e-08, -0.226974383, -0.226974458, -2.98023224e-08, -0.973900855), Name = 'Floor1Small', TreeValue = 'Birch'},
+}
+
+--==================================================
+-- 🔒 NÃO TOCAR (AUTO BUILD USA ISSO)
+--==================================================
+function Module:Convert()
+    local jobs = {}
+
+    for _, v in ipairs(self.PartTable) do
+        table.insert(jobs, {
+            Structure = v.Name,
+            CFrame = v.CFrame,
+            Wood = v.TreeValue
+        })
+    end
+
+    return jobs
+end
+
+return Module
+
+--==================================================
+
+local BlueprintModule = require(script:WaitForChild("BlueprintModule"))
+
+local BuildModule = {}
+
+function BuildModule:Convert()
+    return BlueprintModule:Convert()
+end
+
+--==================================================
+-- "REPLICATEDSTORAGE" FICTÍCIO
+--==================================================
+local ReplicatedStorage = Instance.new("Folder")
+ReplicatedStorage.Name = "ReplicatedStorage"
+
+local PlaceStructure = Instance.new("Folder")
+PlaceStructure.Name = "PlaceStructure"
+PlaceStructure.Parent = ReplicatedStorage
+
+local ClientPlacedBlueprint = Instance.new("RemoteEvent")
+ClientPlacedBlueprint.Name = "ClientPlacedBlueprint"
+ClientPlacedBlueprint.Parent = PlaceStructure
+
+local ClientPlacedStructure = Instance.new("RemoteEvent")
+ClientPlacedStructure.Name = "ClientPlacedStructure"
+ClientPlacedStructure.Parent = PlaceStructure
+
+--==================================================
+-- REMOTES RESOLVIDOS (EXATAMENTE COMO NO REAL)
+--==================================================
+local AssignRemote = ReplicatedStorage
+	:WaitForChild("PlaceStructure")
+	:WaitForChild("ClientPlacedBlueprint")
+
+local BuildRemote = ReplicatedStorage
+	:WaitForChild("PlaceStructure")
+	:WaitForChild("ClientPlacedStructure")
+
+--==================================================
+-- DISPATCHER
+--==================================================
+local Dispatcher = { Actions = {} }
+
+function Dispatcher.Actions.AssignWood(job)
+	if not AssignRemote then
+		warn("[Dispatcher] AssignRemote não definido")
+		return false
+	end
+
+	AssignRemote:FireServer(
+		job.Structure,
+		job.CFrame,
+		job.Wood
+	)
+
+	print("[Dispatcher] Blueprint associado:", job.Structure)
+	return true
+end
+
+function Dispatcher.Actions.Build(job)
+	if not BuildRemote then
+		warn("[Dispatcher] BuildRemote não definido")
+		return false
+	end
+
+	BuildRemote:FireServer(
+		job.Structure,
+		job.CFrame
+	)
+
+	print("[Dispatcher] Estrutura construída:", job.Structure)
+	return true
+end
+
+function Dispatcher:Process(job)
+	if self.Actions.AssignWood(job) then
+		task.wait(0.25)
+		self.Actions.Build(job)
+	end
+end
+
+--==================================================
+-- BUILD QUEUE
+--==================================================
+local BuildQueue = {}
+
+--==================================================
+-- EXEMPLO DE BLUEPRINT REALISTA
+--==================================================
+local Blueprint = {
+	{
+		Name = "Floor1Small",
+		TreeValue = "Birch",
+		CFrame = CFrame.new(
+			26.9999, 55.242, -203.0718,
+			4.47e-08, 1, 5.96e-08,
+			-0.8238, -5.96e-08, -0.5667,
+			-0.5667, -2.98e-08, 0.8238
+		)
+	}
+}
+
+--==================================================
+-- IMPORTAÇÃO DO BLUEPRINT
+--==================================================
+local function ImportBlueprint()
+	table.clear(BuildQueue)
+
+	local jobs = BuildModule:Convert(Blueprint)
+	for _, job in ipairs(jobs) do
+		table.insert(BuildQueue, job)
+	end
+
+	print("[AutoBuild] Blueprint importado:", #BuildQueue)
+end
+
+--==================================================
+-- LOOP DO AUTOBUILD
+--==================================================
+task.spawn(function()
+	while Settings.Running do
+		if Settings.AutoBuild and #BuildQueue > 0 then
+			local job = table.remove(BuildQueue,1)
+			Dispatcher:Process(job)
+		end
+		task.wait(0.4)
+	end
+end)
+
+--==================================================
+-- HUB DRAG (ARRASTAR JANELA)
+--==================================================
+local UserInputService = game:GetService("UserInputService")
+
+local dragging = false
+local dragStart
+local startPos
+
+main.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+main.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+
+--==================================================
+-- BOTÕES
+--==================================================
+autoBtn.MouseButton1Click:Connect(function()
+	Settings.AutoBuild = not Settings.AutoBuild
+	autoBtn.Text = Settings.AutoBuild and "AutoBuild: ON" or "AutoBuild: OFF"
+end)
+
+importBtn.MouseButton1Click:Connect(function()
+	ImportBlueprint()
+end)

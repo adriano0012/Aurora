@@ -1,0 +1,722 @@
+-- Авто-кликер для Roblox
+-- by [ваше имя]
+
+-- Получаем необходимые сервисы
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+
+-- Основные переменные
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local clickerEnabled = false
+local keyPresserEnabled = false
+local keySettings = {}
+local connections = {}
+
+-- Создаем главный экран
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoClickerGUI"
+ScreenGui.DisplayOrder = 999999
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 394, 0, 331)
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Верхняя панель
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.Position = UDim2.new(0, 0, 0, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 8)
+TopBarCorner.Parent = TopBar
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 15, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopBar
+
+-- Декоративная полоска
+local DecorativeLine = Instance.new("Frame")
+DecorativeLine.Name = "DecorativeLine"
+DecorativeLine.Size = UDim2.new(0, 5, 0, 16)
+DecorativeLine.Position = UDim2.new(0, 42, 0.5, -8)
+DecorativeLine.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+DecorativeLine.BorderSizePixel = 0
+DecorativeLine.Parent = TopBar
+
+local DecorativeLineCorner = Instance.new("UICorner")
+DecorativeLineCorner.CornerRadius = UDim.new(0, 2)
+DecorativeLineCorner.Parent = DecorativeLine
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(0, 200, 0, 40)
+Title.Position = UDim2.new(0, 55, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "AUTO CLICKER"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.Unknown
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+-- Кнопка свернуть
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeButton.TextSize = 20
+MinimizeButton.Font = Enum.Font.SourceSansBold
+MinimizeButton.Parent = TopBar
+
+local MinimizeButtonCorner = Instance.new("UICorner")
+MinimizeButtonCorner.CornerRadius = UDim.new(0, 8)
+MinimizeButtonCorner.Parent = MinimizeButton
+
+-- Кнопка закрыть
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseButton.TextSize = 18
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.Parent = TopBar
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 8)
+CloseButtonCorner.Parent = CloseButton
+
+-- Контейнер для контента
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, -20, 1, -70)
+ContentContainer.Position = UDim2.new(0, 10, 0, 60)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+-- Tab Buttons
+local MouseTab = Instance.new("TextButton")
+MouseTab.Name = "MouseTab"
+MouseTab.Size = UDim2.new(0, 180, 0, 40)
+MouseTab.Position = UDim2.new(0, 0, 0, 0)
+MouseTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MouseTab.BorderSizePixel = 0
+MouseTab.Text = "МЫШЬ"
+MouseTab.TextColor3 = Color3.fromRGB(253, 104, 159)
+MouseTab.TextSize = 18
+MouseTab.Font = Enum.Font.SourceSansBold
+MouseTab.Parent = ContentContainer
+
+local MouseTabCorner = Instance.new("UICorner")
+MouseTabCorner.CornerRadius = UDim.new(0, 6)
+MouseTabCorner.Parent = MouseTab
+
+local KeysTab = Instance.new("TextButton")
+KeysTab.Name = "KeysTab"
+KeysTab.Size = UDim2.new(0, 180, 0, 40)
+KeysTab.Position = UDim2.new(1, -180, 0, 0)
+KeysTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+KeysTab.BorderSizePixel = 0
+KeysTab.Text = "КЛАВИШИ"
+KeysTab.TextColor3 = Color3.fromRGB(253, 104, 159)
+KeysTab.TextSize = 18
+KeysTab.Font = Enum.Font.SourceSansBold
+KeysTab.Parent = ContentContainer
+
+local KeysTabCorner = Instance.new("UICorner")
+KeysTabCorner.CornerRadius = UDim.new(0, 6)
+KeysTabCorner.Parent = KeysTab
+
+-- Контейнеры для настроек
+local MouseSettings = Instance.new("Frame")
+MouseSettings.Name = "MouseSettings"
+MouseSettings.Size = UDim2.new(1, 0, 0, 200)
+MouseSettings.Position = UDim2.new(0, 0, 0, 50)
+MouseSettings.BackgroundTransparency = 1
+MouseSettings.Visible = true
+MouseSettings.Parent = ContentContainer
+
+local KeysSettings = Instance.new("Frame")
+KeysSettings.Name = "KeysSettings"
+KeysSettings.Size = UDim2.new(1, 0, 0, 200)
+KeysSettings.Position = UDim2.new(0, 0, 0, 50)
+KeysSettings.BackgroundTransparency = 1
+KeysSettings.Visible = false
+KeysSettings.Parent = ContentContainer
+
+-- НАСТРОЙКИ МЫШИ
+-- Позиция X
+local XPosFrame = Instance.new("Frame")
+XPosFrame.Name = "XPosFrame"
+XPosFrame.Size = UDim2.new(1, 0, 0, 40)
+XPosFrame.Position = UDim2.new(0, 0, 0, 0)
+XPosFrame.BackgroundTransparency = 1
+XPosFrame.Parent = MouseSettings
+
+local XPosLabel = Instance.new("TextLabel")
+XPosLabel.Name = "XPosLabel"
+XPosLabel.Size = UDim2.new(0.4, 0, 1, 0)
+XPosLabel.Position = UDim2.new(0, 0, 0, 0)
+XPosLabel.BackgroundTransparency = 1
+XPosLabel.Text = "Позиция X:"
+XPosLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+XPosLabel.TextSize = 16
+XPosLabel.TextXAlignment = Enum.TextXAlignment.Left
+XPosLabel.Parent = XPosFrame
+
+local XPosBox = Instance.new("TextBox")
+XPosBox.Name = "XPosBox"
+XPosBox.Size = UDim2.new(0.6, -10, 0.7, 0)
+XPosBox.Position = UDim2.new(0.4, 0, 0.15, 0)
+XPosBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+XPosBox.BorderSizePixel = 0
+XPosBox.Text = "960"
+XPosBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+XPosBox.TextSize = 14
+XPosBox.Parent = XPosFrame
+
+local XPosCorner = Instance.new("UICorner")
+XPosCorner.CornerRadius = UDim.new(0, 6)
+XPosCorner.Parent = XPosBox
+
+-- Позиция Y
+local YPosFrame = Instance.new("Frame")
+YPosFrame.Name = "YPosFrame"
+YPosFrame.Size = UDim2.new(1, 0, 0, 40)
+YPosFrame.Position = UDim2.new(0, 0, 0, 40)
+YPosFrame.BackgroundTransparency = 1
+YPosFrame.Parent = MouseSettings
+
+local YPosLabel = Instance.new("TextLabel")
+YPosLabel.Name = "YPosLabel"
+YPosLabel.Size = UDim2.new(0.4, 0, 1, 0)
+YPosLabel.Position = UDim2.new(0, 0, 0, 0)
+YPosLabel.BackgroundTransparency = 1
+YPosLabel.Text = "Позиция Y:"
+YPosLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+YPosLabel.TextSize = 16
+YPosLabel.TextXAlignment = Enum.TextXAlignment.Left
+YPosLabel.Parent = YPosFrame
+
+local YPosBox = Instance.new("TextBox")
+YPosBox.Name = "YPosBox"
+YPosBox.Size = UDim2.new(0.6, -10, 0.7, 0)
+YPosBox.Position = UDim2.new(0.4, 0, 0.15, 0)
+YPosBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+YPosBox.BorderSizePixel = 0
+YPosBox.Text = "540"
+YPosBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+YPosBox.TextSize = 14
+YPosBox.Parent = YPosFrame
+
+local YPosCorner = Instance.new("UICorner")
+YPosCorner.CornerRadius = UDim.new(0, 6)
+YPosCorner.Parent = YPosBox
+
+-- Скорость кликов
+local SpeedFrame = Instance.new("Frame")
+SpeedFrame.Name = "SpeedFrame"
+SpeedFrame.Size = UDim2.new(1, 0, 0, 40)
+SpeedFrame.Position = UDim2.new(0, 0, 0, 80)
+SpeedFrame.BackgroundTransparency = 1
+SpeedFrame.Parent = MouseSettings
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Name = "SpeedLabel"
+SpeedLabel.Size = UDim2.new(0.4, 0, 1, 0)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Скорость (мс):"
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedLabel.TextSize = 16
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+SpeedLabel.Parent = SpeedFrame
+
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Name = "SpeedBox"
+SpeedBox.Size = UDim2.new(0.6, -10, 0.7, 0)
+SpeedBox.Position = UDim2.new(0.4, 0, 0.15, 0)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedBox.BorderSizePixel = 0
+SpeedBox.Text = "100"
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.TextSize = 14
+SpeedBox.Parent = SpeedFrame
+
+local SpeedCorner = Instance.new("UICorner")
+SpeedCorner.CornerRadius = UDim.new(0, 6)
+SpeedCorner.Parent = SpeedBox
+
+-- Выбор кнопки мыши
+local ButtonFrame = Instance.new("Frame")
+ButtonFrame.Name = "ButtonFrame"
+ButtonFrame.Size = UDim2.new(1, 0, 0, 40)
+ButtonFrame.Position = UDim2.new(0, 0, 0, 120)
+ButtonFrame.BackgroundTransparency = 1
+ButtonFrame.Parent = MouseSettings
+
+local ButtonLabel = Instance.new("TextLabel")
+ButtonLabel.Name = "ButtonLabel"
+ButtonLabel.Size = UDim2.new(0.4, 0, 1, 0)
+ButtonLabel.Position = UDim2.new(0, 0, 0, 0)
+ButtonLabel.BackgroundTransparency = 1
+ButtonLabel.Text = "Кнопка мыши:"
+ButtonLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ButtonLabel.TextSize = 16
+ButtonLabel.TextXAlignment = Enum.TextXAlignment.Left
+ButtonLabel.Parent = ButtonFrame
+
+local ButtonDropdown = Instance.new("TextButton")
+ButtonDropdown.Name = "ButtonDropdown"
+ButtonDropdown.Size = UDim2.new(0.6, -10, 0.7, 0)
+ButtonDropdown.Position = UDim2.new(0.4, 0, 0.15, 0)
+ButtonDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ButtonDropdown.BorderSizePixel = 0
+ButtonDropdown.Text = "Левая"
+ButtonDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+ButtonDropdown.TextSize = 14
+ButtonDropdown.Parent = ButtonFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 6)
+ButtonCorner.Parent = ButtonDropdown
+
+-- Кнопка захвата позиции
+local CapturePosButton = Instance.new("TextButton")
+CapturePosButton.Name = "CapturePosButton"
+CapturePosButton.Size = UDim2.new(1, 0, 0, 30)
+CapturePosButton.Position = UDim2.new(0, 0, 0, 165)
+CapturePosButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+CapturePosButton.BorderSizePixel = 0
+CapturePosButton.Text = "Захватить позицию мыши"
+CapturePosButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CapturePosButton.TextSize = 14
+CapturePosButton.Parent = MouseSettings
+
+local CapturePosCorner = Instance.new("UICorner")
+CapturePosCorner.CornerRadius = UDim.new(0, 6)
+CapturePosCorner.Parent = CapturePosButton
+
+-- Кнопка старта для мыши
+local StartMouseButton = Instance.new("TextButton")
+StartMouseButton.Name = "StartMouseButton"
+StartMouseButton.Size = UDim2.new(1, 0, 0, 40)
+StartMouseButton.Position = UDim2.new(0, 0, 0, 200)
+StartMouseButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+StartMouseButton.BorderSizePixel = 0
+StartMouseButton.Text = "ВКЛЮЧИТЬ АВТО-КЛИКЕР"
+StartMouseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartMouseButton.TextSize = 16
+StartMouseButton.Font = Enum.Font.SourceSansBold
+StartMouseButton.Parent = MouseSettings
+
+local StartMouseCorner = Instance.new("UICorner")
+StartMouseCorner.CornerRadius = UDim.new(0, 8)
+StartMouseCorner.Parent = StartMouseButton
+
+-- НАСТРОЙКИ КЛАВИШ
+local KeysList = Instance.new("ScrollingFrame")
+KeysList.Name = "KeysList"
+KeysList.Size = UDim2.new(1, 0, 1, -50)
+KeysList.Position = UDim2.new(0, 0, 0, 0)
+KeysList.BackgroundTransparency = 1
+KeysList.BorderSizePixel = 0
+KeysList.ScrollBarThickness = 6
+KeysList.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+KeysList.CanvasSize = UDim2.new(0, 0, 0, 100)
+KeysList.Parent = KeysSettings
+
+local AddKeyButton = Instance.new("TextButton")
+AddKeyButton.Name = "AddKeyButton"
+AddKeyButton.Size = UDim2.new(1, 0, 0, 35)
+AddKeyButton.Position = UDim2.new(0, 0, 0, 155)
+AddKeyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+AddKeyButton.BorderSizePixel = 0
+AddKeyButton.Text = "+ Добавить клавишу"
+AddKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AddKeyButton.TextSize = 14
+AddKeyButton.Parent = KeysSettings
+
+local AddKeyCorner = Instance.new("UICorner")
+AddKeyCorner.CornerRadius = UDim.new(0, 6)
+AddKeyCorner.Parent = AddKeyButton
+
+local StartKeysButton = Instance.new("TextButton")
+StartKeysButton.Name = "StartKeysButton"
+StartKeysButton.Size = UDim2.new(1, 0, 0, 40)
+StartKeysButton.Position = UDim2.new(0, 0, 0, 195)
+StartKeysButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+StartKeysButton.BorderSizePixel = 0
+StartKeysButton.Text = "ВКЛЮЧИТЬ АВТО-КЛАВИШИ"
+StartKeysButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartKeysButton.TextSize = 16
+StartKeysButton.Font = Enum.Font.SourceSansBold
+StartKeysButton.Parent = KeysSettings
+
+local StartKeysCorner = Instance.new("UICorner")
+StartKeysCorner.CornerRadius = UDim.new(0, 8)
+StartKeysCorner.Parent = StartKeysButton
+
+-- Таблица для хранения элементов клавиш
+local keyElements = {}
+
+-- Функция для обновления отображения клавиш
+local function updateKeysDisplay()
+    -- Очищаем старые элементы
+    for _, element in pairs(keyElements) do
+        if element and element.Parent then
+            element:Destroy()
+        end
+    end
+    keyElements = {}
+    
+    -- Очищаем KeysList
+    for _, child in pairs(KeysList:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    -- Создаем новые элементы
+    for i, keyData in ipairs(keySettings) do
+        local KeyElement = Instance.new("Frame")
+        KeyElement.Name = "KeyElement_" .. i
+        KeyElement.Size = UDim2.new(1, 0, 0, 60)
+        KeyElement.Position = UDim2.new(0, 0, 0, (i-1)*65)
+        KeyElement.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        KeyElement.Parent = KeysList
+        
+        local KeyCorner = Instance.new("UICorner")
+        KeyCorner.CornerRadius = UDim.new(0, 6)
+        KeyCorner.Parent = KeyElement
+        
+        local KeyInput = Instance.new("TextBox")
+        KeyInput.Name = "KeyInput"
+        KeyInput.Size = UDim2.new(0.3, -5, 0.5, 0)
+        KeyInput.Position = UDim2.new(0, 5, 0.25, 0)
+        KeyInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        KeyInput.BorderSizePixel = 0
+        KeyInput.Text = keyData.key
+        KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+        KeyInput.TextSize = 14
+        KeyInput.PlaceholderText = "Клавиша"
+        KeyInput.Parent = KeyElement
+        
+        local KeyInputCorner = Instance.new("UICorner")
+        KeyInputCorner.CornerRadius = UDim.new(0, 4)
+        KeyInputCorner.Parent = KeyInput
+        
+        local DelayInput = Instance.new("TextBox")
+        DelayInput.Name = "DelayInput"
+        DelayInput.Size = UDim2.new(0.3, -5, 0.5, 0)
+        DelayInput.Position = UDim2.new(0.35, 0, 0.25, 0)
+        DelayInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        DelayInput.BorderSizePixel = 0
+        DelayInput.Text = tostring(keyData.delay)
+        DelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+        DelayInput.TextSize = 14
+        DelayInput.PlaceholderText = "Задержка (мс)"
+        DelayInput.Parent = KeyElement
+        
+        local DelayCorner = Instance.new("UICorner")
+        DelayCorner.CornerRadius = UDim.new(0, 4)
+        DelayCorner.Parent = DelayInput
+        
+        local DeleteButton = Instance.new("TextButton")
+        DeleteButton.Name = "DeleteButton"
+        DeleteButton.Size = UDim2.new(0.3, -10, 0.5, 0)
+        DeleteButton.Position = UDim2.new(0.7, 0, 0.25, 0)
+        DeleteButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+        DeleteButton.BorderSizePixel = 0
+        DeleteButton.Text = "Удалить"
+        DeleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        DeleteButton.TextSize = 12
+        DeleteButton.Parent = KeyElement
+        
+        local DeleteCorner = Instance.new("UICorner")
+        DeleteCorner.CornerRadius = UDim.new(0, 4)
+        DeleteCorner.Parent = DeleteButton
+        
+        -- Сохраняем элемент
+        keyElements[i] = KeyElement
+        
+        -- Функция обновления данных
+        KeyInput.FocusLost:Connect(function()
+            if KeyInput.Text ~= "" then
+                keySettings[i].key = KeyInput.Text
+            end
+        end)
+        
+        DelayInput.FocusLost:Connect(function()
+            local num = tonumber(DelayInput.Text)
+            if num then
+                keySettings[i].delay = num
+            end
+        end)
+        
+        -- Функция удаления
+        DeleteButton.MouseButton1Click:Connect(function()
+            if #keySettings > 1 then
+                table.remove(keySettings, i)
+                updateKeysDisplay()
+            else
+                DeleteButton.Text = "Нельзя удалить!"
+                task.wait(1)
+                DeleteButton.Text = "Удалить"
+            end
+        end)
+    end
+    
+    -- Обновляем размер канваса
+    KeysList.CanvasSize = UDim2.new(0, 0, 0, #keySettings * 65)
+end
+
+-- Инициализация списка клавиш
+table.insert(keySettings, {key = "A", delay = 100})
+updateKeysDisplay()
+
+-- Настройка выпадающего списка для кнопок мыши
+local mouseButtons = {"Левая", "Правая", "Средняя"}
+local currentButtonIndex = 1
+
+ButtonDropdown.MouseButton1Click:Connect(function()
+    currentButtonIndex = currentButtonIndex + 1
+    if currentButtonIndex > #mouseButtons then
+        currentButtonIndex = 1
+    end
+    ButtonDropdown.Text = mouseButtons[currentButtonIndex]
+end)
+
+-- Захват позиции мыши
+CapturePosButton.MouseButton1Click:Connect(function()
+    local x = math.floor(mouse.X)
+    local y = math.floor(mouse.Y)
+    
+    XPosBox.Text = tostring(x)
+    YPosBox.Text = tostring(y)
+    
+    CapturePosButton.Text = "Позиция захвачена!"
+    task.wait(1)
+    CapturePosButton.Text = "Захватить позицию мыши"
+end)
+
+-- Переключение вкладок
+MouseTab.MouseButton1Click:Connect(function()
+    MouseSettings.Visible = true
+    KeysSettings.Visible = false
+    
+    MouseTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    KeysTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+end)
+
+KeysTab.MouseButton1Click:Connect(function()
+    MouseSettings.Visible = false
+    KeysSettings.Visible = true
+    
+    MouseTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    KeysTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+-- Функция для клика мышью
+local function performMouseClick(x, y, button)
+    local buttonCode
+    if button == "Левая" then
+        buttonCode = 0
+    elseif button == "Правая" then
+        buttonCode = 1
+    elseif button == "Средняя" then
+        buttonCode = 2
+    else
+        buttonCode = 0
+    end
+    
+    VirtualInputManager:SendMouseButtonEvent(x, y, buttonCode, true, game, 1)
+    task.wait(0.01)
+    VirtualInputManager:SendMouseButtonEvent(x, y, buttonCode, false, game, 1)
+end
+
+-- Функция для нажатия клавиши
+local function pressKey(key)
+    local keyCode = Enum.KeyCode[key]
+    if keyCode then
+        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        task.wait(0.01)
+        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+    end
+end
+
+-- Авто-кликер мышью
+StartMouseButton.MouseButton1Click:Connect(function()
+    clickerEnabled = not clickerEnabled
+    
+    if clickerEnabled then
+        StartMouseButton.Text = "ВЫКЛЮЧИТЬ"
+        StartMouseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+        
+        local speed = tonumber(SpeedBox.Text) or 100
+        local x = tonumber(XPosBox.Text) or 960
+        local y = tonumber(YPosBox.Text) or 540
+        local button = ButtonDropdown.Text
+        
+        local connection
+        connection = RunService.Heartbeat:Connect(function()
+            if not clickerEnabled then
+                connection:Disconnect()
+                return
+            end
+            
+            performMouseClick(x, y, button)
+            task.wait(speed / 1000)
+        end)
+        
+        table.insert(connections, connection)
+    else
+        StartMouseButton.Text = "ВКЛЮЧИТЬ"
+        StartMouseButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end
+end)
+
+-- Авто-нажатие клавиш
+StartKeysButton.MouseButton1Click:Connect(function()
+    keyPresserEnabled = not keyPresserEnabled
+    
+    if keyPresserEnabled then
+        StartKeysButton.Text = "ВЫКЛЮЧИТЬ"
+        StartKeysButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+        
+        local keyIndex = 1
+        local lastPressTime = os.clock()
+        
+        local connection
+        connection = RunService.Heartbeat:Connect(function()
+            if not keyPresserEnabled then
+                connection:Disconnect()
+                return
+            end
+            
+            -- Если список пуст, ничего не делаем
+            if #keySettings == 0 then
+                return
+            end
+            
+            local currentTime = os.clock()
+            if currentTime - lastPressTime >= (keySettings[keyIndex].delay / 1000) then
+                pressKey(keySettings[keyIndex].key)
+                keyIndex = keyIndex + 1
+                if keyIndex > #keySettings then
+                    keyIndex = 1
+                end
+                lastPressTime = currentTime
+            end
+        end)
+        
+        table.insert(connections, connection)
+    else
+        StartKeysButton.Text = "ВКЛЮЧИТЬ"
+        StartKeysButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+    end
+end)
+
+-- Добавление новой клавиши
+AddKeyButton.MouseButton1Click:Connect(function()
+    table.insert(keySettings, {key = "B", delay = 200})
+    updateKeysDisplay()
+end)
+
+-- Перетаскивание окна
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function updateInput(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+local function updateFrame(input)
+    if dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end
+
+TopBar.InputBegan:Connect(updateInput)
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateFrame(input)
+    end
+end)
+
+-- Сворачивание окна
+local minimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    
+    if minimized then
+        MainFrame:TweenSize(UDim2.new(0, 394, 0, 50), "Out", "Quad", 0.3, true)
+        MinimizeButton.Text = "+"
+    else
+        MainFrame:TweenSize(UDim2.new(0, 394, 0, 331), "Out", "Quad", 0.3, true)
+        MinimizeButton.Text = "-"
+    end
+end)
+
+-- Закрытие окна
+CloseButton.MouseButton1Click:Connect(function()
+    clickerEnabled = false
+    keyPresserEnabled = false
+    
+    for _, connection in ipairs(connections) do
+        connection:Disconnect()
+    end
+    
+    ScreenGui:Destroy()
+end)
+
+print("✅ Авто-кликер запущен!")
+print("📌 Перетаскивайте верхнюю панель для перемещения")
+print("🖱️ Можете настроить клики мышью и клавиши")

@@ -1,0 +1,1239 @@
+-- Подключаем необходимые сервисы
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Переменные для полета
+local flyEnabled = false
+local vflyEnabled = false
+local flyConnection = nil
+local vflyConnection = nil
+
+local flySettings = {
+    speed = 50,
+    keybind = Enum.KeyCode.KeypadZero
+}
+local vflySettings = {
+    speed = 600,
+    acceleration = 4,
+    turnSpeed = 16,
+    speedMultiplier = 3,
+    keybind = Enum.KeyCode.KeypadZero,
+    speedKey = Enum.KeyCode.LeftControl
+}
+local CurrentVelocity = Vector3.new(0,0,0)
+local UserRootPart = nil
+
+-- GUI переменные
+local GuiEnabled = true
+local ScreenGui = nil
+local MainFrame = nil
+local TopBar = nil
+local ContentArea = nil
+local MinimizeButton = nil
+local CloseButton = nil
+local TabButtons = {}
+local TabContents = {}
+local CurrentTab = "Fly"
+
+-- Ссылки на элементы UI
+local UIReferences = {
+    FlyToggle = nil,
+    VFlyToggle = nil,
+    FlySpeedSlider = {valueLabel = nil, fill = nil, thumb = nil},
+    VFlySpeedSlider = {valueLabel = nil, fill = nil, thumb = nil},
+    VFlyAccelSlider = {valueLabel = nil, fill = nil, thumb = nil},
+    VFlyTurnSlider = {valueLabel = nil, fill = nil, thumb = nil},
+    VFlyMultiplierSlider = {valueLabel = nil, fill = nil, thumb = nil},
+    FlyKeybindButton = nil,
+    VFlyKeybindButton = nil,
+    BoostKeyButton = nil
+}
+
+-- Цвета из дизайна
+local Colors = {
+    DarkGray = Color3.fromRGB(20, 20, 20),
+    DarkGrayLight = Color3.fromRGB(25, 25, 25),
+    Pink = Color3.fromRGB(253, 104, 159),
+    LightGray = Color3.fromRGB(239, 239, 239),
+    Red = Color3.fromRGB(213, 7, 69),
+    White = Color3.fromRGB(255, 255, 255)
+}
+
+-- Функции полета
+local function FlyFunction()
+    if not LocalPlayer.Character then return end
+    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart then return end
+    local direction = Vector3.new(0, 0, 0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        direction = direction + workspace.CurrentCamera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        direction = direction - workspace.CurrentCamera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        direction = direction - workspace.CurrentCamera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        direction = direction + workspace.CurrentCamera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        direction = direction + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        direction = direction + Vector3.new(0, -1, 0)
+    end
+    if direction.Magnitude > 0 then
+        direction = direction.Unit * flySettings.speed
+    end
+    rootPart.Velocity = Vector3.new(direction.X, direction.Y, direction.Z)
+end
+
+local function VFlyFlight(delta)
+    if not vflyEnabled or not UserRootPart then return end
+    
+    local BaseVelocity = Vector3.new(0,0,0)
+    local Camera = workspace.CurrentCamera
+    if not UserInputService:GetFocusedTextBox() then
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.LookVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.RightVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            BaseVelocity = BaseVelocity - (Camera.CFrame.LookVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.RightVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            BaseVelocity = BaseVelocity + (Camera.CFrame.UpVector * vflySettings.speed)
+        end
+        if UserInputService:IsKeyDown(vflySettings.speedKey) then
+            BaseVelocity = BaseVelocity * vflySettings.speedMultiplier
+        end
+    end
+    local car = UserRootPart:GetRootPart()
+    if car.Anchored then return end
+    CurrentVelocity = CurrentVelocity:Lerp(
+        BaseVelocity,
+        math.clamp(delta * vflySettings.acceleration, 0, 1)
+    )
+    car.Velocity = CurrentVelocity + Vector3.new(0, 2, 0)
+    if car ~= UserRootPart then
+        car.RotVelocity = Vector3.new(0,0,0)
+        car.CFrame = car.CFrame:Lerp(CFrame.lookAt(
+            car.Position,
+            car.Position + CurrentVelocity + Camera.CFrame.LookVector
+        ), math.clamp(delta * vflySettings.turnSpeed, 0, 1))
+    end
+end
+
+local function ToggleFly()
+    flyEnabled = not flyEnabled
+    if flyEnabled then
+        if vflyEnabled then
+            ToggleVFly()
+        end
+        flyConnection = RunService.Heartbeat:Connect(FlyFunction)
+        StarterGui:SetCore("SendNotification",{
+            Title = "🚀 FLY",
+            Text = "Fly has been enabled",
+            Duration = 2
+        })
+        if UIReferences.FlyToggle then
+            UIReferences.FlyToggle.Text = "ON"
+            UIReferences.FlyToggle.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+        end
+    else
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
+        if LocalPlayer.Character then
+            local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                rootPart.Velocity = Vector3.new(0, rootPart.Velocity.Y, 0)
+            end
+        end
+        StarterGui:SetCore("SendNotification",{
+            Title = "🚀 FLY",
+            Text = "Fly has been disabled",
+            Duration = 2
+        })
+        if UIReferences.FlyToggle then
+            UIReferences.FlyToggle.Text = "OFF"
+            UIReferences.FlyToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        end
+    end
+end
+
+local function ToggleVFly()
+    vflyEnabled = not vflyEnabled
+    if vflyEnabled then
+        if flyEnabled then
+            ToggleFly()
+        end
+        if LocalPlayer.Character then
+            UserRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if UserRootPart then
+                CurrentVelocity = UserRootPart.Velocity
+            end
+        end
+        vflyConnection = RunService.Heartbeat:Connect(VFlyFlight)
+        StarterGui:SetCore("SendNotification",{
+            Title = "⚡ VFLY",
+            Text = "V Fly has been enabled",
+            Duration = 2
+        })
+        if UIReferences.VFlyToggle then
+            UIReferences.VFlyToggle.Text = "ON"
+            UIReferences.VFlyToggle.BackgroundColor3 = Color3.fromRGB(80, 220, 140)
+        end
+    else
+        if vflyConnection then
+            vflyConnection:Disconnect()
+            vflyConnection = nil
+        end
+        StarterGui:SetCore("SendNotification",{
+            Title = "⚡ VFLY",
+            Text = "V Fly has been disabled",
+            Duration = 2
+        })
+        if UIReferences.VFlyToggle then
+            UIReferences.VFlyToggle.Text = "OFF"
+            UIReferences.VFlyToggle.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        end
+    end
+end
+
+local function ProcessKeybind(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == flySettings.keybind then
+        ToggleFly()
+    end
+    if input.KeyCode == vflySettings.keybind then
+        ToggleVFly()
+    end
+end
+
+-- Путь для сохранения настроек
+local settingsFolder = "1qluaseting"
+local settingsFile = "SETINGFLY.json"
+
+-- Функции для работы с файлами
+local function ensureSettingsFolder()
+    local success, result = pcall(function()
+        if not isfolder then
+            return false
+        end
+        
+        if not isfolder(settingsFolder) then
+            makefolder(settingsFolder)
+        end
+        return true
+    end)
+    
+    return success and result
+end
+
+local function saveSettings()
+    if not ensureSettingsFolder() then
+        return false
+    end
+    
+    local settingsData = {
+        flyEnabled = flyEnabled,
+        vflyEnabled = vflyEnabled,
+        flySettings = flySettings,
+        vflySettings = vflySettings,
+        windowPosition = {
+            X = MainFrame.Position.X.Scale,
+            Y = MainFrame.Position.Y.Scale,
+            OffsetX = MainFrame.Position.X.Offset,
+            OffsetY = MainFrame.Position.Y.Offset
+        }
+    }
+    
+    -- Преобразуем KeyCodes в строки для сохранения
+    settingsData.flySettings.keybind = tostring(flySettings.keybind)
+    settingsData.vflySettings.keybind = tostring(vflySettings.keybind)
+    settingsData.vflySettings.speedKey = tostring(vflySettings.speedKey)
+    
+    local json = HttpService:JSONEncode(settingsData)
+    
+    local success, errorMsg = pcall(function()
+        writefile(settingsFolder .. "/" .. settingsFile, json)
+    end)
+    
+    return success
+end
+
+local function loadSettings()
+    if not ensureSettingsFolder() then
+        return false
+    end
+    
+    if not isfile then
+        return false
+    end
+    
+    if not isfile(settingsFolder .. "/" .. settingsFile) then
+        return false
+    end
+    
+    local success, result = pcall(function()
+        local json = readfile(settingsFolder .. "/" .. settingsFile)
+        return HttpService:JSONDecode(json)
+    end)
+    
+    if success and result then
+        -- Загружаем настройки полета
+        if result.flyEnabled ~= nil then
+            flyEnabled = result.flyEnabled
+        end
+        if result.vflyEnabled ~= nil then
+            vflyEnabled = result.vflyEnabled
+        end
+        
+        if result.flySettings then
+            flySettings.speed = result.flySettings.speed or 50
+            if result.flySettings.keybind then
+                local keyName = result.flySettings.keybind:gsub("Enum.KeyCode.", "")
+                local success, key = pcall(function()
+                    return Enum.KeyCode[keyName]
+                end)
+                if success then
+                    flySettings.keybind = key
+                end
+            end
+        end
+        
+        if result.vflySettings then
+            vflySettings.speed = result.vflySettings.speed or 600
+            vflySettings.acceleration = result.vflySettings.acceleration or 4
+            vflySettings.turnSpeed = result.vflySettings.turnSpeed or 16
+            vflySettings.speedMultiplier = result.vflySettings.speedMultiplier or 3
+            
+            if result.vflySettings.keybind then
+                local keyName = result.vflySettings.keybind:gsub("Enum.KeyCode.", "")
+                local success, key = pcall(function()
+                    return Enum.KeyCode[keyName]
+                end)
+                if success then
+                    vflySettings.keybind = key
+                end
+            end
+            
+            if result.vflySettings.speedKey then
+                local keyName = result.vflySettings.speedKey:gsub("Enum.KeyCode.", "")
+                local success, key = pcall(function()
+                    return Enum.KeyCode[keyName]
+                end)
+                if success then
+                    vflySettings.speedKey = key
+                end
+            end
+        end
+        
+        if result.windowPosition and MainFrame then
+            MainFrame.Position = UDim2.new(
+                result.windowPosition.X or 0.146,
+                result.windowPosition.OffsetX or 0,
+                result.windowPosition.Y or 0.3,
+                result.windowPosition.OffsetY or 0
+            )
+        end
+        
+        return true
+    end
+    return false
+end
+
+-- Функция для анимации кнопок при наведении
+local function setupButtonHover(button, hoverColor, normalColor)
+    if not button then return end
+    local hoverColor = hoverColor or button.BackgroundColor3
+    local normalColor = normalColor or button.BackgroundColor3
+    
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = hoverColor}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = normalColor}):Play()
+    end)
+end
+
+-- Функции для обновления элементов GUI
+local function updateSliderVisual(sliderRef, value, min, max)
+    if not sliderRef or not sliderRef.fill or not sliderRef.thumb or not sliderRef.valueLabel then
+        return
+    end
+    
+    local normalized = math.clamp((value - min) / (max - min), 0, 1)
+    sliderRef.fill.Size = UDim2.new(normalized, 0, 1, 0)
+    sliderRef.thumb.Position = UDim2.new(normalized, -10, 0.5, -10)
+    sliderRef.valueLabel.Text = tostring(math.floor(value))
+end
+
+local function updateUIFromSettings()
+    -- Обновляем кнопки переключателей
+    if UIReferences.FlyToggle then
+        UIReferences.FlyToggle.Text = flyEnabled and "ON" or "OFF"
+        UIReferences.FlyToggle.BackgroundColor3 = flyEnabled and Color3.fromRGB(80, 220, 140) or Color3.fromRGB(200, 60, 60)
+    end
+    
+    if UIReferences.VFlyToggle then
+        UIReferences.VFlyToggle.Text = vflyEnabled and "ON" or "OFF"
+        UIReferences.VFlyToggle.BackgroundColor3 = vflyEnabled and Color3.fromRGB(80, 220, 140) or Color3.fromRGB(200, 60, 60)
+    end
+    
+    -- Обновляем слайдеры
+    if UIReferences.FlySpeedSlider then
+        updateSliderVisual(UIReferences.FlySpeedSlider, flySettings.speed, 16, 250)
+    end
+    
+    if UIReferences.VFlySpeedSlider then
+        updateSliderVisual(UIReferences.VFlySpeedSlider, vflySettings.speed, 100, 2000)
+    end
+    
+    if UIReferences.VFlyAccelSlider then
+        updateSliderVisual(UIReferences.VFlyAccelSlider, vflySettings.acceleration, 1, 20)
+    end
+    
+    if UIReferences.VFlyTurnSlider then
+        updateSliderVisual(UIReferences.VFlyTurnSlider, vflySettings.turnSpeed, 1, 50)
+    end
+    
+    if UIReferences.VFlyMultiplierSlider then
+        updateSliderVisual(UIReferences.VFlyMultiplierSlider, vflySettings.speedMultiplier, 2, 10)
+    end
+    
+    -- Обновляем кнопки клавиш
+    if UIReferences.FlyKeybindButton then
+        UIReferences.FlyKeybindButton.Text = tostring(flySettings.keybind):gsub("Enum.KeyCode.", "")
+    end
+    
+    if UIReferences.VFlyKeybindButton then
+        UIReferences.VFlyKeybindButton.Text = tostring(vflySettings.keybind):gsub("Enum.KeyCode.", "")
+    end
+    
+    if UIReferences.BoostKeyButton then
+        UIReferences.BoostKeyButton.Text = tostring(vflySettings.speedKey):gsub("Enum.KeyCode.", "")
+    end
+end
+
+-- Новые функции создания элементов GUI с нужным дизайном
+local function createToggleButtonNew(parent, name, default, position, callback)
+    local container = Instance.new("Frame")
+    container.Name = name
+    container.Position = position
+    container.Size = UDim2.new(1, -40, 0, 40) -- Изменено с -30 на -40
+    container.BackgroundTransparency = 1
+    container.Parent = parent
+    
+    local label = Instance.new("TextLabel")
+    label.Name = name .. "Label"
+    label.Text = name:gsub("Toggle", "") .. " Mode"
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0) -- Добавлен отступ 10
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Colors.White
+    label.TextSize = 16
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local toggle = Instance.new("TextButton")
+    toggle.Name = name .. "Button"
+    toggle.Text = default and "ON" or "OFF"
+    toggle.Size = UDim2.new(0, 80, 0, 35)
+    toggle.Position = UDim2.new(1, -90, 0.5, -17.5) -- Изменено с -80 на -90
+    toggle.BackgroundColor3 = default and Color3.fromRGB(80, 220, 140) or Color3.fromRGB(200, 60, 60)
+    toggle.TextColor3 = Colors.White
+    toggle.TextSize = 14
+    toggle.Font = Enum.Font.GothamBold
+    toggle.Parent = container
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = toggle
+    
+    setupButtonHover(toggle, 
+        default and Color3.fromRGB(90, 240, 160) or Color3.fromRGB(220, 80, 80),
+        default and Color3.fromRGB(80, 220, 140) or Color3.fromRGB(200, 60, 60))
+    
+    toggle.MouseButton1Click:Connect(function()
+        callback()
+    end)
+    
+    -- Сохраняем ссылку
+    if name == "FlyToggle" then
+        UIReferences.FlyToggle = toggle
+    elseif name == "VFlyToggle" then
+        UIReferences.VFlyToggle = toggle
+    end
+    
+    return toggle
+end
+
+local function createSliderNew(parent, name, min, max, default, position, callback, sliderRefName)
+    local container = Instance.new("Frame")
+    container.Name = name
+    container.Position = position
+    container.Size = UDim2.new(1, -40, 0, 60) -- Изменено с -30 на -40
+    container.BackgroundTransparency = 1
+    container.Parent = parent
+    
+    local topFrame = Instance.new("Frame")
+    topFrame.Size = UDim2.new(1, 0, 0, 25)
+    topFrame.BackgroundTransparency = 1
+    topFrame.Parent = container
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = name
+    nameLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    nameLabel.Position = UDim2.new(0, 10, 0, 0) -- Добавлен отступ 10
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Colors.White
+    nameLabel.TextSize = 16
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = topFrame
+    
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Name = name .. "Value"
+    valueLabel.Text = tostring(default)
+    valueLabel.Size = UDim2.new(0.4, 0, 1, 0)
+    valueLabel.Position = UDim2.new(0.6, 0, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.TextColor3 = Colors.Pink
+    valueLabel.TextSize = 16
+    valueLabel.Font = Enum.Font.GothamBold
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = topFrame
+    
+    local sliderContainer = Instance.new("Frame")
+    sliderContainer.Size = UDim2.new(1, -20, 0, 20) -- Добавлено -20 чтобы не выходило за границы
+    sliderContainer.Position = UDim2.new(0, 10, 0, 35) -- Добавлен отступ 10
+    sliderContainer.BackgroundTransparency = 1
+    sliderContainer.Parent = container
+    
+    local background = Instance.new("Frame")
+    background.Size = UDim2.new(1, 0, 0, 8)
+    background.Position = UDim2.new(0, 0, 0.5, -4)
+    background.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    background.BorderSizePixel = 0
+    background.Parent = sliderContainer
+    
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = UDim.new(1, 0)
+    bgCorner.Parent = background
+    
+    local fill = Instance.new("Frame")
+    fill.Name = "Fill"
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Colors.Pink
+    fill.BorderSizePixel = 0
+    fill.Parent = background
+    
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = fill
+    
+    local thumb = Instance.new("Frame")
+    thumb.Name = "Thumb"
+    thumb.Size = UDim2.new(0, 18, 0, 18)
+    thumb.Position = UDim2.new((default - min) / (max - min), -9, 0.5, -9)
+    thumb.BackgroundColor3 = Colors.White
+    thumb.BorderSizePixel = 0
+    thumb.Parent = sliderContainer
+    
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0)
+    thumbCorner.Parent = thumb
+    
+    local dragging = false
+    
+    local function updateSlider(value)
+        local normalized = math.clamp((value - min) / (max - min), 0, 1)
+        fill.Size = UDim2.new(normalized, 0, 1, 0)
+        thumb.Position = UDim2.new(normalized, -9, 0.5, -9)
+        valueLabel.Text = tostring(math.floor(value))
+        callback(value)
+    end
+    
+    sliderContainer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            local x = input.Position.X - background.AbsolutePosition.X
+            local normalized = math.clamp(x / background.AbsoluteSize.X, 0, 1)
+            local value = min + (max - min) * normalized
+            updateSlider(value)
+            TweenService:Create(thumb, TweenInfo.new(0.2), {Size = UDim2.new(0, 22, 0, 22)}):Play()
+        end
+    end)
+    
+    sliderContainer.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            TweenService:Create(thumb, TweenInfo.new(0.2), {Size = UDim2.new(0, 18, 0, 18)}):Play()
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local x = input.Position.X - background.AbsolutePosition.X
+            local normalized = math.clamp(x / background.AbsoluteSize.X, 0, 1)
+            local value = min + (max - min) * normalized
+            updateSlider(value)
+        end
+    end)
+    
+    -- Сохраняем ссылки на элементы слайдера
+    if sliderRefName then
+        UIReferences[sliderRefName] = {
+            valueLabel = valueLabel,
+            fill = fill,
+            thumb = thumb
+        }
+    end
+    
+    -- Устанавливаем начальное значение
+    updateSlider(default)
+    
+    return container
+end
+
+local function createKeybindButtonNew(parent, name, defaultKey, position, callback, buttonRefName)
+    local container = Instance.new("Frame")
+    container.Name = name
+    container.Position = position
+    container.Size = UDim2.new(1, -40, 0, 40) -- Изменено с -30 на -40
+    container.BackgroundTransparency = 1
+    container.Parent = parent
+    
+    local label = Instance.new("TextLabel")
+    label.Text = name
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0) -- Добавлен отступ 10
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Colors.White
+    label.TextSize = 16
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+    
+    local button = Instance.new("TextButton")
+    button.Name = name .. "Button"
+    button.Text = tostring(defaultKey):gsub("Enum.KeyCode.", "")
+    button.Size = UDim2.new(0, 120, 0, 35)
+    button.Position = UDim2.new(1, -130, 0.5, -17.5) -- Изменено с -120 на -130
+    button.BackgroundColor3 = Colors.DarkGrayLight
+    button.TextColor3 = Colors.Pink
+    button.TextSize = 14
+    button.Font = Enum.Font.GothamBold
+    button.AutoButtonColor = false
+    button.Parent = container
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    setupButtonHover(button, Color3.fromRGB(35, 35, 35), Colors.DarkGrayLight)
+    
+    local listening = false
+    
+    button.MouseButton1Click:Connect(function()
+        listening = true
+        button.Text = "Press any key..."
+        button.BackgroundColor3 = Colors.Pink
+        button.TextColor3 = Colors.White
+        
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if not gameProcessed and (input.UserInputType == Enum.UserInputType.Keyboard) then
+                listening = false
+                connection:Disconnect()
+                button.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
+                button.BackgroundColor3 = Colors.DarkGrayLight
+                button.TextColor3 = Colors.Pink
+                callback(input.KeyCode)
+                
+                -- Анимация подтверждения
+                TweenService:Create(button, TweenInfo.new(0.1), {Size = UDim2.new(0, 125, 0, 40)}):Play()
+                wait(0.1)
+                TweenService:Create(button, TweenInfo.new(0.1), {Size = UDim2.new(0, 120, 0, 35)}):Play()
+            end
+        end)
+        
+        -- Отмена через 5 секунд
+        delay(5, function()
+            if listening then
+                listening = false
+                connection:Disconnect()
+                button.Text = tostring(defaultKey):gsub("Enum.KeyCode.", "")
+                button.BackgroundColor3 = Colors.DarkGrayLight
+                button.TextColor3 = Colors.Pink
+            end
+        end)
+    end)
+    
+    -- Сохраняем ссылку
+    if buttonRefName then
+        UIReferences[buttonRefName] = button
+    end
+    
+    return button
+end
+
+local function SwitchTab(tabName)
+    if CurrentTab == tabName then return end
+    
+    -- Скрываем текущую вкладку
+    if TabContents[CurrentTab] then
+        TabContents[CurrentTab].Visible = false
+        if TabButtons[CurrentTab] then
+            TabButtons[CurrentTab].BackgroundColor3 = Colors.DarkGrayLight
+            TabButtons[CurrentTab].TextColor3 = Color3.fromRGB(150, 150, 150)
+        end
+    end
+     
+    -- Показываем новую вкладку
+    CurrentTab = tabName
+    if TabContents[tabName] then
+        TabContents[tabName].Visible = true
+        if TabButtons[tabName] then
+            TabButtons[tabName].BackgroundColor3 = Colors.Pink
+            TabButtons[tabName].TextColor3 = Colors.White
+        end
+    end
+end
+
+-- Функция для переключения режима сворачивания окна
+local function ToggleMinimize()
+    if MainFrame then
+        local isMinimized = MainFrame.Size.Y.Offset == 50
+        
+        if isMinimized then
+            -- Развернуть
+            ContentArea.Visible = true
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 394, 0, 331)
+            }):Play()
+            MinimizeButton.Text = "-"
+        else
+            -- Свернуть
+            ContentArea.Visible = false
+            TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 394, 0, 50)
+            }):Play()
+            MinimizeButton.Text = "+"
+        end
+    end
+end
+
+local function CreateGUI()
+    -- Удаляем старый GUI если есть
+    if ScreenGui then
+        ScreenGui:Destroy()
+        ScreenGui = nil
+    end
+    
+    -- Создаем ScreenGui
+    ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "LoopMenuGUI"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.DisplayOrder = 9999
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    -- Основное окно (Frame)
+    MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 394, 0, 331)
+    MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+    MainFrame.BackgroundColor3 = Colors.DarkGray
+    MainFrame.BorderSizePixel = 0
+    MainFrame.ClipsDescendants = true
+    MainFrame.Parent = ScreenGui
+    
+    -- Закругление углов основного окна
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 8)
+    mainCorner.Parent = MainFrame
+    
+    -- Верхняя панель (Top Bar)
+    TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Size = UDim2.new(1, 0, 0, 50)
+    TopBar.Position = UDim2.new(0, 0, 0, 0)
+    TopBar.BackgroundColor3 = Colors.DarkGrayLight
+    TopBar.BorderSizePixel = 0
+    TopBar.Parent = MainFrame
+    
+    local topBarCorner = Instance.new("UICorner")
+    topBarCorner.CornerRadius = UDim.new(0, 8)
+    topBarCorner.Parent = TopBar
+    
+    -- Иконка
+    local Icon = Instance.new("ImageLabel")
+    Icon.Image = "rbxassetid://7733774602"
+    Icon.Size = UDim2.new(0, 22, 0, 22)
+    Icon.Position = UDim2.new(0, 15, 0.5, -11)
+    Icon.BackgroundTransparency = 1
+    Icon.ImageColor3 = Colors.Pink
+    Icon.Parent = TopBar
+    
+    -- Декоративная полоска
+    local Stripe = Instance.new("Frame")
+    Stripe.Size = UDim2.new(0, 5, 0, 16)
+    Stripe.Position = UDim2.new(0, 45, 0.5, -8)
+    Stripe.BackgroundColor3 = Colors.Pink
+    Stripe.BorderSizePixel = 0
+    Stripe.Parent = TopBar
+    
+    -- Заголовок
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Text = "Fly Menu"
+    TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 60, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.TextColor3 = Colors.Pink
+    TitleLabel.TextSize = 31
+    TitleLabel.Font = Enum.Font.SourceSansBold
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = TopBar
+    
+    -- Кнопка "Свернуть"
+    MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+    MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+    MinimizeButton.BackgroundColor3 = Colors.LightGray
+    MinimizeButton.Text = "-"
+    MinimizeButton.TextColor3 = Colors.Pink
+    MinimizeButton.TextSize = 20
+    MinimizeButton.Font = Enum.Font.GothamBold
+    MinimizeButton.AutoButtonColor = false
+    MinimizeButton.Parent = TopBar
+    
+    local minimizeCorner = Instance.new("UICorner")
+    minimizeCorner.CornerRadius = UDim.new(0, 8)
+    minimizeCorner.Parent = MinimizeButton
+    
+    -- ImageButton поверх кнопки "Свернуть"
+    local MinimizeImageButton = Instance.new("ImageButton")
+    MinimizeImageButton.Size = UDim2.new(1, 0, 1, 0)
+    MinimizeImageButton.BackgroundTransparency = 1
+    MinimizeImageButton.Parent = MinimizeButton
+    
+    -- Кнопка "Закрыть"
+    CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 30, 0, 31)
+    CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+    CloseButton.BackgroundColor3 = Colors.Red
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Colors.Pink
+    CloseButton.TextSize = 20
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.AutoButtonColor = false
+    CloseButton.Parent = TopBar
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = CloseButton
+    
+    -- ImageButton поверх кнопки "Закрыть"
+    local CloseImageButton = Instance.new("ImageButton")
+    CloseImageButton.Size = UDim2.new(1, 0, 1, 0)
+    CloseImageButton.BackgroundTransparency = 1
+    CloseImageButton.Parent = CloseButton
+    
+    -- Основная область контента
+    ContentArea = Instance.new("Frame")
+    ContentArea.Name = "ContentArea"
+    ContentArea.Size = UDim2.new(1, 0, 1, -50)
+    ContentArea.Position = UDim2.new(0, 0, 0, 50)
+    ContentArea.BackgroundColor3 = Colors.DarkGray
+    ContentArea.BorderSizePixel = 0
+    ContentArea.Visible = true
+    ContentArea.Parent = MainFrame
+    
+    -- Вкладки
+    local TabsFrame = Instance.new("Frame")
+    TabsFrame.Name = "TabsFrame"
+    TabsFrame.Size = UDim2.new(1, -20, 0, 35)
+    TabsFrame.Position = UDim2.new(0, 10, 0, 10)
+    TabsFrame.BackgroundTransparency = 1
+    TabsFrame.Parent = ContentArea
+    
+    -- Вкладка Fly
+    local FlyTab = Instance.new("TextButton")
+    FlyTab.Name = "FlyTab"
+    FlyTab.Size = UDim2.new(0.5, -5, 1, 0)
+    FlyTab.Position = UDim2.new(0, 0, 0, 0)
+    FlyTab.BackgroundColor3 = Colors.Pink
+    FlyTab.Text = "FLY"
+    FlyTab.TextColor3 = Colors.White
+    FlyTab.TextSize = 16
+    FlyTab.Font = Enum.Font.GothamBold
+    FlyTab.AutoButtonColor = false
+    FlyTab.Parent = TabsFrame
+    
+    local flyTabCorner = Instance.new("UICorner")
+    flyTabCorner.CornerRadius = UDim.new(0, 6)
+    flyTabCorner.Parent = FlyTab
+    
+    -- Вкладка VFly
+    local VFlyTab = Instance.new("TextButton")
+    VFlyTab.Name = "VFlyTab"
+    VFlyTab.Size = UDim2.new(0.5, -5, 1, 0)
+    VFlyTab.Position = UDim2.new(0.5, 5, 0, 0)
+    VFlyTab.BackgroundColor3 = Colors.DarkGrayLight
+    VFlyTab.Text = "V-FLY"
+    VFlyTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    VFlyTab.TextSize = 16
+    VFlyTab.Font = Enum.Font.GothamBold
+    VFlyTab.AutoButtonColor = false
+    VFlyTab.Parent = TabsFrame
+    
+    local vflyTabCorner = Instance.new("UICorner")
+    vflyTabCorner.CornerRadius = UDim.new(0, 6)
+    vflyTabCorner.Parent = VFlyTab
+    
+    TabButtons["Fly"] = FlyTab
+    TabButtons["VFly"] = VFlyTab
+    
+    -- Контейнер для содержимого вкладок
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -20, 1, -95) -- Изменено с -55 на -95 чтобы освободить место для кнопок
+    ContentContainer.Position = UDim2.new(0, 10, 0, 50)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = ContentArea
+    
+    -- Содержимое вкладки Fly
+    local FlyContent = Instance.new("ScrollingFrame")
+    FlyContent.Name = "FlyContent"
+    FlyContent.Size = UDim2.new(1, 0, 1, 0)
+    FlyContent.Position = UDim2.new(0, 0, 0, 0)
+    FlyContent.BackgroundTransparency = 1
+    FlyContent.BorderSizePixel = 0
+    FlyContent.ScrollBarThickness = 6
+    FlyContent.ScrollBarImageColor3 = Colors.Pink
+    FlyContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    FlyContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    FlyContent.Visible = true
+    FlyContent.Parent = ContentContainer
+    
+    TabContents["Fly"] = FlyContent
+    
+    -- Содержимое вкладки VFly
+    local VFlyContent = Instance.new("ScrollingFrame")
+    VFlyContent.Name = "VFlyContent"
+    VFlyContent.Size = UDim2.new(1, 0, 1, 0)
+    VFlyContent.Position = UDim2.new(0, 0, 0, 0)
+    VFlyContent.BackgroundTransparency = 1
+    VFlyContent.BorderSizePixel = 0
+    VFlyContent.ScrollBarThickness = 6
+    VFlyContent.ScrollBarImageColor3 = Colors.Pink
+    VFlyContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    VFlyContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    VFlyContent.Visible = false
+    VFlyContent.Parent = ContentContainer
+    
+    TabContents["VFly"] = VFlyContent
+    
+    -- Кнопки управления внизу
+    local BottomButtons = Instance.new("Frame")
+    BottomButtons.Name = "BottomButtons"
+    BottomButtons.Size = UDim2.new(1, -20, 0, 40)
+    BottomButtons.Position = UDim2.new(0, 10, 1, -45)
+    BottomButtons.BackgroundTransparency = 1
+    BottomButtons.Parent = ContentArea
+    
+    -- Кнопка сохранения
+    local SaveButton = Instance.new("TextButton")
+    SaveButton.Name = "SaveButton"
+    SaveButton.Size = UDim2.new(0.48, 0, 1, 0)
+    SaveButton.Position = UDim2.new(0, 0, 0, 0)
+    SaveButton.BackgroundColor3 = Colors.Pink
+    SaveButton.Text = "SAVE"
+    SaveButton.TextColor3 = Colors.White
+    SaveButton.TextSize = 14
+    SaveButton.Font = Enum.Font.GothamBold
+    SaveButton.AutoButtonColor = false
+    SaveButton.Parent = BottomButtons
+    
+    local saveCorner = Instance.new("UICorner")
+    saveCorner.CornerRadius = UDim.new(0, 6)
+    saveCorner.Parent = SaveButton
+    
+    -- Кнопка загрузки
+    local LoadButton = Instance.new("TextButton")
+    LoadButton.Name = "LoadButton"
+    LoadButton.Size = UDim2.new(0.48, 0, 1, 0)
+    LoadButton.Position = UDim2.new(0.52, 0, 0, 0)
+    LoadButton.BackgroundColor3 = Colors.DarkGrayLight
+    LoadButton.Text = "LOAD"
+    LoadButton.TextColor3 = Colors.White
+    LoadButton.TextSize = 14
+    LoadButton.Font = Enum.Font.GothamBold
+    LoadButton.AutoButtonColor = false
+    LoadButton.Parent = BottomButtons
+    
+    local loadCorner = Instance.new("UICorner")
+    loadCorner.CornerRadius = UDim.new(0, 6)
+    loadCorner.Parent = LoadButton
+    
+    -- Создаем элементы для вкладки Fly с правильными отступами
+    createToggleButtonNew(FlyContent, "FlyToggle", flyEnabled, UDim2.new(0, 0, 0, 20), function()
+        ToggleFly()
+    end)
+    
+    createSliderNew(FlyContent, "Fly Speed", 16, 250, flySettings.speed, UDim2.new(0, 0, 0, 80), function(value)
+        flySettings.speed = value
+    end, "FlySpeedSlider")
+    
+    createKeybindButtonNew(FlyContent, "Fly Keybind", flySettings.keybind, UDim2.new(0, 0, 0, 160), function(key)
+        flySettings.keybind = key
+        StarterGui:SetCore("SendNotification",{
+            Title = "🚀 FLY",
+            Text = "Keybind updated: "..tostring(key):gsub("Enum.KeyCode.", ""),
+            Duration = 2
+        })
+    end, "FlyKeybindButton")
+    
+    -- Создаем элементы для вкладки VFly с правильными отступами
+    createToggleButtonNew(VFlyContent, "VFlyToggle", vflyEnabled, UDim2.new(0, 0, 0, 20), function()
+        ToggleVFly()
+    end)
+    
+    createSliderNew(VFlyContent, "V-Fly Speed", 100, 2000, vflySettings.speed, UDim2.new(0, 0, 0, 80), function(value)
+        vflySettings.speed = value
+    end, "VFlySpeedSlider")
+    
+    createSliderNew(VFlyContent, "Acceleration", 1, 20, vflySettings.acceleration, UDim2.new(0, 0, 0, 160), function(value)
+        vflySettings.acceleration = value
+    end, "VFlyAccelSlider")
+    
+    createSliderNew(VFlyContent, "Turn Speed", 1, 50, vflySettings.turnSpeed, UDim2.new(0, 0, 0, 240), function(value)
+        vflySettings.turnSpeed = value
+    end, "VFlyTurnSlider")
+    
+    createSliderNew(VFlyContent, "Speed Multiplier", 2, 10, vflySettings.speedMultiplier, UDim2.new(0, 0, 0, 320), function(value)
+        vflySettings.speedMultiplier = value
+    end, "VFlyMultiplierSlider")
+    
+    createKeybindButtonNew(VFlyContent, "V-Fly Keybind", vflySettings.keybind, UDim2.new(0, 0, 0, 400), function(key)
+        vflySettings.keybind = key
+        StarterGui:SetCore("SendNotification",{
+            Title = "⚡ V-FLY",
+            Text = "Keybind updated: "..tostring(key):gsub("Enum.KeyCode.", ""),
+            Duration = 2
+        })
+    end, "VFlyKeybindButton")
+    
+    createKeybindButtonNew(VFlyContent, "Boost Key", vflySettings.speedKey, UDim2.new(0, 0, 0, 460), function(key)
+        vflySettings.speedKey = key
+        StarterGui:SetCore("SendNotification",{
+            Title = "⚡ V-FLY",
+            Text = "Boost key updated: "..tostring(key):gsub("Enum.KeyCode.", ""),
+            Duration = 2
+        })
+    end, "BoostKeyButton")
+    
+    -- Настройка эффектов наведения для кнопок
+    setupButtonHover(MinimizeButton, Color3.fromRGB(220, 220, 220), Colors.LightGray)
+    setupButtonHover(CloseButton, Color3.fromRGB(230, 40, 80), Colors.Red)
+    setupButtonHover(FlyTab, Color3.fromRGB(255, 120, 180), Colors.Pink)
+    setupButtonHover(VFlyTab, Color3.fromRGB(35, 35, 35), Colors.DarkGrayLight)
+    setupButtonHover(SaveButton, Color3.fromRGB(255, 120, 180), Colors.Pink)
+    setupButtonHover(LoadButton, Color3.fromRGB(35, 35, 35), Colors.DarkGrayLight)
+    
+    -- Обработчики событий для вкладок
+    FlyTab.MouseButton1Click:Connect(function()
+        SwitchTab("Fly")
+    end)
+    
+    VFlyTab.MouseButton1Click:Connect(function()
+        SwitchTab("VFly")
+    end)
+    
+    -- Обработчик кнопки "Свернуть"
+    MinimizeImageButton.MouseButton1Click:Connect(function()
+        ToggleMinimize()
+    end)
+    
+    MinimizeButton.MouseButton1Click:Connect(function()
+        ToggleMinimize()
+    end)
+    
+    -- Обработчик кнопки "Закрыть"
+    CloseImageButton.MouseButton1Click:Connect(function()
+        GuiEnabled = false
+        ScreenGui:Destroy()
+        ScreenGui = nil
+        
+        -- Отключаем полеты при закрытии GUI
+        if flyEnabled then
+            ToggleFly()
+        end
+        if vflyEnabled then
+            ToggleVFly()
+        end
+    end)
+    
+    CloseButton.MouseButton1Click:Connect(function()
+        GuiEnabled = false
+        ScreenGui:Destroy()
+        ScreenGui = nil
+        
+        -- Отключаем полеты при закрытии GUI
+        if flyEnabled then
+            ToggleFly()
+        end
+        if vflyEnabled then
+            ToggleVFly()
+        end
+    end)
+    
+    -- Обработчик кнопки сохранения
+    SaveButton.MouseButton1Click:Connect(function()
+        if saveSettings() then
+            -- Анимация подтверждения
+            SaveButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+            SaveButton.Text = "SAVED!"
+            
+            wait(1)
+            
+            SaveButton.BackgroundColor3 = Colors.Pink
+            SaveButton.Text = "SAVE"
+            
+            setupButtonHover(SaveButton, Color3.fromRGB(255, 120, 180), Colors.Pink)
+        else
+            -- Анимация ошибки
+            SaveButton.BackgroundColor3 = Color3.fromRGB(220, 100, 100)
+            SaveButton.Text = "ERROR!"
+            
+            wait(1)
+            
+            SaveButton.BackgroundColor3 = Colors.Pink
+            SaveButton.Text = "SAVE"
+            
+            setupButtonHover(SaveButton, Color3.fromRGB(255, 120, 180), Colors.Pink)
+        end
+    end)
+    
+    -- Обработчик кнопки загрузки
+    LoadButton.MouseButton1Click:Connect(function()
+        if loadSettings() then
+            updateUIFromSettings()
+            
+            -- Анимация подтверждения
+            LoadButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+            LoadButton.Text = "LOADED!"
+            
+            wait(1)
+            
+            LoadButton.BackgroundColor3 = Colors.DarkGrayLight
+            LoadButton.Text = "LOAD"
+            
+            setupButtonHover(LoadButton, Color3.fromRGB(35, 35, 35), Colors.DarkGrayLight)
+        else
+            -- Анимация ошибки
+            LoadButton.BackgroundColor3 = Color3.fromRGB(220, 100, 100)
+            LoadButton.Text = "ERROR!"
+            
+            wait(1)
+            
+            LoadButton.BackgroundColor3 = Colors.DarkGrayLight
+            LoadButton.Text = "LOAD"
+            
+            setupButtonHover(LoadButton, Color3.fromRGB(35, 35, 35), Colors.DarkGrayLight)
+        end
+    end)
+    
+    -- Функционал перемещения окна
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    TopBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    -- Загружаем настройки после создания GUI
+    wait(0.5)
+    local success = pcall(loadSettings)
+    if success then
+        updateUIFromSettings()
+    end
+    
+    -- Обновляем интерфейс
+    updateUIFromSettings()
+end
+
+-- Инициализация
+UserInputService.InputBegan:Connect(ProcessKeybind)
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    wait(1)
+    if character then
+        UserRootPart = character:WaitForChild("HumanoidRootPart")
+    end
+end)
+
+if LocalPlayer.Character then
+    UserRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+end
+
+-- Создаем GUI
+CreateGUI()
+
+-- Клавиша для показа/скрытия GUI (F5)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.F5 then
+        if ScreenGui then
+            MainFrame.Visible = not MainFrame.Visible
+        else
+            CreateGUI()
+        end
+    end
+end)

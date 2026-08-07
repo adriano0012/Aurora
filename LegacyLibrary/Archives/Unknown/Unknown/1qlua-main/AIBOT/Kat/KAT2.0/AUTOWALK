@@ -1,0 +1,168 @@
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local PathfindingService = game:GetService("PathfindingService")
+
+local player = Players.LocalPlayer
+if not player then
+    player = Players.PlayerAdded:Wait()
+end
+
+local character, humanoid, rootPart
+local gyro
+local currentPath = nil
+local waypoints = {}
+local nextWaypointIndex = 1
+local pathUpdateRate = 2 
+local lastPathUpdate = 0
+
+local function createGyro()
+    if gyro then
+        gyro:Destroy()
+        gyro = nil
+    end
+    gyro = Instance.new("BodyGyro")
+    gyro.MaxTorque = Vector3.new(1, 1, 1) * math.huge
+    gyro.P = 1000
+    gyro.D = 100
+    return gyro
+end
+
+local function onCharacterAdded(newChar)
+    character = newChar
+    humanoid = character:WaitForChild("Humanoid", 5)
+    rootPart = character:WaitForChild("HumanoidRootPart", 5)
+    
+    gyro = createGyro()
+    gyro.Parent = rootPart
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
+local function getClosestEnemy()
+    if not rootPart then return nil end
+    local myPos = rootPart.Position
+    local closest = nil
+    local closestDist = math.huge
+    
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player then
+            local otherChar = otherPlayer.Character
+            if otherChar and otherChar:FindFirstChild("Humanoid") and otherChar.Humanoid.Health > 0 then
+                local otherRoot = otherChar:FindFirstChild("HumanoidRootPart")
+                if otherRoot then
+                    local dist = (otherRoot.Position - myPos).Magnitude
+                    if dist < closestDist then
+                        closestDist = dist
+                        closest = otherPlayer
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+local function buildPathTo(targetPosition)
+    local pathParams = {
+        AgentRadius = 2.0,
+        AgentHeight = 5.0,
+        AgentCanJump = true,
+        AgentCanClimb = false,
+        Costs = {
+            Water = 10,
+        }
+    }
+    
+    local path = PathfindingService:CreatePath(pathParams)
+    local success, errorMessage = pcall(function()
+        path:ComputeAsync(rootPart.Position, targetPosition)
+    end)
+    
+    if success and path.Status == Enum.PathStatus.Success then
+        return path:GetWaypoints()
+    else
+        return nil
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if not (humanoid and humanoid.Parent and rootPart and rootPart.Parent) then
+        return
+    end
+    
+    local targetPlayer = getClosestEnemy()
+    if targetPlayer then
+        local targetChar = targetPlayer.Character
+        if targetChar then
+            local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                local targetPos = targetRoot.Position
+                
+                local now = tick()
+                if now - lastPathUpdate > pathUpdateRate or not currentPath then
+                    local newWaypoints = buildPathTo(targetPos)
+                    if newWaypoints and #newWaypoints > 0 then
+                        waypoints = newWaypoints
+                        nextWaypointIndex = 1
+                        currentPath = true
+                        lastPathUpdate = now
+                    end
+                end
+        
+                if waypoints and nextWaypointIndex <= #waypoints then
+                    local waypoint = waypoints[nextWaypointIndex]
+                    
+                    if (waypoint.Position - rootPart.Position).Magnitude < 4 then
+                        nextWaypointIndex = nextWaypointIndex + 1
+                        if nextWaypointIndex <= #waypoints then
+                            waypoint = waypoints[nextWaypointIndex]
+                        end
+                    end
+                    
+                    if nextWaypointIndex <= #waypoints then
+                        humanoid:MoveTo(waypoint.Position)
+                        
+                        if waypoint.Action == Enum.PathWaypointAction.Jump then
+                            humanoid.Jump = true
+                        end
+                    else
+                        humanoid:MoveTo(targetPos)
+                    end
+                else
+                    humanoid:MoveTo(targetPos)
+                end
+                
+                if gyro and gyro.Parent then
+                    local direction = targetPos - rootPart.Position
+                    if direction.Magnitude > 0.1 then
+                        gyro.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + direction)
+                    end
+                end
+            end
+        end
+    else
+        if humanoid then
+            humanoid:MoveTo(rootPart.Position)
+        end
+        if gyro and gyro.Parent then
+            gyro.CFrame = rootPart.CFrame
+        end
+        currentPath = nil
+        waypoints = {}
+    end
+end)
+
+player.CharacterRemoving:Connect(function()
+    character = nil
+    humanoid = nil
+    rootPart = nil
+    if gyro then
+        gyro:Destroy()
+        gyro = nil
+    end
+end)

@@ -1,0 +1,1 @@
+A collection of files hosted for my old [Lumber Tycoon 2](https://www.roblox.com/games/13822889/Lumber-Tycoon-2) script. This is still up as some files are still being utilized in old circulating loadstrings.

@@ -1,0 +1,6 @@
+if _G.StopBot then
+    _G.StopBot()
+    print("Бот остановлен")
+else
+    print("Бот не запущен")
+end

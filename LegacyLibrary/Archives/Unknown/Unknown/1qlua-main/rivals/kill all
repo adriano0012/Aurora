@@ -1,0 +1,336 @@
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInput = game:GetService("VirtualInputManager")
+local HttpService = game:GetService("HttpService")
+local Camera = workspace.CurrentCamera
+
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+    LocalPlayer = Players.LocalPlayer
+end
+
+local CONFIG = {
+    MenuKey = Enum.KeyCode.P,  
+    ToggleKey = Enum.KeyCode.X,   
+    TeleportOffset = 4.5,       
+    ShootDelay = 0.03,     
+    FollowSpeed = 0.3, 
+}
+
+local selectedTarget = nil
+local isActive = false
+local stopShooting = nil
+local originalCameraCFrame = nil  
+local cameraConnection = nil
+local followConnection = nil
+
+local function getHeadPart(character)
+    if not character then return nil end
+    return character:FindFirstChild("Head")
+        or character:FindFirstChild("HitboxHead")
+        or character:FindFirstChild("PhysicalHitboxHead")
+        or character:FindFirstChild("HumanoidRootPart")
+end
+
+local function teleportToTarget(targetChar)
+    local myChar = LocalPlayer.Character
+    if not myChar then return false end
+    local hrp = myChar:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local targetHead = getHeadPart(targetChar)
+    if not targetHead then return false end
+    local newPos = targetHead.Position + Vector3.new(0, CONFIG.TeleportOffset, 0)
+    hrp.CFrame = CFrame.new(newPos)
+    local humanoid = myChar:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = true
+    end
+    return true
+end
+
+local function updateCamera(targetPart)
+    if not targetPart then return end
+    if CONFIG.FollowSpeed == 0 then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+    else
+        local targetCF = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+        Camera.CFrame = Camera.CFrame:Lerp(targetCF, CONFIG.FollowSpeed)
+    end
+end
+
+local function startAutoShoot(shouldStopFunc)
+    local shooting = true
+    local connection
+    local function click()
+        if not shooting then return end
+        if shouldStopFunc and shouldStopFunc() then
+            shooting = false
+            return
+        end
+        local mousePos = UserInputService:GetMouseLocation()
+        VirtualInput:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, true, game, 1)
+        task.wait(0.02)
+        VirtualInput:SendMouseButtonEvent(mousePos.X, mousePos.Y, 0, false, game, 1)
+    end
+    connection = RunService.RenderStepped:Connect(function()
+        if shooting then
+            click()
+            task.wait(CONFIG.ShootDelay)
+        end
+    end)
+    return function()
+        shooting = false
+        if connection then connection:Disconnect() end
+    end
+end
+
+local function enableKillMode(targetPlayer)
+    if isActive then return false end
+    if not targetPlayer or not targetPlayer.Character then
+        return false
+    end
+
+    originalCameraCFrame = Camera.CFrame
+
+    local success = teleportToTarget(targetPlayer.Character)
+    if not success then return false end
+
+    isActive = true
+
+    cameraConnection = RunService.RenderStepped:Connect(function()
+        if not isActive or not targetPlayer.Character then
+            return
+        end
+        local head = getHeadPart(targetPlayer.Character)
+        if head then
+            updateCamera(head)
+        end
+    end)
+
+    followConnection = RunService.RenderStepped:Connect(function()
+        if not isActive or not targetPlayer.Character then return end
+        local myChar = LocalPlayer.Character
+        if not myChar then return end
+        local hrp = myChar:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local targetHead = getHeadPart(targetPlayer.Character)
+        if targetHead then
+            local desiredPos = targetHead.Position + Vector3.new(0, CONFIG.TeleportOffset, 0)
+            hrp.CFrame = CFrame.new(desiredPos)
+        end
+    end)
+    stopShooting = startAutoShoot(function()
+        return not isActive
+            or not targetPlayer.Character
+            or (targetPlayer.Character:FindFirstChild("Humanoid") and targetPlayer.Character.Humanoid.Health <= 0)
+    end)
+
+    return true
+end
+
+local function disableKillMode()
+    if not isActive then return end
+    isActive = false
+
+    if stopShooting then stopShooting() end
+    if cameraConnection then cameraConnection:Disconnect() end
+    if followConnection then followConnection:Disconnect() end
+
+    if originalCameraCFrame then
+        Camera.CFrame = originalCameraCFrame
+        originalCameraCFrame = nil
+    end
+
+    local myChar = LocalPlayer.Character
+    if myChar then
+        local humanoid = myChar:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = false
+        end
+    end
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoKillerGui"
+ScreenGui.ResetOnSpawn = false
+if gethui then ScreenGui.Parent = gethui() else ScreenGui.Parent = game:GetService("CoreGui") end
+
+local function CreateIndicator(pos, name)
+    local dot = Instance.new("Frame", ScreenGui)
+    dot.Name = name
+    dot.Size = UDim2.new(0, 12, 0, 12)
+    dot.Position = pos
+    dot.BorderSizePixel = 0
+    Instance.new("UICorner", dot)
+    return dot
+end
+local StatusDot = CreateIndicator(UDim2.new(1, -40, 0, 10), "StatusDot")
+local TargetDot = CreateIndicator(UDim2.new(1, -20, 0, 10), "TargetDot")
+
+local function UpdateDots()
+    StatusDot.BackgroundColor3 = isActive and Color3.fromRGB(0, 134, 9) or Color3.fromRGB(206, 131, 188)
+    TargetDot.BackgroundColor3 = selectedTarget and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(80, 80, 80)
+end
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Position = UDim2.new(1, -850, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 220, 0, 400)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+RunService.RenderStepped:Connect(function()
+    if dragging and dragInput then
+        local delta = dragInput.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.new(1, 1, 1)
+Stroke.ApplyStrokeMode = "Border"
+local Gradient = Instance.new("UIGradient", Stroke)
+Gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 162, 233))
+}
+task.spawn(function()
+    local rot = 0
+    RunService.RenderStepped:Connect(function(dt)
+        rot = rot + (300 * dt)
+        Gradient.Rotation = rot % 360
+    end)
+end)
+
+local function AddImg(pos, id)
+    local img = Instance.new("ImageLabel", MainFrame)
+    img.BackgroundTransparency = 1
+    img.Position = pos
+    img.Size = UDim2.new(0, 30, 0, 30)
+    img.Image = "rbxassetid://"..id
+    return img
+end
+AddImg(UDim2.new(0.032, 3, 0.01, -2), "138895356591238")
+AddImg(UDim2.new(0.827, 3, 0.01, -2), "138895356591238")
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Font = "GothamBold"
+Title.Text = "Auto_Killer"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextSize = 16
+
+local Divider = Instance.new("Frame", MainFrame)
+Divider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Divider.BackgroundTransparency = 0.5
+Divider.Position = UDim2.new(0.023, 6, 0, 36)
+Divider.Size = UDim2.new(0.955, 0, 0, 2)
+Divider.BorderSizePixel = 0
+
+local Scroll = Instance.new("ScrollingFrame", MainFrame)
+Scroll.BackgroundTransparency = 1
+Scroll.Position = UDim2.new(0, 10, 0, 45)
+Scroll.Size = UDim2.new(1, -20, 1, -55)
+Scroll.ScrollBarThickness = 0
+local UIList = Instance.new("UIListLayout", Scroll)
+UIList.Padding = UDim.new(0, 5)
+
+local function UpdatePlayerList()
+    for _, child in ipairs(Scroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        local Card = Instance.new("TextButton", Scroll)
+        Card.Size = UDim2.new(1, 0, 0, 35)
+        Card.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        Card.Text = ""
+        Instance.new("UICorner", Card)
+
+        local Icon = Instance.new("ImageLabel", Card)
+        Icon.Size = UDim2.new(0, 25, 0, 25)
+        Icon.Position = UDim2.new(0, 5, 0, 5)
+        task.spawn(function()
+            Icon.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        end)
+        Instance.new("UICorner", Icon).CornerRadius = UDim.new(0, 5)
+
+        local DName = Instance.new("TextLabel", Card)
+        DName.Text = player.DisplayName
+        DName.Position = UDim2.new(0.16, 0, 0.13, 0)
+        DName.Size = UDim2.new(0.6, 0, 0, 20)
+        DName.TextColor3 = Color3.fromRGB(200, 200, 200)
+        DName.Font = "GothamBold"
+        DName.TextSize = 14
+        DName.TextXAlignment = "Left"
+        DName.BackgroundTransparency = 1
+
+        local Indicator = Instance.new("Frame", Card)
+        Indicator.Size = UDim2.new(0, 7, 0, 20)
+        Indicator.Position = UDim2.new(0.92, 0, 0.2, 0)
+        Indicator.BackgroundColor3 = (selectedTarget == player) and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(80, 80, 80)
+        Instance.new("UICorner", Indicator).CornerRadius = UDim.new(0, 5)
+
+        Card.MouseButton1Click:Connect(function()
+            selectedTarget = player
+            UpdatePlayerList()
+            UpdateDots()
+        end)
+    end
+    local count = #Scroll:GetChildren()
+    Scroll.CanvasSize = UDim2.new(0, 0, 0, count * 40 + 10)
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == CONFIG.MenuKey then
+        MainFrame.Visible = not MainFrame.Visible
+        if MainFrame.Visible then UpdatePlayerList() end
+    elseif input.KeyCode == CONFIG.ToggleKey then
+        if isActive then
+            disableKillMode()
+        else
+            if selectedTarget then
+                enableKillMode(selectedTarget)
+            else
+                local notif = Instance.new("TextLabel", ScreenGui)
+                notif.Text = "Выбери игрока в GUI (P)"
+                notif.Position = UDim2.new(0.5, -100, 0.9, 0)
+                notif.Size = UDim2.new(0, 200, 0, 30)
+                notif.BackgroundColor3 = Color3.fromRGB(0,0,0)
+                notif.TextColor3 = Color3.fromRGB(255,200,100)
+                notif.BackgroundTransparency = 0.5
+                notif.Font = "GothamBold"
+                notif.TextSize = 14
+                task.wait(2)
+                notif:Destroy()
+            end
+        end
+        UpdateDots()
+    end
+end)
+
+UpdatePlayerList()
+UpdateDots()
+MainFrame.Visible = false

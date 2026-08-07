@@ -1,0 +1,1041 @@
+-- Переменные
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local TeleportAreas = {}
+local Active = false
+local Dragging, DragInput, DragStart, StartPos
+local Minimized = false
+local OriginalSize = UDim2.new(0, 394, 0, 500)
+local OriginalContentPosition = UDim2.new(0, 10, 0, 60)
+
+-- Пути для сохранения
+local folderPath = "1qluaseting"
+local filePath = folderPath .. "/TPPos.json"
+
+-- Создание папки если нет
+if not isfolder then
+    warn("Функция isfolder не найдена. Используем альтернативный метод.")
+elseif not isfolder(folderPath) then
+    makefolder(folderPath)
+end
+
+-- Функция для сериализации Vector3
+local function SerializeVector3(vec)
+    if not vec then return {X = 0, Y = 0, Z = 0} end
+    return {
+        X = vec.X or 0,
+        Y = vec.Y or 0,
+        Z = vec.Z or 0
+    }
+end
+
+-- Функция для десериализации Vector3
+local function DeserializeVector3(data)
+    if not data then return Vector3.new(0, 0, 0) end
+    return Vector3.new(
+        data.X or 0,
+        data.Y or 0,
+        data.Z or 0
+    )
+end
+
+-- Проверка на наличие функций работы с файлами
+local function FileExists(path)
+    if readfile and writefile then
+        local success, _ = pcall(function()
+            return readfile(path)
+        end)
+        return success
+    end
+    return false
+end
+
+-- Загрузка сохраненных данных
+local function LoadData()
+    if readfile and FileExists(filePath) then
+        local success, data = pcall(function()
+            return readfile(filePath)
+        end)
+        if success and data then
+            local decoded = HttpService:JSONDecode(data)
+            return decoded
+        end
+    end
+    return {
+        position = {X = 0.146, Y = 0.3},
+        teleportAreas = {}
+    }
+end
+
+-- Сохранение данных
+local function SaveData()
+    if not writefile then return end
+    
+    if MainFrame and MainFrame.Parent then
+        -- Подготовка данных для сохранения
+        local saveTeleportAreas = {}
+        for _, area in ipairs(TeleportAreas) do
+            if area and area.center and area.teleport then
+                table.insert(saveTeleportAreas, {
+                    center = SerializeVector3(area.center),
+                    teleport = SerializeVector3(area.teleport),
+                    radius = area.radius or 10,
+                    active = area.active == true
+                })
+            end
+        end
+        
+        local data = {
+            position = {
+                X = MainFrame.Position.X.Scale,
+                Y = MainFrame.Position.Y.Scale
+            },
+            teleportAreas = saveTeleportAreas,
+            settings = {
+                active = Active
+            }
+        }
+        pcall(function()
+            writefile(filePath, HttpService:JSONEncode(data))
+        end)
+    end
+end
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleporterGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+ScreenGui.DisplayOrder = 999
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Основное окно
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = OriginalSize
+MainFrame.Position = UDim2.new(0.146, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
+MainFrame.Selectable = true
+MainFrame.Visible = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Верхняя панель
+local TopFrame = Instance.new("Frame")
+TopFrame.Name = "TopFrame"
+TopFrame.Size = UDim2.new(1, 0, 0, 50)
+TopFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+TopFrame.BorderSizePixel = 0
+TopFrame.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 8)
+TopCorner.Parent = TopFrame
+
+-- Иконка
+local Icon = Instance.new("ImageLabel")
+Icon.Name = "Icon"
+Icon.Size = UDim2.new(0, 22, 0, 22)
+Icon.Position = UDim2.new(0, 10, 0.5, -11)
+Icon.BackgroundTransparency = 1
+Icon.Image = "rbxassetid://7733774602"
+Icon.ImageColor3 = Color3.fromRGB(253, 104, 159)
+Icon.Parent = TopFrame
+
+-- Полоска
+local Strip = Instance.new("Frame")
+Strip.Name = "Strip"
+Strip.Size = UDim2.new(0, 5, 0, 16)
+Strip.Position = UDim2.new(0, 37, 0.5, -8)
+Strip.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+Strip.BorderSizePixel = 0
+Strip.Parent = TopFrame
+
+-- Заголовок
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.new(0, 50, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Teleporter Menu"
+Title.TextColor3 = Color3.fromRGB(253, 104, 159)
+Title.TextSize = 31
+Title.Font = Enum.Font.SourceSansBold
+Title.TextStrokeTransparency = 0.5
+Title.Parent = TopFrame
+
+-- Кнопка свернуть
+local MinimizeButton = Instance.new("Frame")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 31)
+MinimizeButton.Position = UDim2.new(1, -70, 0.5, -15.5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(239, 239, 239)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Parent = TopFrame
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = MinimizeButton
+
+local MinimizeText = Instance.new("TextLabel")
+MinimizeText.Name = "MinimizeText"
+MinimizeText.Size = UDim2.new(1, 0, 1, 0)
+MinimizeText.BackgroundTransparency = 1
+MinimizeText.Text = "-"
+MinimizeText.TextColor3 = Color3.fromRGB(253, 104, 159)
+MinimizeText.TextSize = 20
+MinimizeText.Font = Enum.Font.SourceSansBold
+MinimizeText.Parent = MinimizeButton
+
+local MinimizeBtn = Instance.new("ImageButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(1, 0, 1, 0)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Parent = MinimizeButton
+
+-- Кнопка закрыть
+local CloseButton = Instance.new("Frame")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 31)
+CloseButton.Position = UDim2.new(1, -35, 0.5, -15.5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+CloseButton.BorderSizePixel = 0
+CloseButton.Parent = TopFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseButton
+
+local CloseText = Instance.new("TextLabel")
+CloseText.Name = "CloseText"
+CloseText.Size = UDim2.new(1, 0, 1, 0)
+CloseText.BackgroundTransparency = 1
+CloseText.Text = "X"
+CloseText.TextColor3 = Color3.fromRGB(253, 104, 159)
+CloseText.TextSize = 20
+CloseText.Font = Enum.Font.SourceSansBold
+CloseText.Parent = CloseButton
+
+local CloseBtn = Instance.new("ImageButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(1, 0, 1, 0)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Parent = CloseButton
+
+-- Контейнер для основного контента
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, -20, 1, -70)
+ContentFrame.Position = UDim2.new(0, 10, 0, 60)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.ClipsDescendants = true
+ContentFrame.Parent = MainFrame
+
+-- Ввод координат
+local CoordInputFrame = Instance.new("Frame")
+CoordInputFrame.Name = "CoordInputFrame"
+CoordInputFrame.Size = UDim2.new(1, 0, 0, 165)
+CoordInputFrame.BackgroundTransparency = 1
+CoordInputFrame.Parent = ContentFrame
+
+local CoordLabel = Instance.new("TextLabel")
+CoordLabel.Name = "CoordLabel"
+CoordLabel.Size = UDim2.new(1, 0, 0, 20)
+CoordLabel.BackgroundTransparency = 1
+CoordLabel.Text = "Координаты центра:"
+CoordLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+CoordLabel.TextSize = 16
+CoordLabel.Font = Enum.Font.SourceSans
+CoordLabel.TextXAlignment = Enum.TextXAlignment.Left
+CoordLabel.Parent = CoordInputFrame
+
+local XLabel = Instance.new("TextLabel")
+XLabel.Name = "XLabel"
+XLabel.Size = UDim2.new(0, 30, 0, 25)
+XLabel.Position = UDim2.new(0, 0, 0, 25)
+XLabel.BackgroundTransparency = 1
+XLabel.Text = "X:"
+XLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+XLabel.TextSize = 16
+XLabel.Font = Enum.Font.SourceSans
+XLabel.Parent = CoordInputFrame
+
+local XBox = Instance.new("TextBox")
+XBox.Name = "XBox"
+XBox.Size = UDim2.new(0, 100, 0, 25)
+XBox.Position = UDim2.new(0, 35, 0, 25)
+XBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+XBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+XBox.TextSize = 14
+XBox.Font = Enum.Font.SourceSans
+XBox.PlaceholderText = "0"
+XBox.Text = ""
+XBox.Parent = CoordInputFrame
+
+local UICornerX = Instance.new("UICorner")
+UICornerX.CornerRadius = UDim.new(0, 4)
+UICornerX.Parent = XBox
+
+local YLabel = Instance.new("TextLabel")
+YLabel.Name = "YLabel"
+YLabel.Size = UDim2.new(0, 30, 0, 25)
+YLabel.Position = UDim2.new(0, 145, 0, 25)
+YLabel.BackgroundTransparency = 1
+YLabel.Text = "Y:"
+YLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+YLabel.TextSize = 16
+YLabel.Font = Enum.Font.SourceSans
+YLabel.Parent = CoordInputFrame
+
+local YBox = Instance.new("TextBox")
+YBox.Name = "YBox"
+YBox.Size = UDim2.new(0, 100, 0, 25)
+YBox.Position = UDim2.new(0, 180, 0, 25)
+YBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+YBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+YBox.TextSize = 14
+YBox.Font = Enum.Font.SourceSans
+YBox.PlaceholderText = "0"
+YBox.Text = ""
+YBox.Parent = CoordInputFrame
+
+local UICornerY = Instance.new("UICorner")
+UICornerY.CornerRadius = UDim.new(0, 4)
+UICornerY.Parent = YBox
+
+local ZLabel = Instance.new("TextLabel")
+ZLabel.Name = "ZLabel"
+ZLabel.Size = UDim2.new(0, 30, 0, 25)
+ZLabel.Position = UDim2.new(0, 290, 0, 25)
+ZLabel.BackgroundTransparency = 1
+ZLabel.Text = "Z:"
+ZLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZLabel.TextSize = 16
+ZLabel.Font = Enum.Font.SourceSans
+ZLabel.Parent = CoordInputFrame
+
+local ZBox = Instance.new("TextBox")
+ZBox.Name = "ZBox"
+ZBox.Size = UDim2.new(0, 100, 0, 25)
+ZBox.Position = UDim2.new(0, 325, 0, 25)
+ZBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ZBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZBox.TextSize = 14
+ZBox.Font = Enum.Font.SourceSans
+ZBox.PlaceholderText = "0"
+ZBox.Text = ""
+ZBox.Parent = CoordInputFrame
+
+local UICornerZ = Instance.new("UICorner")
+UICornerZ.CornerRadius = UDim.new(0, 4)
+UICornerZ.Parent = ZBox
+
+-- Радиус
+local RadiusLabel = Instance.new("TextLabel")
+RadiusLabel.Name = "RadiusLabel"
+RadiusLabel.Size = UDim2.new(1, 0, 0, 20)
+RadiusLabel.Position = UDim2.new(0, 0, 0, 55)
+RadiusLabel.BackgroundTransparency = 1
+RadiusLabel.Text = "Радиус действия:"
+RadiusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RadiusLabel.TextSize = 16
+RadiusLabel.Font = Enum.Font.SourceSans
+RadiusLabel.TextXAlignment = Enum.TextXAlignment.Left
+RadiusLabel.Parent = CoordInputFrame
+
+local RadiusBox = Instance.new("TextBox")
+RadiusBox.Name = "RadiusBox"
+RadiusBox.Size = UDim2.new(0, 150, 0, 25)
+RadiusBox.Position = UDim2.new(0, 0, 0, 80)
+RadiusBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+RadiusBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+RadiusBox.TextSize = 14
+RadiusBox.Font = Enum.Font.SourceSans
+RadiusBox.PlaceholderText = "10"
+RadiusBox.Text = "10"
+RadiusBox.Parent = CoordInputFrame
+
+local UICornerRadius = Instance.new("UICorner")
+UICornerRadius.CornerRadius = UDim.new(0, 4)
+UICornerRadius.Parent = RadiusBox
+
+-- Координаты телепортации
+local TeleportCoordLabel = Instance.new("TextLabel")
+TeleportCoordLabel.Name = "TeleportCoordLabel"
+TeleportCoordLabel.Size = UDim2.new(1, 0, 0, 20)
+TeleportCoordLabel.Position = UDim2.new(0, 0, 0, 110)
+TeleportCoordLabel.BackgroundTransparency = 1
+TeleportCoordLabel.Text = "Координаты телепортации:"
+TeleportCoordLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TeleportCoordLabel.TextSize = 16
+TeleportCoordLabel.Font = Enum.Font.SourceSans
+TeleportCoordLabel.TextXAlignment = Enum.TextXAlignment.Left
+TeleportCoordLabel.Parent = CoordInputFrame
+
+local TXLabel = Instance.new("TextLabel")
+TXLabel.Name = "TXLabel"
+TXLabel.Size = UDim2.new(0, 30, 0, 25)
+TXLabel.Position = UDim2.new(0, 0, 0, 135)
+TXLabel.BackgroundTransparency = 1
+TXLabel.Text = "X:"
+TXLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TXLabel.TextSize = 16
+TXLabel.Font = Enum.Font.SourceSans
+TXLabel.Parent = CoordInputFrame
+
+local TXBox = Instance.new("TextBox")
+TXBox.Name = "TXBox"
+TXBox.Size = UDim2.new(0, 100, 0, 25)
+TXBox.Position = UDim2.new(0, 35, 0, 135)
+TXBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TXBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TXBox.TextSize = 14
+TXBox.Font = Enum.Font.SourceSans
+TXBox.PlaceholderText = "0"
+TXBox.Text = ""
+TXBox.Parent = CoordInputFrame
+
+local UICornerTX = Instance.new("UICorner")
+UICornerTX.CornerRadius = UDim.new(0, 4)
+UICornerTX.Parent = TXBox
+
+local TYLabel = Instance.new("TextLabel")
+TYLabel.Name = "TYLabel"
+TYLabel.Size = UDim2.new(0, 30, 0, 25)
+TYLabel.Position = UDim2.new(0, 145, 0, 135)
+TYLabel.BackgroundTransparency = 1
+TYLabel.Text = "Y:"
+TYLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TYLabel.TextSize = 16
+TYLabel.Font = Enum.Font.SourceSans
+TYLabel.Parent = CoordInputFrame
+
+local TYBox = Instance.new("TextBox")
+TYBox.Name = "TYBox"
+TYBox.Size = UDim2.new(0, 100, 0, 25)
+TYBox.Position = UDim2.new(0, 180, 0, 135)
+TYBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TYBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TYBox.TextSize = 14
+TYBox.Font = Enum.Font.SourceSans
+TYBox.PlaceholderText = "0"
+TYBox.Text = ""
+TYBox.Parent = CoordInputFrame
+
+local UICornerTY = Instance.new("UICorner")
+UICornerTY.CornerRadius = UDim.new(0, 4)
+UICornerTY.Parent = TYBox
+
+local TZLabel = Instance.new("TextLabel")
+TZLabel.Name = "TZLabel"
+TZLabel.Size = UDim2.new(0, 30, 0, 25)
+TZLabel.Position = UDim2.new(0, 290, 0, 135)
+TZLabel.BackgroundTransparency = 1
+TZLabel.Text = "Z:"
+TZLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TZLabel.TextSize = 16
+TZLabel.Font = Enum.Font.SourceSans
+TZLabel.Parent = CoordInputFrame
+
+local TZBox = Instance.new("TextBox")
+TZBox.Name = "TZBox"
+TZBox.Size = UDim2.new(0, 100, 0, 25)
+TZBox.Position = UDim2.new(0, 325, 0, 135)
+TZBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TZBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TZBox.TextSize = 14
+TZBox.Font = Enum.Font.SourceSans
+TZBox.PlaceholderText = "0"
+TZBox.Text = ""
+TZBox.Parent = CoordInputFrame
+
+local UICornerTZ = Instance.new("UICorner")
+UICornerTZ.CornerRadius = UDim.new(0, 4)
+UICornerTZ.Parent = TZBox
+
+-- Кнопка добавления
+local AddButton = Instance.new("TextButton")
+AddButton.Name = "AddButton"
+AddButton.Size = UDim2.new(0, 120, 0, 30)
+AddButton.Position = UDim2.new(0, 10, 0, 180)
+AddButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+AddButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AddButton.TextSize = 16
+AddButton.Text = "Добавить точку"
+AddButton.Font = Enum.Font.SourceSansBold
+AddButton.Parent = ContentFrame
+
+local AddButtonCorner = Instance.new("UICorner")
+AddButtonCorner.CornerRadius = UDim.new(0, 6)
+AddButtonCorner.Parent = AddButton
+
+-- Переключатель активности
+local ToggleFrame = Instance.new("Frame")
+ToggleFrame.Name = "ToggleFrame"
+ToggleFrame.Size = UDim2.new(0, 120, 0, 30)
+ToggleFrame.Position = UDim2.new(0, 140, 0, 180)
+ToggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleFrame.Parent = ContentFrame
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 6)
+ToggleCorner.Parent = ToggleFrame
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 60, 0, 26)
+ToggleButton.Position = UDim2.new(0, 2, 0, 2)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 14
+ToggleButton.Text = "Выкл"
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.Parent = ToggleFrame
+
+local ToggleButtonCorner = Instance.new("UICorner")
+ToggleButtonCorner.CornerRadius = UDim.new(0, 5)
+ToggleButtonCorner.Parent = ToggleButton
+
+-- Кнопка остановки скрипта
+local StopButton = Instance.new("TextButton")
+StopButton.Name = "StopButton"
+StopButton.Size = UDim2.new(0, 120, 0, 30)
+StopButton.Position = UDim2.new(1, -130, 0, 180)
+StopButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopButton.TextSize = 16
+StopButton.Text = "Остановить скрипт"
+StopButton.Font = Enum.Font.SourceSansBold
+StopButton.Parent = ContentFrame
+
+local StopButtonCorner = Instance.new("UICorner")
+StopButtonCorner.CornerRadius = UDim.new(0, 6)
+StopButtonCorner.Parent = StopButton
+
+-- Поле для имени сохранения
+local SaveNameFrame = Instance.new("Frame")
+SaveNameFrame.Name = "SaveNameFrame"
+SaveNameFrame.Size = UDim2.new(1, 0, 0, 40)
+SaveNameFrame.Position = UDim2.new(0, 0, 0, 215)
+SaveNameFrame.BackgroundTransparency = 1
+SaveNameFrame.Parent = ContentFrame
+
+local SaveNameLabel = Instance.new("TextLabel")
+SaveNameLabel.Name = "SaveNameLabel"
+SaveNameLabel.Size = UDim2.new(0, 100, 0, 25)
+SaveNameLabel.BackgroundTransparency = 1
+SaveNameLabel.Text = "Имя сохранения:"
+SaveNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveNameLabel.TextSize = 14
+SaveNameLabel.Font = Enum.Font.SourceSans
+SaveNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+SaveNameLabel.Parent = SaveNameFrame
+
+local SaveNameBox = Instance.new("TextBox")
+SaveNameBox.Name = "SaveNameBox"
+SaveNameBox.Size = UDim2.new(0, 150, 0, 25)
+SaveNameBox.Position = UDim2.new(0, 105, 0, 0)
+SaveNameBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SaveNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveNameBox.TextSize = 14
+SaveNameBox.Font = Enum.Font.SourceSans
+SaveNameBox.PlaceholderText = "Мои точки"
+SaveNameBox.Text = "TPPos"
+SaveNameBox.Parent = SaveNameFrame
+
+local SaveNameCorner = Instance.new("UICorner")
+SaveNameCorner.CornerRadius = UDim.new(0, 4)
+SaveNameCorner.Parent = SaveNameBox
+
+local SaveButton = Instance.new("TextButton")
+SaveButton.Name = "SaveButton"
+SaveButton.Size = UDim2.new(0, 80, 0, 25)
+SaveButton.Position = UDim2.new(0, 265, 0, 0)
+SaveButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveButton.TextSize = 14
+SaveButton.Text = "Сохранить"
+SaveButton.Font = Enum.Font.SourceSansBold
+SaveButton.Parent = SaveNameFrame
+
+local SaveButtonCorner = Instance.new("UICorner")
+SaveButtonCorner.CornerRadius = UDim.new(0, 4)
+SaveButtonCorner.Parent = SaveButton
+
+local LoadButton = Instance.new("TextButton")
+LoadButton.Name = "LoadButton"
+LoadButton.Size = UDim2.new(0, 80, 0, 25)
+LoadButton.Position = UDim2.new(0, 350, 0, 0)
+LoadButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+LoadButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadButton.TextSize = 14
+LoadButton.Text = "Загрузить"
+LoadButton.Font = Enum.Font.SourceSansBold
+LoadButton.Parent = SaveNameFrame
+
+local LoadButtonCorner = Instance.new("UICorner")
+LoadButtonCorner.CornerRadius = UDim.new(0, 4)
+LoadButtonCorner.Parent = LoadButton
+
+-- Список точек
+local ListFrame = Instance.new("Frame")
+ListFrame.Name = "ListFrame"
+ListFrame.Size = UDim2.new(1, 0, 0, 180)
+ListFrame.Position = UDim2.new(0, 0, 0, 260)
+ListFrame.BackgroundTransparency = 1
+ListFrame.Parent = ContentFrame
+
+local ListLabel = Instance.new("TextLabel")
+ListLabel.Name = "ListLabel"
+ListLabel.Size = UDim2.new(1, 0, 0, 20)
+ListLabel.BackgroundTransparency = 1
+ListLabel.Text = "Список точек телепортации:"
+ListLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ListLabel.TextSize = 16
+ListLabel.Font = Enum.Font.SourceSans
+ListLabel.TextXAlignment = Enum.TextXAlignment.Left
+ListLabel.Parent = ListFrame
+
+-- Контейнер для прокрутки
+local ScrollContainer = Instance.new("ScrollingFrame")
+ScrollContainer.Name = "ScrollContainer"
+ScrollContainer.Size = UDim2.new(1, 0, 1, -25)
+ScrollContainer.Position = UDim2.new(0, 0, 0, 25)
+ScrollContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ScrollContainer.BorderSizePixel = 0
+ScrollContainer.ScrollBarThickness = 10
+ScrollContainer.ScrollBarImageColor3 = Color3.fromRGB(253, 104, 159)
+ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollContainer.ScrollingDirection = Enum.ScrollingDirection.Y
+ScrollContainer.Parent = ListFrame
+
+local UICornerScroll = Instance.new("UICorner")
+UICornerScroll.CornerRadius = UDim.new(0, 6)
+UICornerScroll.Parent = ScrollContainer
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = ScrollContainer
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingTop = UDim.new(0, 5)
+UIPadding.PaddingLeft = UDim.new(0, 5)
+UIPadding.PaddingRight = UDim.new(0, 5)
+UIPadding.Parent = ScrollContainer
+
+-- Функции
+local function UpdateList()
+    for _, child in ipairs(ScrollContainer:GetChildren()) do
+        if child:IsA("Frame") and child.Name:match("^ItemFrame_") then
+            child:Destroy()
+        end
+    end
+    
+    for i, area in ipairs(TeleportAreas) do
+        if area and area.center and area.teleport and area.radius then
+            local ItemFrame = Instance.new("Frame")
+            ItemFrame.Name = "ItemFrame_" .. i
+            ItemFrame.Size = UDim2.new(1, -10, 0, 60)
+            ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            ItemFrame.Parent = ScrollContainer
+            
+            local ItemCorner = Instance.new("UICorner")
+            ItemCorner.CornerRadius = UDim.new(0, 4)
+            ItemCorner.Parent = ItemFrame
+            
+            local InfoLabel = Instance.new("TextLabel")
+            InfoLabel.Name = "InfoLabel"
+            InfoLabel.Size = UDim2.new(0.6, -5, 1, -10)
+            InfoLabel.Position = UDim2.new(0, 5, 0, 5)
+            InfoLabel.BackgroundTransparency = 1
+            InfoLabel.Text = string.format("Центр: (%.1f, %.1f, %.1f)\nРадиус: %.1f\nТелепорт: (%.1f, %.1f, %.1f)", 
+                area.center.X, area.center.Y, area.center.Z,
+                area.radius,
+                area.teleport.X, area.teleport.Y, area.teleport.Z)
+            InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            InfoLabel.TextSize = 11
+            InfoLabel.Font = Enum.Font.SourceSans
+            InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+            InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+            InfoLabel.TextWrapped = true
+            InfoLabel.Parent = ItemFrame
+            
+            local ActiveLabel = Instance.new("TextLabel")
+            ActiveLabel.Name = "ActiveLabel"
+            ActiveLabel.Size = UDim2.new(0.15, 0, 0, 20)
+            ActiveLabel.Position = UDim2.new(0.65, 5, 0.1, 0)
+            ActiveLabel.BackgroundColor3 = area.active and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+            ActiveLabel.Text = area.active and "Активна" or "Неактивна"
+            ActiveLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ActiveLabel.TextSize = 11
+            ActiveLabel.Font = Enum.Font.SourceSansBold
+            ActiveLabel.Parent = ItemFrame
+            
+            local ActiveCorner = Instance.new("UICorner")
+            ActiveCorner.CornerRadius = UDim.new(0, 4)
+            ActiveCorner.Parent = ActiveLabel
+            
+            local EditButton = Instance.new("TextButton")
+            EditButton.Name = "EditButton"
+            EditButton.Size = UDim2.new(0.15, 0, 0, 20)
+            EditButton.Position = UDim2.new(0.65, 5, 0.5, 0)
+            EditButton.BackgroundColor3 = Color3.fromRGB(253, 104, 159)
+            EditButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            EditButton.TextSize = 11
+            EditButton.Text = "Изменить"
+            EditButton.Font = Enum.Font.SourceSansBold
+            EditButton.Parent = ItemFrame
+            
+            local EditCorner = Instance.new("UICorner")
+            EditCorner.CornerRadius = UDim.new(0, 4)
+            EditCorner.Parent = EditButton
+            
+            local DeleteButton = Instance.new("TextButton")
+            DeleteButton.Name = "DeleteButton"
+            DeleteButton.Size = UDim2.new(0.15, 0, 0, 20)
+            DeleteButton.Position = UDim2.new(0.82, 5, 0.5, 0)
+            DeleteButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+            DeleteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            DeleteButton.TextSize = 11
+            DeleteButton.Text = "Удалить"
+            DeleteButton.Font = Enum.Font.SourceSansBold
+            DeleteButton.Parent = ItemFrame
+            
+            local DeleteCorner = Instance.new("UICorner")
+            DeleteCorner.CornerRadius = UDim.new(0, 4)
+            DeleteCorner.Parent = DeleteButton
+            
+            EditButton.MouseButton1Click:Connect(function()
+                XBox.Text = tostring(area.center.X)
+                YBox.Text = tostring(area.center.Y)
+                ZBox.Text = tostring(area.center.Z)
+                RadiusBox.Text = tostring(area.radius)
+                TXBox.Text = tostring(area.teleport.X)
+                TYBox.Text = tostring(area.teleport.Y)
+                TZBox.Text = tostring(area.teleport.Z)
+                ToggleButton.Text = area.active and "Вкл" or "Выкл"
+                ToggleButton.BackgroundColor3 = area.active and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(213, 7, 69)
+                Active = area.active
+                table.remove(TeleportAreas, i)
+                UpdateList()
+                SaveData()
+            end)
+            
+            DeleteButton.MouseButton1Click:Connect(function()
+                table.remove(TeleportAreas, i)
+                UpdateList()
+                SaveData()
+            end)
+        else
+            warn("Некорректная точка телепортации под индексом " .. i .. ", удаляем...")
+            table.remove(TeleportAreas, i)
+        end
+    end
+    
+    task.wait(0.05)
+    ScrollContainer.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
+end
+
+local function AddTeleportArea()
+    local centerX = tonumber(XBox.Text)
+    local centerY = tonumber(YBox.Text)
+    local centerZ = tonumber(ZBox.Text)
+    local radius = tonumber(RadiusBox.Text)
+    local teleportX = tonumber(TXBox.Text)
+    local teleportY = tonumber(TYBox.Text)
+    local teleportZ = tonumber(TZBox.Text)
+    
+    if not centerX or not centerY or not centerZ then
+        warn("Некорректные координаты центра!")
+        return
+    end
+    
+    if not radius then
+        warn("Некорректный радиус!")
+        return
+    end
+    
+    if not teleportX or not teleportY or not teleportZ then
+        warn("Некорректные координаты телепортации!")
+        return
+    end
+    
+    local center = Vector3.new(centerX, centerY, centerZ)
+    local teleport = Vector3.new(teleportX, teleportY, teleportZ)
+    
+    local active = ToggleButton.Text == "Вкл"
+    
+    table.insert(TeleportAreas, {
+        center = center,
+        radius = radius,
+        teleport = teleport,
+        active = active
+    })
+    
+    UpdateList()
+    
+    XBox.Text = ""
+    YBox.Text = ""
+    ZBox.Text = ""
+    TXBox.Text = ""
+    TYBox.Text = ""
+    TZBox.Text = ""
+    
+    SaveData()
+end
+
+local function TeleportPlayer()
+    if not Active then return end
+    if not LocalPlayer or not LocalPlayer.Character then return end
+    
+    local humanoidRootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+    
+    local playerPos = humanoidRootPart.Position
+    
+    for _, area in ipairs(TeleportAreas) do
+        if area and area.active and area.center and area.teleport and area.radius then
+            local distance = (playerPos - area.center).Magnitude
+            if distance <= area.radius then
+                humanoidRootPart.CFrame = CFrame.new(area.teleport)
+                break
+            end
+        end
+    end
+end
+
+local function ToggleActivation()
+    if ToggleButton.Text == "Выкл" then
+        ToggleButton.Text = "Вкл"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        Active = true
+        print("Телепортация активирована!")
+    else
+        ToggleButton.Text = "Выкл"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+        Active = false
+        print("Телепортация деактивирована!")
+    end
+    SaveData()
+end
+
+local function SaveTeleportAreas()
+    local fileName = SaveNameBox.Text
+    if fileName == "" then fileName = "TPPos" end
+    
+    local fullPath = folderPath .. "/" .. fileName .. ".json"
+    
+    if writefile then
+        SaveData()
+        print("Данные сохранены в: " .. fullPath)
+    else
+        warn("Функция writefile не найдена!")
+    end
+    
+    SaveNameBox.Text = fileName
+end
+
+local function LoadTeleportAreas()
+    local fileName = SaveNameBox.Text
+    if fileName == "" then fileName = "TPPos" end
+    
+    local fullPath = folderPath .. "/" .. fileName .. ".json"
+    
+    if readfile and FileExists(fullPath) then
+        local success, data = pcall(function()
+            return readfile(fullPath)
+        end)
+        
+        if success and data then
+            local loadedData = HttpService:JSONDecode(data)
+            
+            if loadedData then
+                TeleportAreas = {}
+                
+                -- Загрузка позиции окна
+                if loadedData.position then
+                    MainFrame.Position = UDim2.new(loadedData.position.X or 0.146, 0, loadedData.position.Y or 0.3, 0)
+                end
+                
+                -- Загрузка точек телепортации
+                if loadedData.teleportAreas then
+                    for _, areaData in ipairs(loadedData.teleportAreas) do
+                        if areaData then
+                            table.insert(TeleportAreas, {
+                                center = DeserializeVector3(areaData.center),
+                                teleport = DeserializeVector3(areaData.teleport),
+                                radius = areaData.radius or 10,
+                                active = areaData.active == true
+                            })
+                        end
+                    end
+                end
+                
+                -- Загрузка настроек
+                if loadedData.settings then
+                    Active = loadedData.settings.active == true
+                    if Active then
+                        ToggleButton.Text = "Вкл"
+                        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+                    else
+                        ToggleButton.Text = "Выкл"
+                        ToggleButton.BackgroundColor3 = Color3.fromRGB(213, 7, 69)
+                    end
+                end
+                
+                UpdateList()
+                print("Данные загружены из: " .. fullPath)
+                print("Загружено точек: " .. #TeleportAreas)
+            end
+        else
+            warn("Ошибка загрузки файла или файл пуст")
+        end
+    else
+        print("Файл не найден, создаем новый: " .. fullPath)
+        TeleportAreas = {}
+        UpdateList()
+    end
+end
+
+-- Загрузка сохраненных данных при запуске
+task.spawn(function()
+    task.wait(1)
+    LoadTeleportAreas()
+end)
+
+-- Подключение событий
+AddButton.MouseButton1Click:Connect(function()
+    AddTeleportArea()
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    ToggleActivation()
+end)
+
+SaveButton.MouseButton1Click:Connect(function()
+    SaveTeleportAreas()
+end)
+
+LoadButton.MouseButton1Click:Connect(function()
+    LoadTeleportAreas()
+end)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    if Minimized then
+        ContentFrame.Visible = true
+        MainFrame.Size = OriginalSize
+        MinimizeText.Text = "-"
+    else
+        ContentFrame.Visible = false
+        MainFrame.Size = UDim2.new(OriginalSize.X.Scale, OriginalSize.X.Offset, 0, 50)
+        MinimizeText.Text = "+"
+    end
+    Minimized = not Minimized
+    SaveData()
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    SaveData()
+    ScreenGui:Destroy()
+end)
+
+StopButton.MouseButton1Click:Connect(function()
+    SaveData()
+    ScreenGui:Destroy()
+    Active = false
+end)
+
+-- Соединяем Enter для добавления
+local function ConnectEnterKey(textBox)
+    textBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            AddTeleportArea()
+        end
+    end)
+end
+
+ConnectEnterKey(XBox)
+ConnectEnterKey(YBox)
+ConnectEnterKey(ZBox)
+ConnectEnterKey(RadiusBox)
+ConnectEnterKey(TXBox)
+ConnectEnterKey(TYBox)
+ConnectEnterKey(TZBox)
+
+-- Перемещение окна
+local function UpdateInput(input)
+    if not MainFrame or not MainFrame.Parent then return end
+    
+    local delta = input.Position - DragStart
+    MainFrame.Position = UDim2.new(
+        StartPos.X.Scale,
+        StartPos.X.Offset + delta.X,
+        StartPos.Y.Scale,
+        StartPos.Y.Offset + delta.Y
+    )
+end
+
+TopFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Dragging = true
+        DragStart = input.Position
+        StartPos = MainFrame.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+                if connection then connection:Disconnect() end
+                SaveData()
+            end
+        end)
+    end
+end)
+
+TopFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        DragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == DragInput and Dragging then
+        UpdateInput(input)
+    end
+end)
+
+-- Основной цикл проверки
+local heartbeatConnection
+heartbeatConnection = RunService.Heartbeat:Connect(function()
+    if Active and TeleportAreas and #TeleportAreas > 0 then
+        TeleportPlayer()
+    end
+end)
+
+-- Очистка при уничтожении
+ScreenGui.Destroying:Connect(function()
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+    end
+    SaveData()
+end)
+
+print("=======================")
+print("Teleporter GUI загружен!")
+print("Инструкция:")
+print("1. Введите координаты центра, радиус и координаты телепортации")
+print("2. Нажмите 'Добавить точку' или Enter")
+print("3. Нажмите переключатель на 'Вкл' (станет зеленым)")
+print("4. Встаньте в указанную область для телепортации")
+print("5. Сохраните/загрузите данные через соответствующие кнопки")
+print("=======================")

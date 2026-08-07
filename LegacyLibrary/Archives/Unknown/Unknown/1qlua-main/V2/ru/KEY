@@ -1,0 +1,9 @@
+local gameScripts = {
+    [7239319209] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/ru/key/1qluaKeyRuOHIO",    -- Ohio
+    ["default"] = "https://raw.githubusercontent.com/1Qlua-RBXscript/1qlua/refs/heads/main/V2/ru/key/1qluaKeyRu"      -- Другие игры
+}
+
+local currentGameId = game.PlaceId
+local scriptUrl = gameScripts[currentGameId] or gameScripts["default"]
+
+loadstring(game:HttpGet(scriptUrl))()
