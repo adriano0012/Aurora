@@ -19,7 +19,7 @@ return function(UI, Config, Utils)
         return
     end
 
-    local canvas = tab:Canvas(306)
+    local canvas = tab:Canvas(360)
     local connections = {}
 
     local function connect(object, eventName, callback)
@@ -72,8 +72,8 @@ return function(UI, Config, Utils)
             Position = UDim2.fromOffset(x, y),
             Size = UDim2.fromOffset(width, height)
         })
-        round(card, 10)
-        stroke(card, 0.14)
+        round(card, 12)
+        stroke(card, 0.08)
         return card
     end
 
@@ -82,11 +82,11 @@ return function(UI, Config, Utils)
             Parent = parent,
             BackgroundTransparency = 1,
             Font = Enum.Font.GothamMedium,
-            Position = UDim2.fromOffset(16, 10),
-            Size = UDim2.new(1, -32, 0, 18),
+            Position = UDim2.fromOffset(20, 14),
+            Size = UDim2.new(1, -40, 0, 20),
             Text = text,
             TextColor3 = UI.Theme.Accent,
-            TextSize = 12,
+            TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left
         })
         bindTheme(label, "TextColor3", "Accent")
@@ -287,111 +287,202 @@ return function(UI, Config, Utils)
         end)
     end
 
-    local hero = makeCard("Hero", 0, 0, 1220, 108, 0.34)
-    create("UIGradient", {
-        Parent = hero,
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(2, 6, 8)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 18, 20))
-        }),
-        Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.02),
-            NumberSequenceKeypoint.new(0.55, 0.2),
-            NumberSequenceKeypoint.new(1, 0.58)
-        })
-    })
-
-    local heroAccent = create("Frame", {
-        Parent = hero,
-        BackgroundColor3 = UI.Theme.Accent,
-        BorderSizePixel = 0,
-        Position = UDim2.fromOffset(18, 18),
-        Size = UDim2.fromOffset(3, 72)
-    })
-    round(heroAccent, 3)
-    bindTheme(heroAccent, "BackgroundColor3", "Accent")
-
-    create("TextLabel", {
-        Parent = hero,
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBlack,
-        Position = UDim2.fromOffset(34, 20),
-        Size = UDim2.fromOffset(430, 30),
-        Text = "✦ VANGUARD HUB ✦",
-        TextColor3 = UI.Theme.Text,
-        TextSize = 28,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-    create("TextLabel", {
-        Parent = hero,
-        BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham,
-        Position = UDim2.fromOffset(34, 56),
-        Size = UDim2.fromOffset(300, 34),
-        Text = "Se rodou, amém.\nSe não rodou, Discord.",
-        TextColor3 = UI.Theme.Text,
-        TextSize = 14,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top
-    })
-
-    local information = makeCard("Information", 0, 126, 260, 132)
+    -- Home v2: clean dashboard without hero.
+    local information = makeCard("Information", 0, 0, 310, 158)
     makeTitle(information, "INFORMACOES")
+
+    local executorName = "Unknown"
+    pcall(function()
+        if type(identifyexecutor) == "function" then
+            local detected = identifyexecutor()
+            if type(detected) == "string" and detected ~= "" then
+                executorName = detected
+            end
+        end
+    end)
+
     local informationRows = {
         {"User", localPlayer and localPlayer.Name or "VanguardHub"},
         {"Game", "Lumber Tycoon 2"},
+        {"Executor", executorName},
         {"Version", "v1.0"}
     }
+
     for index, row in ipairs(informationRows) do
-        local y = 38 + ((index - 1) * 28)
+        local y = 44 + ((index - 1) * 25)
+
         create("TextLabel", {
             Parent = information,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(16, y),
-            Size = UDim2.fromOffset(70, 20),
+            Position = UDim2.fromOffset(20, y),
+            Size = UDim2.fromOffset(78, 20),
             Text = row[1],
             TextColor3 = UI.Theme.TextDim,
             TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left
         })
+
         local valueLabel = create("TextLabel", {
             Parent = information,
             BackgroundTransparency = 1,
             Font = Enum.Font.GothamMedium,
-            Position = UDim2.fromOffset(86, y),
-            Size = UDim2.fromOffset(158, 20),
+            Position = UDim2.fromOffset(100, y),
+            Size = UDim2.new(1, -120, 0, 20),
             Text = row[2],
             TextColor3 = UI.Theme.Accent,
-            TextSize = 12,
+            TextSize = 13,
             TextTruncate = Enum.TextTruncate.AtEnd,
             TextXAlignment = Enum.TextXAlignment.Left
         })
         bindTheme(valueLabel, "TextColor3", "Accent")
     end
 
-    local quickStatus = makeCard("QuickStatus", 276, 126, 340, 144)
+    local quickStatus = makeCard("QuickStatus", 326, 0, 894, 158)
     makeTitle(quickStatus, "QUICK TOGGLES")
-    makeToggle(quickStatus, 34, "Noclip", "Noclip", Config.Noclip == true, function(value)
+
+    local function makeHomeToggle(x, y, text, flag, default, callback)
+        local holder = create("Frame", {
+            Parent = quickStatus,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(x, y),
+            Size = UDim2.fromOffset(421, 24)
+        })
+        makeToggle(holder, 0, text, flag, default, callback)
+    end
+
+    makeHomeToggle(4, 44, "Noclip", "Noclip", Config.Noclip == true, function(value)
         Config.Noclip = value
     end)
-    makeToggle(quickStatus, 54, "God Mode", "GodMode", Config.GodMode == true, function(value)
-        Config.GodMode = value
-    end)
-    makeToggle(quickStatus, 74, "Fly", "Flight", Config.Flight == true, function(value)
+    makeHomeToggle(4, 76, "Fly", "Flight", Config.Flight == true, function(value)
         Config.Flight = value
     end)
-    makeToggle(quickStatus, 94, "Anti Void", "AntiVoid", Config.AntiVoid == true, function(value)
+    makeHomeToggle(4, 108, "God Mode", "GodMode", Config.GodMode == true, function(value)
+        Config.GodMode = value
+    end)
+    makeHomeToggle(437, 44, "Anti Void", "AntiVoid", Config.AntiVoid == true, function(value)
         Config.AntiVoid = value
     end)
-    makeToggle(quickStatus, 114, "No Fog", "NoFog", Config.NoFog == true, function(value)
+    makeHomeToggle(437, 76, "No Fog", "NoFog", Config.NoFog == true, function(value)
         Config.NoFog = value
     end)
 
-    local quickSettings = makeCard("QuickSettings", 632, 126, 588, 132)
+    local quickSettings = makeCard("QuickSettings", 0, 174, 1220, 170)
     makeTitle(quickSettings, "CONFIGURACOES RAPIDAS")
-    makeSlider(quickSettings, 34, "WalkSpeed", "WalkSpeed", Config.WalkSpeed or 120, 16, 1000, function(value)
+
+    local function makeWideSlider(parent, y, text, flag, default, minimum, maximum, callback)
+        create("TextLabel", {
+            Parent = parent,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.Gotham,
+            Position = UDim2.fromOffset(20, y),
+            Size = UDim2.fromOffset(110, 22),
+            Text = text,
+            TextColor3 = UI.Theme.Text,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+
+        local valueLabel = create("TextLabel", {
+            Parent = parent,
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamMedium,
+            Position = UDim2.new(1, -78, 0, y),
+            Size = UDim2.fromOffset(58, 22),
+            Text = tostring(default),
+            TextColor3 = UI.Theme.Accent,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Right
+        })
+        bindTheme(valueLabel, "TextColor3", "Accent")
+
+        local track = create("Frame", {
+            Parent = parent,
+            Active = true,
+            BackgroundColor3 = UI.Theme.Tertiary,
+            BorderSizePixel = 0,
+            Position = UDim2.fromOffset(146, y + 9),
+            Size = UDim2.new(1, -244, 0, 4)
+        })
+        round(track, 3)
+
+        local fill = create("Frame", {
+            Parent = track,
+            BackgroundColor3 = UI.Theme.Accent,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 0, 1, 0)
+        })
+        round(fill, 3)
+        bindTheme(fill, "BackgroundColor3", "Accent")
+
+        local knob = create("Frame", {
+            Parent = track,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundColor3 = UI.Theme.Accent,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 0, 0.5, 0),
+            Size = UDim2.fromOffset(14, 14)
+        })
+        round(knob, 7)
+        bindTheme(knob, "BackgroundColor3", "Accent")
+
+        local value = math.clamp(tonumber(default) or minimum, minimum, maximum)
+        local dragging = false
+        local sharedControl
+
+        local function setValue(newValue, runCallback, skipBroadcast)
+            value = math.clamp(math.floor((tonumber(newValue) or minimum) + 0.5), minimum, maximum)
+            local percent = (value - minimum) / math.max(1, maximum - minimum)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, 0, 0.5, 0)
+            valueLabel.Text = tostring(value)
+            if type(UI.SetFlag) == "function" then
+                UI:SetFlag(flag, value)
+            end
+            if runCallback and callback then
+                task.spawn(callback, value)
+            end
+            if not skipBroadcast and type(UI.BroadcastFlag) == "function" then
+                UI:BroadcastFlag(flag, value, sharedControl, runCallback)
+            end
+        end
+
+        local function setFromX(x)
+            if track.AbsoluteSize.X <= 0 then
+                return
+            end
+            local percent = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            setValue(minimum + ((maximum - minimum) * percent), true, false)
+        end
+
+        if type(UI.RegisterFlagControl) == "function" then
+            sharedControl = UI:RegisterFlagControl(flag, function(sharedValue, triggerCallback)
+                setValue(sharedValue, triggerCallback, true)
+            end)
+        end
+
+        setValue(value, false, true)
+
+        connect(track, "InputBegan", function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                setFromX(input.Position.X)
+            end
+        end)
+        connect(UserInputService, "InputChanged", function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                setFromX(input.Position.X)
+            end
+        end)
+        connect(UserInputService, "InputEnded", function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
+    end
+
+    makeWideSlider(quickSettings, 46, "WalkSpeed", "WalkSpeed", Config.WalkSpeed or 120, 16, 1000, function(value)
         Config.WalkSpeed = value
         local character = localPlayer and localPlayer.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -399,7 +490,8 @@ return function(UI, Config, Utils)
             humanoid.WalkSpeed = value
         end
     end)
-    makeSlider(quickSettings, 56, "JumpPower", "JumpPower", Config.JumpPower or 250, 50, 1000, function(value)
+
+    makeWideSlider(quickSettings, 76, "JumpPower", "JumpPower", Config.JumpPower or 250, 50, 1000, function(value)
         Config.JumpPower = value
         local character = localPlayer and localPlayer.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -408,13 +500,15 @@ return function(UI, Config, Utils)
             humanoid.JumpPower = value
         end
     end)
-    makeSlider(quickSettings, 78, "FOV", "FOV", Config.FOV or 90, 1, 120, function(value)
+
+    makeWideSlider(quickSettings, 106, "FOV", "FOV", Config.FOV or 90, 1, 120, function(value)
         Config.FOV = value
         if workspace.CurrentCamera then
             workspace.CurrentCamera.FieldOfView = value
         end
     end)
-    makeToggle(quickSettings, 104, "Auto Save Settings", "AutoSave", Config.AutoSave ~= false, function(value)
+
+    makeToggle(quickSettings, 136, "Auto Save Settings", "AutoSave", Config.AutoSave ~= false, function(value)
         Config.AutoSave = value
     end)
 
