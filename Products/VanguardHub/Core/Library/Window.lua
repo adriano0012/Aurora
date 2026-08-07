@@ -328,7 +328,7 @@ function Library:new(name)
 
     local BASE_WIDTH = 1619
     local BASE_HEIGHT = 972
-    local MAX_UI_SCALE = 0.74
+    local MAX_UI_SCALE = 0.64
     
     -- Main Frame
     local Main = CreateInstance("Frame", {
@@ -449,7 +449,7 @@ function Library:new(name)
         Parent = Main,
         Active = true,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 104),
+        Size = UDim2.new(1, 0, 0, 92),
         ZIndex = 20
     })
     lib:TrackInstance(Top)
@@ -458,11 +458,11 @@ function Library:new(name)
         Parent = Top,
         BackgroundColor3 = Color3.fromRGB(4, 9, 11),
         BackgroundTransparency = 0.25,
-        Position = UDim2.fromOffset(24, 22),
-        Size = UDim2.fromOffset(62, 66),
+        Position = UDim2.fromOffset(22, 19),
+        Size = UDim2.fromOffset(56, 56),
         ZIndex = 21
     })
-    CreateInstance("UICorner", {CornerRadius = UDim.new(0, 15), Parent = LogoShield})
+    CreateInstance("UICorner", {CornerRadius = UDim.new(0, 14), Parent = LogoShield})
     CreateInstance("UIStroke", {
         Parent = LogoShield,
         Color = Color3.fromRGB(219, 221, 223),
@@ -477,7 +477,7 @@ function Library:new(name)
         Size = UDim2.fromScale(1, 1),
         Text = "V",
         TextColor3 = lib.Theme.Text,
-        TextSize = 41,
+        TextSize = 36,
         ZIndex = 22
     })
 
@@ -485,12 +485,12 @@ function Library:new(name)
         Parent = Top,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamBold,
-        Position = UDim2.fromOffset(101, 24),
+        Position = UDim2.fromOffset(94, 20),
         RichText = true,
-        Size = UDim2.fromOffset(255, 42),
+        Size = UDim2.fromOffset(238, 34),
         Text = '<b>Vanguard</b><font color="#805EF5"><b>Hub</b></font>',
         TextColor3 = lib.Theme.Text,
-        TextSize = 32,
+        TextSize = 28,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 21
     })
@@ -498,11 +498,11 @@ function Library:new(name)
         Parent = Top,
         BackgroundTransparency = 1,
         Font = Enum.Font.Gotham,
-        Position = UDim2.fromOffset(102, 66),
-        Size = UDim2.fromOffset(230, 24),
+        Position = UDim2.fromOffset(95, 52),
+        Size = UDim2.fromOffset(220, 20),
         Text = "Lumber Tycoon 2",
         TextColor3 = lib.Theme.TextDim,
-        TextSize = 18,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 21
     })
@@ -515,8 +515,8 @@ function Library:new(name)
             BackgroundTransparency = 0.1,
             BorderSizePixel = 0,
             Font = Enum.Font.GothamMedium,
-            Position = UDim2.fromOffset(x, 35),
-            Size = UDim2.fromOffset(width, 51),
+            Position = UDim2.fromOffset(x, 28),
+            Size = UDim2.fromOffset(width, 42),
             Text = "",
             AutoButtonColor = false,
             ZIndex = 22
@@ -532,22 +532,22 @@ function Library:new(name)
             Parent = btn,
             BackgroundTransparency = 1,
             Font = Enum.Font.GothamBold,
-            Position = UDim2.fromOffset(12, 0),
-            Size = UDim2.fromOffset(34, 51),
+            Position = UDim2.fromOffset(10, 0),
+            Size = UDim2.fromOffset(24, 42),
             Text = icon,
             TextColor3 = lib.Theme.Text,
-            TextSize = 18,
+            TextSize = 14,
             ZIndex = 23
         })
         local textLabel = CreateInstance("TextLabel", {
             Parent = btn,
             BackgroundTransparency = 1,
             Font = Enum.Font.GothamMedium,
-            Position = UDim2.fromOffset(44, 0),
-            Size = UDim2.new(1, -50, 1, 0),
+            Position = UDim2.fromOffset(34, 0),
+            Size = UDim2.new(1, -40, 1, 0),
             Text = text,
             TextColor3 = lib.Theme.Text,
-            TextSize = 15,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 23
         })
@@ -575,6 +575,16 @@ function Library:new(name)
     local TopSettingsButton = CreateTopButton("Settings", "⚙", 526, 135)
     local TopThemeButton = CreateTopButton("Theme", "◉", 681, 128)
 
+    TopMainButton.Position = UDim2.fromOffset(366, 28)
+    TopMainButton.Size = UDim2.fromOffset(104, 42)
+    TopSettingsButton.Position = UDim2.fromOffset(484, 28)
+    TopSettingsButton.Size = UDim2.fromOffset(118, 42)
+    TopThemeButton.Position = UDim2.fromOffset(616, 28)
+    TopThemeButton.Size = UDim2.fromOffset(108, 42)
+    topButtonRecords[TopMainButton].Icon.Text = "⌂"
+    topButtonRecords[TopSettingsButton].Icon.Text = "⚙"
+    topButtonRecords[TopThemeButton].Icon.Text = "◉"
+
     local function SetTopSelected(selectedButton)
         for button, record in pairs(topButtonRecords) do
             local selected = button == selectedButton
@@ -600,8 +610,8 @@ function Library:new(name)
         Parent = Top,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.05,
-        Position = UDim2.fromOffset(1332, 21),
-        Size = UDim2.fromOffset(267, 79),
+        Position = UDim2.fromOffset(1361, 18),
+        Size = UDim2.fromOffset(238, 62),
         ZIndex = 22
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Profile})
@@ -612,19 +622,50 @@ function Library:new(name)
         Transparency = 0.2
     })
 
+    local ProfileAvatar = CreateInstance("ImageLabel", {
+        Parent = Profile,
+        BackgroundColor3 = lib.Theme.Selected,
+        Image = localPlayer and ("rbxthumb://type=AvatarHeadShot&id=" .. tostring(localPlayer.UserId) .. "&w=150&h=150") or "",
+        Position = UDim2.fromOffset(7, 7),
+        ScaleType = Enum.ScaleType.Crop,
+        Size = UDim2.fromOffset(48, 48),
+        ZIndex = 23
+    })
+    CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0), Parent = ProfileAvatar})
+    local ProfileAvatarStroke = CreateInstance("UIStroke", {
+        Parent = ProfileAvatar,
+        Color = lib.Theme.Accent,
+        Thickness = 1.6,
+        Transparency = 0.1
+    })
+    lib:BindTheme(ProfileAvatarStroke, "Color", "Accent")
+
     CreateInstance("TextLabel", {
         Parent = Profile,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(18, 25),
-        Size = UDim2.fromOffset(108, 28),
+        Position = UDim2.fromOffset(67, 10),
+        Size = UDim2.fromOffset(82, 20),
         Text = localPlayer and localPlayer.DisplayName or "VanguardHub",
         TextColor3 = lib.Theme.Text,
-        TextSize = 16,
+        TextSize = 14,
         TextTruncate = Enum.TextTruncate.AtEnd,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 23
     })
+    local ProfileVersion = CreateInstance("TextLabel", {
+        Parent = Profile,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamMedium,
+        Position = UDim2.fromOffset(67, 31),
+        Size = UDim2.fromOffset(72, 16),
+        Text = "v1.0",
+        TextColor3 = lib.Theme.Accent,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 23
+    })
+    lib:BindTheme(ProfileVersion, "TextColor3", "Accent")
 
     local function CreateWindowButton(text, x)
         local button = CreateInstance("TextButton", {
@@ -634,11 +675,11 @@ function Library:new(name)
             BackgroundTransparency = 0.05,
             BorderSizePixel = 0,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(x, 13),
-            Size = UDim2.fromOffset(48, 50),
+            Position = UDim2.fromOffset(x, 9),
+            Size = UDim2.fromOffset(34, 44),
             Text = text,
             TextColor3 = lib.Theme.Text,
-            TextSize = 28,
+            TextSize = 22,
             ZIndex = 24
         })
         CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8), Parent = button})
@@ -654,11 +695,20 @@ function Library:new(name)
 
     local MinimizeButton = CreateWindowButton("−", 244)
     local CloseButton = CreateWindowButton("×", 302)
+    MinimizeButton.Position = UDim2.fromOffset(160, 9)
+    CloseButton.Position = UDim2.fromOffset(197, 9)
+    MinimizeButton.Text = "−"
+    CloseButton.Text = "×"
     local minimized = false
     lib:AddConnection(MinimizeButton, "MouseButton1Click", function()
         local positionDelta = ((BASE_HEIGHT - 105) * MainScale.Scale) / 2
         local currentPosition = Main.Position
         minimized = not minimized
+        task.defer(function()
+            if MinimizeButton and MinimizeButton.Parent then
+                MinimizeButton.Text = minimized and "+" or "−"
+            end
+        end)
         MinimizeButton.Text = minimized and "+" or "−"
         CreateTween(Main, {
             Position = UDim2.new(
@@ -683,8 +733,8 @@ function Library:new(name)
         Parent = Main,
         BackgroundColor3 = lib.Theme.Secondary,
         BackgroundTransparency = 0.02,
-        Position = UDim2.fromOffset(681, 94),
-        Size = UDim2.fromOffset(270, 84),
+        Position = UDim2.fromOffset(616, 76),
+        Size = UDim2.fromOffset(248, 76),
         Visible = false,
         ZIndex = 80
     })
@@ -699,11 +749,11 @@ function Library:new(name)
         Parent = ThemePanel,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(12, 7),
-        Size = UDim2.fromOffset(246, 22),
+        Position = UDim2.fromOffset(12, 6),
+        Size = UDim2.fromOffset(224, 18),
         Text = "COR DE DESTAQUE",
         TextColor3 = lib.Theme.TextDim,
-        TextSize = 11,
+        TextSize = 10,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 81
     })
@@ -722,8 +772,8 @@ function Library:new(name)
             AutoButtonColor = false,
             BackgroundColor3 = choice[2],
             BorderSizePixel = 0,
-            Position = UDim2.fromOffset(14 + ((index - 1) * 50), 38),
-            Size = UDim2.fromOffset(36, 36),
+            Position = UDim2.fromOffset(14 + ((index - 1) * 44), 31),
+            Size = UDim2.fromOffset(32, 32),
             Text = "",
             ZIndex = 81
         })
@@ -825,15 +875,15 @@ function Library:new(name)
     
     ConnectToggleKey()
     
-    local sidebarWidth = 268
+    local sidebarWidth = 248
 
     -- Tab Background
     local TabBG = CreateInstance("Frame", {
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(sidebarWidth, 644),
-        Position = UDim2.fromOffset(17, 112),
+        Size = UDim2.fromOffset(sidebarWidth, 520),
+        Position = UDim2.fromOffset(17, 102),
         ZIndex = 10
     })
     lib:TrackInstance(TabBG)
@@ -849,12 +899,12 @@ function Library:new(name)
     local CategoriesTitle = CreateInstance("TextLabel", {
         Parent = TabBG,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -32, 0, 28),
-        Position = UDim2.fromOffset(19, 8),
+        Size = UDim2.new(1, -28, 0, 24),
+        Position = UDim2.fromOffset(16, 8),
         Font = Enum.Font.GothamMedium,
         Text = "CATEGORIES",
         TextColor3 = lib.Theme.Accent,
-        TextSize = 13,
+        TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 11
     })
@@ -864,8 +914,8 @@ function Library:new(name)
     local TabHolder = CreateInstance("ScrollingFrame", {
         Parent = TabBG,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(246, 598),
-        Position = UDim2.fromOffset(11, 38),
+        Size = UDim2.fromOffset(228, 476),
+        Position = UDim2.fromOffset(10, 34),
         ScrollBarThickness = 0,
         ScrollBarImageColor3 = lib.Theme.Accent,
         CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -889,8 +939,8 @@ function Library:new(name)
         Parent = Main,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
-        Position = UDim2.fromOffset(17, 768),
-        Size = UDim2.fromOffset(268, 122),
+        Position = UDim2.fromOffset(17, 635),
+        Size = UDim2.fromOffset(248, 138),
         ZIndex = 10
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Credits})
@@ -904,11 +954,11 @@ function Library:new(name)
         Parent = Credits,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(20, 10),
-        Size = UDim2.fromOffset(228, 24),
+        Position = UDim2.fromOffset(18, 10),
+        Size = UDim2.fromOffset(210, 26),
         Text = "CREDITS",
         TextColor3 = lib.Theme.Accent,
-        TextSize = 15,
+        TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 11
     })
@@ -924,11 +974,11 @@ function Library:new(name)
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(20, 38 + ((index - 1) * 26)),
-            Size = UDim2.fromOffset(96, 22),
+            Position = UDim2.fromOffset(18, 42 + ((index - 1) * 28)),
+            Size = UDim2.fromOffset(102, 22),
             Text = row[1],
             TextColor3 = lib.Theme.TextDim,
-            TextSize = 13,
+            TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 11
         })
@@ -936,11 +986,11 @@ function Library:new(name)
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(110, 38 + ((index - 1) * 26)),
-            Size = UDim2.fromOffset(138, 22),
+            Position = UDim2.fromOffset(122, 42 + ((index - 1) * 28)),
+            Size = UDim2.fromOffset(108, 22),
             Text = row[2],
             TextColor3 = lib.Theme.Accent,
-            TextSize = 13,
+            TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 11
         })
@@ -951,8 +1001,8 @@ function Library:new(name)
     local ContentArea = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(1310, 720),
-        Position = UDim2.fromOffset(302, 116),
+        Size = UDim2.fromOffset(1328, 660),
+        Position = UDim2.fromOffset(274, 102),
         ClipsDescendants = true,
         ZIndex = 10
     })
@@ -961,8 +1011,8 @@ function Library:new(name)
     local Footer = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(302, 844),
-        Size = UDim2.fromOffset(1297, 46),
+        Position = UDim2.fromOffset(274, 776),
+        Size = UDim2.fromOffset(1328, 34),
         ZIndex = 15
     })
 
@@ -982,18 +1032,22 @@ function Library:new(name)
     end
 
     local function CreateFooterButton(text, icon, x, width, callback)
+        local buttonText = text
+        if type(icon) == "string" and icon ~= "" then
+            buttonText = icon .. "   " .. text
+        end
         local button = CreateInstance("TextButton", {
             Parent = Footer,
             AutoButtonColor = false,
             BackgroundColor3 = lib.Theme.Glass,
-            BackgroundTransparency = 0.04,
+            BackgroundTransparency = 0.08,
             BorderSizePixel = 0,
             Font = Enum.Font.GothamMedium,
             Position = UDim2.fromOffset(x, 0),
-            Size = UDim2.fromOffset(width, 52),
-            Text = icon .. "   " .. text,
+            Size = UDim2.fromOffset(width, 34),
+            Text = buttonText,
             TextColor3 = lib.Theme.Text,
-            TextSize = 16,
+            TextSize = 13,
             ZIndex = 16
         })
         CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8), Parent = button})
@@ -1010,7 +1064,7 @@ function Library:new(name)
         return button
     end
 
-    CreateFooterButton("Discord", "?", 1124, 155, CopyDiscord)
+    CreateFooterButton("Discord", "", 1208, 110, CopyDiscord)
 
     -- ============================================================
     -- TAB SYSTEM
@@ -1070,7 +1124,7 @@ function Library:new(name)
             BackgroundTransparency = 0.82,
             BorderSizePixel = 0,
             LayoutOrder = order,
-            Size = UDim2.new(1, 0, 0, 38),
+            Size = UDim2.new(1, 0, 0, 32),
             Text = "",
             ZIndex = 12
         })
@@ -1079,22 +1133,22 @@ function Library:new(name)
             Parent = button,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(14, 0),
-            Size = UDim2.fromOffset(28, 38),
+            Position = UDim2.fromOffset(12, 0),
+            Size = UDim2.fromOffset(22, 32),
             Text = icon,
             TextColor3 = lib.Theme.TextDim,
-            TextSize = 18,
+            TextSize = 15,
             ZIndex = 13
         })
         CreateInstance("TextLabel", {
             Parent = button,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(56, 0),
-            Size = UDim2.new(1, -64, 1, 0),
+            Position = UDim2.fromOffset(42, 0),
+            Size = UDim2.new(1, -50, 1, 0),
             Text = label,
             TextColor3 = lib.Theme.Text,
-            TextSize = 15,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 13
         })
@@ -1121,7 +1175,7 @@ function Library:new(name)
             Parent = TabHolder,
             BackgroundColor3 = lib.Theme.Main,
             BackgroundTransparency = 0.82,
-            Size = sidebarVisible and UDim2.new(1, 0, 0, 38) or UDim2.fromOffset(0, 0),
+            Size = sidebarVisible and UDim2.new(1, 0, 0, 32) or UDim2.fromOffset(0, 0),
             Position = UDim2.new(0, 0, 0, 0),
             AutoButtonColor = false,
             BorderSizePixel = 0,
@@ -1163,8 +1217,8 @@ function Library:new(name)
                 Parent = TabBtn,
                 BackgroundTransparency = 1,
                 Name = "TabIcon",
-                Size = UDim2.new(0, 20, 0, 20),
-                Position = UDim2.new(0, 14, 0.5, -10),
+                Size = UDim2.new(0, 18, 0, 18),
+                Position = UDim2.new(0, 12, 0.5, -9),
                 Image = "rbxassetid://" .. icon,
                 ImageColor3 = lib.Theme.TextDim,
                 ScaleType = Enum.ScaleType.Fit,
@@ -1176,12 +1230,12 @@ function Library:new(name)
             Name = "TabText",
             Parent = TabBtn,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, icon and -58 or -24, 1, 0),
-            Position = UDim2.new(0, icon and 50 or 14, 0, 0),
+            Size = UDim2.new(1, icon and -52 or -20, 1, 0),
+            Position = UDim2.new(0, icon and 42 or 12, 0, 0),
             Font = Enum.Font.Gotham,
             Text = displayName,
             TextColor3 = lib.Theme.Text,
-            TextSize = 15,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 13
         })
