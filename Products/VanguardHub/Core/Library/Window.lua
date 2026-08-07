@@ -31,7 +31,6 @@ local Library = {
         Glass = Color3.fromRGB(4, 10, 12)
     },
     Assets = {
-        -- Official Lumber Tycoon 2 media image (close-up of the house/base).
         Background = "rbxassetid://16941499839"
     }
 }
@@ -296,14 +295,12 @@ end
 -- ============================================================
 
 function Library:new(name)
-    -- Destroy existing instance
     for _, v in pairs(CoreGui:GetChildren()) do
         if v.Name == "VanguardHub" then
             v:Destroy()
         end
     end
     
-    -- Create ScreenGui
     local ScreenGui = CreateInstance("ScreenGui", {
         Name = "VanguardHub",
         Parent = CoreGui,
@@ -330,7 +327,6 @@ function Library:new(name)
     local BASE_HEIGHT = 890
     local MAX_UI_SCALE = 1
     
-    -- Main Frame
     local Main = CreateInstance("Frame", {
         Name = "Main",
         Parent = ScreenGui,
@@ -571,19 +567,9 @@ function Library:new(name)
         return btn
     end
 
-    local TopMainButton = CreateTopButton("Main", "⌂", 394, 113)
-    local TopSettingsButton = CreateTopButton("Settings", "⚙", 526, 135)
-    local TopThemeButton = CreateTopButton("Theme", "◉", 681, 128)
-
-    TopMainButton.Position = UDim2.fromOffset(366, 28)
-    TopMainButton.Size = UDim2.fromOffset(104, 42)
-    TopSettingsButton.Position = UDim2.fromOffset(484, 28)
-    TopSettingsButton.Size = UDim2.fromOffset(118, 42)
-    TopThemeButton.Position = UDim2.fromOffset(616, 28)
-    TopThemeButton.Size = UDim2.fromOffset(108, 42)
-    topButtonRecords[TopMainButton].Icon.Text = "⌂"
-    topButtonRecords[TopSettingsButton].Icon.Text = "⚙"
-    topButtonRecords[TopThemeButton].Icon.Text = "◉"
+    local TopMainButton = CreateTopButton("Main", "⌂", 366, 104)
+    local TopSettingsButton = CreateTopButton("Settings", "⚙", 484, 118)
+    local TopThemeButton = CreateTopButton("Theme", "◉", 616, 108)
 
     local function SetTopSelected(selectedButton)
         for button, record in pairs(topButtonRecords) do
@@ -606,12 +592,13 @@ function Library:new(name)
     end
     SetTopSelected(TopMainButton)
 
+    local localPlayer = Players.LocalPlayer
     local Profile = CreateInstance("Frame", {
         Parent = Top,
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.05,
-        Position = UDim2.fromOffset(1361, 18),
-        Size = UDim2.fromOffset(238, 62),
+        Position = UDim2.fromOffset(860, 18),
+        Size = UDim2.fromOffset(222, 62),
         ZIndex = 22
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Profile})
@@ -693,12 +680,8 @@ function Library:new(name)
         return button
     end
 
-    local MinimizeButton = CreateWindowButton("−", 244)
-    local CloseButton = CreateWindowButton("×", 302)
-    MinimizeButton.Position = UDim2.fromOffset(160, 9)
-    CloseButton.Position = UDim2.fromOffset(197, 9)
-    MinimizeButton.Text = "−"
-    CloseButton.Text = "×"
+    local MinimizeButton = CreateWindowButton("−", 160)
+    local CloseButton = CreateWindowButton("×", 197)
     local minimized = false
     lib:AddConnection(MinimizeButton, "MouseButton1Click", function()
         local positionDelta = ((BASE_HEIGHT - 105) * MainScale.Scale) / 2
@@ -803,7 +786,6 @@ function Library:new(name)
         SetTopSelected(ThemePanel.Visible and TopThemeButton or TopMainButton)
     end)
     
-    -- FIXED: Drag System connected to Top only
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -864,7 +846,6 @@ function Library:new(name)
             local targetKey = Enum.KeyCode[toggleKey]
             if not targetKey or input.KeyCode ~= targetKey then return end
             
-            -- FIXED: Use UserInputService:GetFocusedTextBox()
             local focusedTextBox = UserInputService:GetFocusedTextBox()
             if focusedTextBox then return end
             
@@ -875,143 +856,202 @@ function Library:new(name)
     
     ConnectToggleKey()
     
-    local sidebarWidth = 255
+    -- ============================================================
+    -- SIDEBAR - PIXEL POLISH
+    -- ============================================================
+    local SIDEBAR_W = 256
+    local SIDEBAR_PAD = 12
+    local SIDEBAR_RADIUS = 12
+    local TAB_H = 34
+    local TAB_GAP = 2
+    local TAB_ICON_SIZE = 20
+    local TAB_ICON_X = 12
+    local TAB_TEXT_X = 40
+    local TITLE_H = 28
+    local INFO_ROW_H = 22
 
-    -- Tab Background
-    local TabBG = CreateInstance("Frame", {
+    -- Sidebar container
+    local Sidebar = CreateInstance("Frame", {
         Parent = Main,
-        BackgroundColor3 = lib.Theme.Glass,
-        BackgroundTransparency = 0.04,
-        Size = UDim2.fromOffset(sidebarWidth, 590),
+        BackgroundColor3 = lib.Theme.Secondary,
+        BackgroundTransparency = 0.06,
+        Size = UDim2.fromOffset(SIDEBAR_W, 770),
         Position = UDim2.fromOffset(17, 102),
         ZIndex = 10
     })
-    lib:TrackInstance(TabBG)
-
-    CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = TabBG})
+    CreateInstance("UICorner", {CornerRadius = UDim.new(0, SIDEBAR_RADIUS), Parent = Sidebar})
     CreateInstance("UIStroke", {
-        Parent = TabBG,
+        Parent = Sidebar,
         Color = lib.Theme.CardBorder,
         Thickness = 1,
-        Transparency = 0.12
+        Transparency = 0.88
     })
 
-    local CategoriesTitle = CreateInstance("TextLabel", {
-        Parent = TabBG,
+    -- Navigation title
+    CreateInstance("TextLabel", {
+        Parent = Sidebar,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -28, 0, 24),
-        Position = UDim2.fromOffset(16, 8),
-        Font = Enum.Font.GothamMedium,
-        Text = "CATEGORIES",
-        TextColor3 = lib.Theme.Accent,
+        Size = UDim2.new(1, -SIDEBAR_PAD * 2, 0, TITLE_H),
+        Position = UDim2.fromOffset(SIDEBAR_PAD, SIDEBAR_PAD + 2),
+        Font = Enum.Font.GothamBold,
+        Text = "NAVIGATION",
+        TextColor3 = lib.Theme.TextDim,
         TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 11
     })
-    lib:BindTheme(CategoriesTitle, "TextColor3", "Accent")
-    
-    -- Tab Holder
+
+    -- Tab list
     local TabHolder = CreateInstance("ScrollingFrame", {
-        Parent = TabBG,
+        Parent = Sidebar,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(280, 456),
-        Position = UDim2.fromOffset(10, 34),
+        Size = UDim2.fromOffset(SIDEBAR_W - SIDEBAR_PAD * 2, 568),
+        Position = UDim2.fromOffset(SIDEBAR_PAD, SIDEBAR_PAD + TITLE_H + 6),
         ScrollBarThickness = 0,
-        ScrollBarImageColor3 = lib.Theme.Accent,
+        ScrollBarImageTransparency = 1,
         CanvasSize = UDim2.new(0, 0, 0, 0),
         ScrollingDirection = Enum.ScrollingDirection.Y,
-        ScrollBarImageTransparency = 1,
         ZIndex = 11
     })
-    lib:TrackInstance(TabHolder)
     
     local TabHolderLL = CreateInstance("UIListLayout", {
         Parent = TabHolder,
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 3)
+        Padding = UDim.new(0, TAB_GAP)
     })
     
     lib:AddPropertyConnection(TabHolderLL, "AbsoluteContentSize", function()
         TabHolder.CanvasSize = UDim2.new(0, 0, 0, TabHolderLL.AbsoluteContentSize.Y + 8)
     end)
 
-    local Credits = CreateInstance("Frame", {
-        Parent = Main,
-        BackgroundColor3 = lib.Theme.Glass,
-        BackgroundTransparency = 0.04,
-        Position = UDim2.fromOffset(17, 705),
-        Size = UDim2.fromOffset(255, 150),
-        ZIndex = 10
-    })
-    CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Credits})
-    CreateInstance("UIStroke", {
-        Parent = Credits,
-        Color = lib.Theme.CardBorder,
-        Thickness = 1,
-        Transparency = 0.12
-    })
-    local CreditsTitle = CreateInstance("TextLabel", {
-        Parent = Credits,
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamMedium,
-        Position = UDim2.fromOffset(18, 10),
-        Size = UDim2.fromOffset(264, 28),
-        Text = "CREDITS",
-        TextColor3 = lib.Theme.Accent,
-        TextSize = 17,
-        TextXAlignment = Enum.TextXAlignment.Left,
+    -- Session section
+    local SessionSection = CreateInstance("Frame", {
+        Parent = Sidebar,
+        BackgroundColor3 = lib.Theme.Secondary,
+        BackgroundTransparency = 0.93,
+        BorderSizePixel = 0,
+        Size = UDim2.fromOffset(SIDEBAR_W - SIDEBAR_PAD * 2, 104),
+        Position = UDim2.fromOffset(SIDEBAR_PAD, 648),
         ZIndex = 11
     })
-    lib:BindTheme(CreditsTitle, "TextColor3", "Accent")
+    CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8), Parent = SessionSection})
+    CreateInstance("UIStroke", {
+        Parent = SessionSection,
+        Color = lib.Theme.CardBorder,
+        Thickness = 1,
+        Transparency = 0.92
+    })
 
-    local creditRows = {
-        {"Owner:", "₳ĐⱤł₳₦Ø"},
-        {"UI & Architecture:", "Vanguard Team"},
-        {"Version:", "v1.0"}
+    CreateInstance("TextLabel", {
+        Parent = SessionSection,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        Position = UDim2.fromOffset(SIDEBAR_PAD, 10),
+        Size = UDim2.fromOffset(200, 18),
+        Text = "SESSION",
+        TextColor3 = lib.Theme.TextDim,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 12
+    })
+
+    local sessionRows = {
+        {label = "Executor", value = "Unknown"},
+        {label = "Status", value = "Connected"},
+        {label = "Version", value = "v1.0"}
     }
-    for index, row in ipairs(creditRows) do
+
+    pcall(function()
+        if type(identifyexecutor) == "function" then
+            local detected = identifyexecutor()
+            if type(detected) == "string" and detected ~= "" then
+                sessionRows[1][2] = detected
+            end
+        end
+    end)
+
+    for index, row in ipairs(sessionRows) do
+        local y = 34 + ((index - 1) * INFO_ROW_H)
+
         CreateInstance("TextLabel", {
-            Parent = Credits,
+            Parent = SessionSection,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(18, 48 + ((index - 1) * 32)),
-            Size = UDim2.fromOffset(128, 24),
+            Position = UDim2.fromOffset(SIDEBAR_PAD, y),
+            Size = UDim2.fromOffset(56, 18),
             Text = row[1],
             TextColor3 = lib.Theme.TextDim,
-            TextSize = 15,
+            TextSize = 10,
             TextXAlignment = Enum.TextXAlignment.Left,
-            ZIndex = 11
+            ZIndex = 12
         })
+
         local valueLabel = CreateInstance("TextLabel", {
-            Parent = Credits,
+            Parent = SessionSection,
             BackgroundTransparency = 1,
-            Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(150, 48 + ((index - 1) * 32)),
-            Size = UDim2.fromOffset(132, 24),
+            Font = Enum.Font.GothamMedium,
+            Position = UDim2.fromOffset(72, y),
+            Size = UDim2.fromOffset(144, 18),
             Text = row[2],
             TextColor3 = lib.Theme.Accent,
-            TextSize = 15,
+            TextSize = 10,
+            TextTruncate = Enum.TextTruncate.AtEnd,
             TextXAlignment = Enum.TextXAlignment.Left,
-            ZIndex = 11
+            ZIndex = 12
         })
         lib:BindTheme(valueLabel, "TextColor3", "Accent")
     end
-    
+
+    -- Credits footer
+    local Credits = CreateInstance("Frame", {
+        Parent = Sidebar,
+        BackgroundTransparency = 1,
+        Size = UDim2.fromOffset(SIDEBAR_W - SIDEBAR_PAD * 2, 34),
+        Position = UDim2.fromOffset(SIDEBAR_PAD, 726),
+        ZIndex = 11
+    })
+
+    CreateInstance("TextLabel", {
+        Parent = Credits,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamMedium,
+        Size = UDim2.fromOffset(SIDEBAR_W - SIDEBAR_PAD * 2, 18),
+        Text = "VanguardHub",
+        TextColor3 = lib.Theme.Text,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 12
+    })
+
+    CreateInstance("TextLabel", {
+        Parent = Credits,
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(0, 18),
+        Size = UDim2.fromOffset(SIDEBAR_W - SIDEBAR_PAD * 2, 14),
+        Text = "by Adriano",
+        TextColor3 = lib.Theme.TextDim,
+        TextSize = 10,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 12
+    })
+
     -- Content Area
     local ContentArea = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(815, 710),
-        Position = UDim2.fromOffset(275, 102),
+        Size = UDim2.fromOffset(815, 770),
+        Position = UDim2.fromOffset(285, 102),
         ClipsDescendants = true,
         ZIndex = 10
     })
     lib:TrackInstance(ContentArea)
 
+    -- Footer
     local Footer = CreateInstance("Frame", {
         Parent = Main,
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(275, 840),
+        Position = UDim2.fromOffset(285, 840),
         Size = UDim2.fromOffset(810, 34),
         ZIndex = 15
     })
@@ -1067,7 +1107,7 @@ function Library:new(name)
     CreateFooterButton("Discord", "", 690, 110, CopyDiscord)
 
     -- ============================================================
-    -- TAB SYSTEM
+    -- TAB SYSTEM (unchanged logic)
     -- ============================================================
     
     local Tabs = {
@@ -1090,7 +1130,6 @@ function Library:new(name)
                 return
             end
         end
-
         SetTopSelected(TopMainButton)
     end
 
@@ -1124,7 +1163,7 @@ function Library:new(name)
             BackgroundTransparency = 0.82,
             BorderSizePixel = 0,
             LayoutOrder = order,
-            Size = UDim2.new(1, 0, 0, 32),
+            Size = UDim2.new(1, 0, 0, TAB_H),
             Text = "",
             ZIndex = 12
         })
@@ -1133,8 +1172,8 @@ function Library:new(name)
             Parent = button,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(12, 0),
-            Size = UDim2.fromOffset(22, 32),
+            Position = UDim2.fromOffset(TAB_ICON_X, 0),
+            Size = UDim2.fromOffset(TAB_ICON_SIZE, TAB_H),
             Text = icon,
             TextColor3 = lib.Theme.TextDim,
             TextSize = 15,
@@ -1144,8 +1183,8 @@ function Library:new(name)
             Parent = button,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(42, 0),
-            Size = UDim2.new(1, -50, 1, 0),
+            Position = UDim2.fromOffset(TAB_TEXT_X, 0),
+            Size = UDim2.new(1, -(TAB_TEXT_X + 8), 1, 0),
             Text = label,
             TextColor3 = lib.Theme.Text,
             TextSize = 13,
@@ -1175,7 +1214,7 @@ function Library:new(name)
             Parent = TabHolder,
             BackgroundColor3 = lib.Theme.Main,
             BackgroundTransparency = 0.82,
-            Size = sidebarVisible and UDim2.new(1, 0, 0, 32) or UDim2.fromOffset(0, 0),
+            Size = sidebarVisible and UDim2.new(1, 0, 0, TAB_H) or UDim2.fromOffset(0, 0),
             Position = UDim2.new(0, 0, 0, 0),
             AutoButtonColor = false,
             BorderSizePixel = 0,
@@ -1205,8 +1244,8 @@ function Library:new(name)
             Name = "Indicator",
             Parent = TabBtn,
             BackgroundColor3 = lib.Theme.Accent,
-            Size = UDim2.new(0, 3, 1, -10),
-            Position = UDim2.new(0, 0, 0, 5),
+            Size = UDim2.new(0, 3, 1, -8),
+            Position = UDim2.new(0, 0, 0, 4),
             BackgroundTransparency = 1,
             ZIndex = 13
         })
@@ -1217,8 +1256,8 @@ function Library:new(name)
                 Parent = TabBtn,
                 BackgroundTransparency = 1,
                 Name = "TabIcon",
-                Size = UDim2.new(0, 18, 0, 18),
-                Position = UDim2.new(0, 12, 0.5, -9),
+                Size = UDim2.fromOffset(TAB_ICON_SIZE, TAB_ICON_SIZE),
+                Position = UDim2.fromOffset(TAB_ICON_X, (TAB_H - TAB_ICON_SIZE) / 2),
                 Image = "rbxassetid://" .. icon,
                 ImageColor3 = lib.Theme.TextDim,
                 ScaleType = Enum.ScaleType.Fit,
@@ -1230,8 +1269,8 @@ function Library:new(name)
             Name = "TabText",
             Parent = TabBtn,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, icon and -52 or -20, 1, 0),
-            Position = UDim2.new(0, icon and 42 or 12, 0, 0),
+            Size = UDim2.new(1, -(TAB_TEXT_X + 8), 1, 0),
+            Position = UDim2.fromOffset(TAB_TEXT_X, 0),
             Font = Enum.Font.Gotham,
             Text = displayName,
             TextColor3 = lib.Theme.Text,
@@ -1348,7 +1387,7 @@ function Library:new(name)
         end
         
         -- ============================================================
-        -- SECTION SYSTEM
+        -- SECTION SYSTEM (unchanged logic)
         -- ============================================================
         
         local Sections = {}
@@ -1512,7 +1551,7 @@ function Library:new(name)
             end)
             
             -- ============================================================
-            -- ELEMENTS
+            -- ELEMENTS (unchanged logic)
             -- ============================================================
             
             local Elements = {}
@@ -1812,7 +1851,6 @@ function Library:new(name)
             end
             
             function Elements:Dropdown(text, flag, options, callback)
-                -- FIXED: Dropdown expands Section height instead of overlapping
                 local Dropdown = CreateInstance("Frame", {
                     Parent = SectionContent,
                     BackgroundColor3 = lib.Theme.Main,
@@ -2066,7 +2104,6 @@ function Library:new(name)
                 local binding = false
                 local bindingConnection = nil
                 
-                -- FIXED: Cancel binding safely
                 local function CancelBinding()
                     binding = false
                     isBindingKey = false
@@ -2109,7 +2146,6 @@ function Library:new(name)
                     bindingConnection = lib:AddConnection(UserInputService, "InputBegan", function(input, gameProcessed)
                         if gameProcessed then return end
                         
-                        -- FIXED: Escape cancels binding
                         if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Escape then
                             CancelBinding()
                             return
