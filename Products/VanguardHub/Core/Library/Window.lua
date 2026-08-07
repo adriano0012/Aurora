@@ -121,7 +121,13 @@ end
 
 function Library:AddConnection(obj, event, callback)
     if not obj or not event then return end
-    local connection = obj[event]:Connect(callback)
+    local member = obj[event]
+    local connection
+    if typeof(member) == "RBXScriptSignal" then
+        connection = member:Connect(callback)
+    else
+        connection = obj:GetPropertyChangedSignal(event):Connect(callback)
+    end
     table.insert(self.Connections, connection)
     return connection
 end
@@ -322,6 +328,7 @@ function Library:new(name)
 
     local BASE_WIDTH = 1619
     local BASE_HEIGHT = 972
+    local MAX_UI_SCALE = 0.8
     
     -- Main Frame
     local Main = CreateInstance("Frame", {
@@ -363,7 +370,7 @@ function Library:new(name)
             (viewport.Y - 16) / BASE_HEIGHT
         )
 
-        MainScale.Scale = math.clamp(scale, 0.25, 1)
+        MainScale.Scale = math.clamp(scale, 0.25, MAX_UI_SCALE)
     end
 
     local viewportConnection
@@ -641,19 +648,19 @@ function Library:new(name)
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 23
     })
-    local PremiumLabel = CreateInstance("TextLabel", {
+    local ProfileMetaLabel = CreateInstance("TextLabel", {
         Parent = Profile,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
         Position = UDim2.fromOffset(87, 39),
         Size = UDim2.fromOffset(145, 25),
-        Text = "Premium",
+        Text = "v1.0",
         TextColor3 = lib.Theme.Accent,
-        TextSize = 17,
+        TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 23
     })
-    lib:BindTheme(PremiumLabel, "TextColor3", "Accent")
+    lib:BindTheme(ProfileMetaLabel, "TextColor3", "Accent")
 
     local function CreateWindowButton(text, x)
         local button = CreateInstance("TextButton", {
@@ -919,7 +926,7 @@ function Library:new(name)
         BackgroundColor3 = lib.Theme.Glass,
         BackgroundTransparency = 0.04,
         Position = UDim2.fromOffset(17, 830),
-        Size = UDim2.fromOffset(311, 126),
+        Size = UDim2.fromOffset(311, 104),
         ZIndex = 10
     })
     CreateInstance("UICorner", {CornerRadius = UDim.new(0, 10), Parent = Credits})
@@ -944,18 +951,17 @@ function Library:new(name)
     lib:BindTheme(CreditsTitle, "TextColor3", "Accent")
 
     local creditRows = {
-        {"Developer:", "Vanguard"},
-        {"UI Design:", "Vanguard Team"},
-        {"Special Thanks:", "Nightfall Team"},
-        {"Version:", "v2.5.0"}
+        {"Owner:", "₳ĐⱤł₳₦Ø"},
+        {"UI & Architecture:", "Vanguard Team"},
+        {"Version:", "v1.0"}
     }
     for index, row in ipairs(creditRows) do
         CreateInstance("TextLabel", {
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(18, 29 + ((index - 1) * 22)),
-            Size = UDim2.fromOffset(105, 21),
+            Position = UDim2.fromOffset(18, 29 + ((index - 1) * 24)),
+            Size = UDim2.fromOffset(130, 21),
             Text = row[1],
             TextColor3 = lib.Theme.TextDim,
             TextSize = 12,
@@ -966,8 +972,8 @@ function Library:new(name)
             Parent = Credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(111, 29 + ((index - 1) * 22)),
-            Size = UDim2.fromOffset(180, 21),
+            Position = UDim2.fromOffset(148, 29 + ((index - 1) * 24)),
+            Size = UDim2.fromOffset(143, 21),
             Text = row[2],
             TextColor3 = lib.Theme.Accent,
             TextSize = 12,
@@ -1016,7 +1022,7 @@ function Library:new(name)
         Position = UDim2.fromOffset(22, 0),
         RichText = true,
         Size = UDim2.fromOffset(180, 52),
-        Text = 'Status: <font color="#3FB61D">Attached</font>',
+        Text = 'Status: <font color="#3FB61D">Active</font>',
         TextColor3 = lib.Theme.TextDim,
         TextSize = 15,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1029,7 +1035,7 @@ function Library:new(name)
         Font = Enum.Font.Gotham,
         Position = UDim2.fromOffset(204, 0),
         Size = UDim2.fromOffset(150, 52),
-        Text = "Time:  00:00:00",
+        Text = "Session:  00:00:00",
         TextColor3 = lib.Theme.TextDim,
         TextSize = 15,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -1125,7 +1131,7 @@ function Library:new(name)
         local hours = math.floor(elapsed / 3600)
         local minutes = math.floor((elapsed % 3600) / 60)
         local seconds = elapsed % 60
-        TimeLabel.Text = string.format("Time:  %02d:%02d:%02d", hours, minutes, seconds)
+        TimeLabel.Text = string.format("Session:  %02d:%02d:%02d", hours, minutes, seconds)
         FooterFPS.Visible = lib.Flags.FPSOverlay ~= false
         FooterFPS.Text = "FPS:  " .. tostring(fps)
     end)

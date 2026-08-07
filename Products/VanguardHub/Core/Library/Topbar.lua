@@ -220,18 +220,18 @@ function Topbar.Build(context)
         TextTruncate = Enum.TextTruncate.AtEnd,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    local premiumLabel = Utils.CreateInstance("TextLabel", {
+    local versionLabel = Utils.CreateInstance("TextLabel", {
         Parent = profile,
         BackgroundTransparency = 1,
         Font = Enum.Font.GothamMedium,
         Position = UDim2.fromOffset(87, 39),
         Size = UDim2.fromOffset(145, 25),
-        Text = "Premium",
+        Text = "v1.0",
         TextColor3 = library.Theme.Accent,
-        TextSize = 17,
+        TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-    library:BindTheme(premiumLabel, "TextColor3", "Accent")
+    library:BindTheme(versionLabel, "TextColor3", "Accent")
 
     local minimizeButton = makeWindowButton(context, profile, "-", 244)
     local closeButton = makeWindowButton(context, profile, "x", 302)

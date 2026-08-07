@@ -61,7 +61,7 @@ function Sidebar.Build(context)
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 3)
     })
-    library:AddConnection(layout, "AbsoluteContentSize", function()
+    library:AddPropertyConnection(layout, "AbsoluteContentSize", function()
         list.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 8)
     end)
 
@@ -70,7 +70,7 @@ function Sidebar.Build(context)
         BackgroundColor3 = library.Theme.Glass,
         BackgroundTransparency = 0.04,
         Position = UDim2.fromOffset(17, 830),
-        Size = UDim2.fromOffset(311, 126)
+        Size = UDim2.fromOffset(311, 104)
     })
     Utils.CreateInstance("UICorner", {Parent = credits, CornerRadius = UDim.new(0, 10)})
     Utils.CreateInstance("UIStroke", {
@@ -93,18 +93,17 @@ function Sidebar.Build(context)
     library:BindTheme(creditsTitle, "TextColor3", "Accent")
 
     local creditRows = {
-        {"Developer:", "Vanguard"},
-        {"UI Design:", "Vanguard Team"},
-        {"Special Thanks:", "Nightfall Team"},
-        {"Version:", "v2.5.0"}
+        {"Owner:", "₳ĐⱤł₳₦Ø"},
+        {"UI & Architecture:", "Vanguard Team"},
+        {"Version:", "v1.0"}
     }
     for index, row in ipairs(creditRows) do
         Utils.CreateInstance("TextLabel", {
             Parent = credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(18, 29 + ((index - 1) * 22)),
-            Size = UDim2.fromOffset(105, 21),
+            Position = UDim2.fromOffset(18, 29 + ((index - 1) * 24)),
+            Size = UDim2.fromOffset(130, 21),
             Text = row[1],
             TextColor3 = library.Theme.TextDim,
             TextSize = 12,
@@ -114,8 +113,8 @@ function Sidebar.Build(context)
             Parent = credits,
             BackgroundTransparency = 1,
             Font = Enum.Font.Gotham,
-            Position = UDim2.fromOffset(111, 29 + ((index - 1) * 22)),
-            Size = UDim2.fromOffset(180, 21),
+            Position = UDim2.fromOffset(148, 29 + ((index - 1) * 24)),
+            Size = UDim2.fromOffset(143, 21),
             Text = row[2],
             TextColor3 = library.Theme.Accent,
             TextSize = 12,
