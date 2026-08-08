@@ -167,11 +167,11 @@ local ConfigData = {
     
     -- Player
     Player = {
-        WalkSpeed = 120,
-        SprintSpeed = 65,
+        WalkSpeed = 16,
+        SprintSpeed = 16,
         InfiniteSprint = false,
-        JumpPower = 250,
-        FlySpeed = 200,
+        JumpPower = 50,
+        FlySpeed = 50,
         Flight = false,
         Noclip = false,
         InfiniteJump = false,
